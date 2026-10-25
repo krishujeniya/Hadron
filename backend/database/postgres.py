@@ -107,9 +107,35 @@ def _build_engine():
         "postgresql+asyncpg://user:pass@host:5432/dbname"
     """
     cfg = get_settings()
+    db_url = cfg.database_url
+
+    # Normalize standard postgres connection strings to asyncpg driver
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif db_url.startswith("postgresql://") and not db_url.startswith("postgresql+asyncpg://"):
+        db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+    # SQLite connection handling
+    if "sqlite" in db_url.lower():
+        from sqlalchemy.pool import StaticPool
+        return create_async_engine(
+            db_url,
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+            echo=False,
+        )
+
+    connect_args = {}
+    if any(h in db_url for h in ("supabase.co", "pooler.supabase.com", "sslmode=require")):
+        import ssl
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        connect_args["ssl"] = ctx
 
     engine = create_async_engine(
-        cfg.database_url,
+        db_url,
+        connect_args=connect_args,
 
         # Pool settings (from Storage-Engines.md wiki):
         # pool_size=5: 5 persistent connections. Enough for moderate concurrency.
@@ -383,12 +409,22 @@ async def init_tiger_schema() -> None:
     # asyncpg wants plain postgresql:// not postgresql+asyncpg:// (that's SQLAlchemy syntax)
     dsn = dsn.replace("postgresql+asyncpg://", "postgresql://").replace("postgres+asyncpg://", "postgresql://")
 
+    # SSL context for Supabase / hosted cloud PostgreSQL
+    ssl_arg = None
+    if any(h in dsn for h in ("supabase.co", "pooler.supabase.com", "sslmode=require")):
+        import ssl
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        ssl_arg = ctx
+
     # Build the pool with pgvector codec registered on every new connection.
     async def _init_conn(conn):
         await _register_vector(conn)
 
     _tiger_pool = await _asyncpg.create_pool(
         dsn=dsn,
+        ssl=ssl_arg,
         min_size=2,
         max_size=10,
         command_timeout=60,
