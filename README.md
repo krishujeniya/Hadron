@@ -4,6 +4,12 @@
 
 # Hadron — Autonomous AI PR Review Agent
 
+<p align="center">
+  <a href="https://hadron.vercel.app"><img src="https://img.shields.io/badge/Live_Dashboard-hadron.vercel.app-000000?style=flat-square&logo=vercel&logoColor=white" alt="Live Dashboard" /></a>
+  <a href="https://hadron-backend-mi03.onrender.com/health/live"><img src="https://img.shields.io/badge/Backend_API-Online-46E3B7?style=flat-square&logo=render&logoColor=white" alt="API Status" /></a>
+  <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License" />
+</p>
+
 A production-grade, open source AI Pull Request Review Agent. A developer opens a PR. A webhook fires. Four specialist sub-agents run in parallel — security, code quality, test coverage, docs. Each one reasons over the diff plus codebase context retrieved via semantic search. An aggregator merges findings into a single structured review and posts it back to the PR. Low-confidence findings route to a human approval queue.
 
 Every phase has a gate: tests pass, evals pass, a written checkpoint before the next phase begins.
