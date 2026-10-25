@@ -30,6 +30,15 @@ export default function EconomicsPage() {
         </p>
       </div>
 
+      {/* Autonomous Cloud Guardrails Banner */}
+      <div className="p-3.5 rounded-xl border border-white/10 bg-white/[0.02] flex items-center gap-3 text-xs text-zinc-300">
+        <span className="text-base shrink-0">🛡️</span>
+        <div>
+          <span className="font-semibold text-white">Autonomous Cost Guardrails: </span>
+          Hadron operates with strict per-review and daily budget caps. Runaway loops or unforeseen cloud overages are intercepted automatically before exceeding quota.
+        </div>
+      </div>
+
       {/* Budget gauge */}
       <section className="border border-border rounded-lg bg-panel px-5 py-4">
         <div className="flex items-baseline justify-between">

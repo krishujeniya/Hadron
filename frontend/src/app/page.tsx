@@ -196,13 +196,13 @@ export default function DashboardPage() {
             <Stat label="Reviews" value={reviews.length} err={!!reviewsErr} />
             <Stat label="Watched Repos" value={repositories.length} tone="ok" />
             <Stat
-              label="HITL pending"
+              label="Approvals Pending"
               value={pendingHitl.length}
               err={!!hitlErr}
               tone={pendingHitl.length > 0 ? "warn" : "ok"}
             />
             <Stat
-              label="Needs human review"
+              label="Escalated Items"
               value={escalated}
               err={!!reviewsErr}
               tone={escalated > 0 ? "warn" : "ok"}
@@ -258,10 +258,10 @@ export default function DashboardPage() {
             )}
           </section>
 
-          {/* HITL Queue Table */}
+          {/* Approvals Queue Table */}
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-medium text-white">HITL queue</h2>
+              <h2 className="text-lg font-medium text-white">Approvals & Action Needed</h2>
               <Link href="/hitl" className="text-sm text-white hover:underline">
                 Open queue →
               </Link>

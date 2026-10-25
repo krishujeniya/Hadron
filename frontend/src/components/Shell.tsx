@@ -11,12 +11,12 @@ import { HadronIcon } from "./HadronIcon";
 import { ThemeToggle } from "./ThemeToggle";
 
 const NAV = [
-  { href: "/", label: "Dashboard" },
-  { href: "/repositories", label: "Repositories" },
-  { href: "/reviews", label: "Reviews" },
-  { href: "/hitl", label: "HITL Queue" },
-  { href: "/economics", label: "Economics" },
-  { href: "/health", label: "Health" },
+  { href: "/", label: "Dashboard", icon: "📊" },
+  { href: "/repositories", label: "Repositories", icon: "📂" },
+  { href: "/reviews", label: "Reviews", icon: "📋" },
+  { href: "/hitl", label: "Approvals", icon: "⚡", badge: "Action" },
+  { href: "/economics", label: "Economics", icon: "💰" },
+  { href: "/health", label: "Engine Health", icon: "🟢" },
 ];
 
 export function Shell({ children }: { children: React.ReactNode }) {
@@ -145,14 +145,24 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   key={item.href}
                   href={item.href}
                   className={clsx(
-                    "flex items-center justify-between px-3 py-2 rounded-lg text-sm transition",
+                    "flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all group",
                     active
-                      ? "bg-gradient-to-r from-white/15 via-white/5 to-transparent text-white font-semibold border-l-2 border-white"
-                      : "text-muted hover:text-foreground hover:bg-white/5"
+                      ? "bg-gradient-to-r from-white/15 via-white/5 to-transparent text-white font-semibold border-l-2 border-white shadow-xs"
+                      : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"
                   )}
                 >
-                  <span>{item.label}</span>
-                  {active && <span className="w-1.5 h-1.5 rounded-full bg-white shadow-sm shadow-white" />}
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-sm opacity-90 group-hover:scale-110 transition-transform">{item.icon}</span>
+                    <span>{item.label}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {item.badge && !active && (
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase tracking-wider bg-white/10 text-zinc-300 border border-white/10">
+                        {item.badge}
+                      </span>
+                    )}
+                    {active && <span className="w-1.5 h-1.5 rounded-full bg-white shadow-xs shadow-white" />}
+                  </div>
                 </Link>
               );
             })}
