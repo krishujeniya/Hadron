@@ -1,0 +1,24 @@
+# .dockerignore - Prevent sensitive files and build artifacts from leaking into images
+.git
+.gitignore
+.venv
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+*.db
+*.sqlite
+*.sqlite3
+.env*
+!.env.example
+node_modules/
+frontend/.next/
+frontend/out/
+frontend/node_modules/
+.DS_Store
+*.log
+.system_generated/

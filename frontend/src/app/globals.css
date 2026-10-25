@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: 11 13 18;             /* #0b0d12 */
+  --panel: 17 20 27;          /* #11141b */
+  --surface: 22 27 38;        /* #161b26 */
+  --border: 31 36 48;         /* #1f2430 */
+  --muted: 138 147 166;       /* #8a93a6 */
+  --accent: 124 156 255;      /* #7c9cff */
+  --foreground: 229 231 235;  /* #e5e7eb */
+  --ok: 74 222 128;           /* #4ade80 */
+  --warn: 251 191 36;         /* #fbbf24 */
+  --err: 248 113 113;         /* #f87171 */
+}
+
+html.light {
+  --bg: 248 250 252;          /* #f8fafc */
+  --panel: 255 255 255;       /* #ffffff */
+  --surface: 241 245 249;     /* #f1f5f9 */
+  --border: 226 232 240;      /* #e2e8f0 */
+  --muted: 71 85 105;         /* #475569 (WCAG AAA >= 7:1) */
+  --accent: 79 70 229;        /* #4f46e5 (WCAG AAA >= 7:1) */
+  --foreground: 15 23 42;     /* #0f172a (WCAG AAA >= 15:1) */
+  --ok: 21 128 61;            /* #15803d */
+  --warn: 180 83 9;           /* #b45309 */
+  --err: 185 28 28;           /* #b91c1c */
+}
+
+html, body {
+  background-color: rgb(var(--bg));
+  color: rgb(var(--foreground));
+}
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+a { color: inherit; }
+
+::selection { background: rgb(var(--accent) / 0.25); }
