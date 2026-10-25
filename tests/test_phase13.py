@@ -236,9 +236,9 @@ class TestSettings:
         assert "localhost" in s.database_url or "postgres" in s.database_url
 
     def test_default_redis_url(self):
-        """Default REDIS_URL must be a redis:// URL."""
+        """Default REDIS_URL must be a redis:// or rediss:// (TLS) URL."""
         s = self._make_settings()
-        assert s.redis_url.startswith("redis://")
+        assert s.redis_url.startswith(("redis://", "rediss://"))
 
     def test_default_qdrant_url(self):
         """Default QDRANT_URL must be an HTTP URL on port 6333."""
