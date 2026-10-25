@@ -7,6 +7,7 @@ import { FindingsByAgent } from "@/components/AgentFindingCard";
 import { DiffViewer } from "@/components/DiffViewer";
 import { ReviewStatusBadge } from "@/components/ReviewStatusBadge";
 import { VerdictChip } from "@/components/VerdictChip";
+import { ExecutiveReviewSummary } from "@/components/ExecutiveReviewSummary";
 import { Empty } from "@/components/Empty";
 import { api } from "@/lib/api";
 import type { ReviewDetail } from "@/lib/types";
@@ -15,7 +16,7 @@ export default function ReviewDetailPage() {
   const params = useParams<{ id: string }>();
   const id = decodeURIComponent(params.id);
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<"findings" | "diff">("findings");
+  const [activeTab, setActiveTab] = useState<"executive" | "findings" | "diff">("executive");
 
   // Use api.getReview (custom fetcher) instead of the URL-string fetcher so
   // the BE-route fallback in lib/api.ts kicks in for ids containing "/".
@@ -89,6 +90,19 @@ export default function ReviewDetailPage() {
       {/* View Mode Tabs */}
       <div className="flex items-center gap-2 border-b border-white/10 pb-1">
         <button
+          onClick={() => setActiveTab("executive")}
+          className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-t-lg transition-colors border-b-2 -mb-[5px] ${
+            activeTab === "executive"
+              ? "border-white text-white bg-zinc-900/60 font-semibold shadow-sm"
+              : "border-transparent text-muted hover:text-foreground"
+          }`}
+        >
+          <span>✨ Plain English Summary</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/10 text-white font-mono">
+            Non-Tech
+          </span>
+        </button>
+        <button
           onClick={() => setActiveTab("findings")}
           className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-t-lg transition-colors border-b-2 -mb-[5px] ${
             activeTab === "findings"
@@ -116,7 +130,9 @@ export default function ReviewDetailPage() {
         </button>
       </div>
 
-      {activeTab === "findings" ? (
+      {activeTab === "executive" ? (
+        <ExecutiveReviewSummary data={data} />
+      ) : activeTab === "findings" ? (
         <FindingsByAgent findings={data.findings ?? []} />
       ) : (
         <DiffViewer diff={data.pr_diff || undefined} findings={data.findings ?? []} />
