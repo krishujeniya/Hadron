@@ -17,6 +17,14 @@ export function HadronAuthScreen() {
     setErrorMsg(null);
     try {
       const res = await fetch("/api/v1/auth/github/login");
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Authentication service unavailable (${res.status}): ${text || "Please try again later"}`);
+      }
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        throw new Error("Invalid response received from authentication server.");
+      }
       const data = await res.json();
       if (data.oauth_available && data.authorize_url) {
         window.location.href = data.authorize_url;

@@ -20,7 +20,7 @@ import type {
 // To bypass the proxy, set NEXT_PUBLIC_API_DIRECT=1.
 const BASE =
   process.env.NEXT_PUBLIC_API_DIRECT === "1"
-    ? process.env.NEXT_PUBLIC_API_BASE_URL ?? ""
+    ? (process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || "")
     : "";
 
 const TOKEN = process.env.NEXT_PUBLIC_API_TOKEN ?? "";

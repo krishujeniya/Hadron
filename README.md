@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://hadron.vercel.app"><img src="https://img.shields.io/badge/Live_Dashboard-hadron.vercel.app-000000?style=flat-square&logo=vercel&logoColor=white" alt="Live Dashboard" /></a>
-  <a href="https://hadron-backend-mi03.onrender.com/health/live"><img src="https://img.shields.io/badge/Backend_API-Online-46E3B7?style=flat-square&logo=render&logoColor=white" alt="API Status" /></a>
+  <a href="https://hadron-backend.vercel.app/health/live"><img src="https://img.shields.io/badge/Backend_API-hadron--backend.vercel.app-000000?style=flat-square&logo=vercel&logoColor=white" alt="Backend API" /></a>
   <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License" />
 </p>
 

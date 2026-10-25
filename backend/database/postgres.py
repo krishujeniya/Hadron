@@ -38,6 +38,7 @@
 #   returned to the pool when done.
 
 import logging
+import os
 import pathlib
 import re
 
@@ -133,15 +134,15 @@ def _build_engine():
         ctx.verify_mode = ssl.CERT_NONE
         connect_args["ssl"] = ctx
 
+    is_serverless = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
+    pool_size = 1 if is_serverless else 5
+    max_overflow = 2 if is_serverless else 10
+
     engine = create_async_engine(
         db_url,
         connect_args=connect_args,
-
-        # Pool settings (from Storage-Engines.md wiki):
-        # pool_size=5: 5 persistent connections. Enough for moderate concurrency.
-        # max_overflow=10: burst to 15 total under load, then queue at pool_timeout.
-        pool_size=5,
-        max_overflow=10,
+        pool_size=pool_size,
+        max_overflow=max_overflow,
 
         # pool_timeout=30: wait up to 30s for a free connection.
         # Prevents requests piling up forever if the DB is overwhelmed.
@@ -422,11 +423,12 @@ async def init_tiger_schema() -> None:
     async def _init_conn(conn):
         await _register_vector(conn)
 
+    is_serverless = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
     _tiger_pool = await _asyncpg.create_pool(
         dsn=dsn,
         ssl=ssl_arg,
-        min_size=2,
-        max_size=10,
+        min_size=1 if is_serverless else 2,
+        max_size=2 if is_serverless else 10,
         command_timeout=60,
         init=_init_conn,
     )
