@@ -48,6 +48,15 @@ export default function ReviewDetailPage() {
 
   return (
     <div className="space-y-6">
+      {/* Universal Breadcrumb Spatial Traversal (Principle 49) */}
+      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs font-mono text-zinc-500">
+        <a href="/" className="hover:text-white transition-colors">Dashboard</a>
+        <span>/</span>
+        <a href="/reviews" className="hover:text-white transition-colors">Reviews</a>
+        <span>/</span>
+        <span className="text-zinc-300 font-semibold">{data.repo_full_name} #{data.pr_number}</span>
+      </nav>
+
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="text-xs text-muted font-mono truncate">{data.id}</div>

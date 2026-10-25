@@ -22,8 +22,27 @@ export default function HITLDetailPage() {
   const isResolved = data.status !== "pending" && data.status !== "in_review";
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2 space-y-4">
+    <div className="space-y-6">
+      {/* Universal Breadcrumb Spatial Traversal (Principle 49) */}
+      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs font-mono text-zinc-500">
+        <a href="/" className="hover:text-white transition-colors">Dashboard</a>
+        <span>/</span>
+        <a href="/hitl" className="hover:text-white transition-colors">Approvals</a>
+        <span>/</span>
+        <span className="text-zinc-300 font-semibold">{data.repo_full_name} #{data.pr_number}</span>
+      </nav>
+
+      {/* Psychological Safety Callout (Principles 35 & 77) */}
+      <div className="p-3.5 rounded-xl border border-white/10 bg-white/[0.02] flex items-center gap-3 text-xs text-zinc-300">
+        <span className="text-base shrink-0">🛡️</span>
+        <div>
+          <span className="font-semibold text-white">Reversible Decision-Making: </span>
+          Decisions recorded here post directly to GitHub as an official review. You can override or update this recommendation at any time.
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-4">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="text-xs text-muted font-mono truncate">{data.review_id}</div>
@@ -88,6 +107,7 @@ export default function HITLDetailPage() {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }

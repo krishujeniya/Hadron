@@ -9,6 +9,7 @@ import { HadronAuthScreen } from "./HadronAuthScreen";
 import { HadronLogo } from "./HadronLogo";
 import { HadronIcon } from "./HadronIcon";
 import { ThemeToggle } from "./ThemeToggle";
+import { CommandPalette } from "./CommandPalette";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: "📊" },
@@ -23,11 +24,24 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { currentAccount, isLoading, logout } = useGitHubAccount();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   // Close mobile drawer on route navigation
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+
+  // Global keyboard shortcut for Command Palette (Cmd+K / Ctrl+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // Allow the OAuth callback route to process even before currentAccount is stored
   if (pathname === "/auth/callback") {
@@ -57,6 +71,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-border bg-panel sticky top-0 z-30">
         <HadronLogo size="sm" animated={false} />
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setPaletteOpen(true)}
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-muted hover:text-foreground bg-bg text-xs"
+            aria-label="Open Command Palette"
+          >
+            🔍
+          </button>
           <ThemeToggle />
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -134,6 +155,22 @@ export function Shell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
+          {/* Universal Quick Command / Search Bar (Linear & Raycast Principles 33 & 50) */}
+          <div className="px-3 mb-2">
+            <button
+              onClick={() => setPaletteOpen(true)}
+              className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl border border-white/10 bg-black/40 hover:bg-white/[0.05] hover:border-white/20 transition-all text-xs text-zinc-400 group"
+            >
+              <span className="flex items-center gap-2">
+                <span>🔍</span>
+                <span className="group-hover:text-zinc-200 transition-colors">Quick Command</span>
+              </span>
+              <kbd className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-white/10 text-zinc-400 border border-white/10">
+                ⌘K
+              </kbd>
+            </button>
+          </div>
+
           {/* Nav links */}
           <nav className="px-3 py-2 space-y-1">
             {NAV.map((item) => {
@@ -184,6 +221,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
       {/* Main Content */}
       <main className="flex-1 px-4 py-4 md:px-8 md:py-6 overflow-x-hidden min-w-0">{children}</main>
+
+      {/* Global Command Palette */}
+      <CommandPalette isOpen={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
   );
 }
