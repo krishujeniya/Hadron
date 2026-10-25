@@ -10,7 +10,6 @@
 import logging
 import secrets
 import time
-from typing import Any
 
 import httpx
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, Response, status

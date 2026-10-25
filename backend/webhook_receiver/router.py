@@ -44,7 +44,6 @@ from fastapi.responses import JSONResponse
 from backend.config.settings import Settings, get_settings
 from backend.core.exceptions import (
     DuplicateWebhookError,
-    JobEnqueueError,
     MemoryStoreError,
     WebhookParseError,
     WebhookValidationError,

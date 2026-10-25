@@ -32,7 +32,6 @@
 import uuid
 from datetime import datetime, timezone
 from typing import AsyncGenerator
-from unittest.mock import AsyncMock, patch
 
 import pytest
 import pytest_asyncio

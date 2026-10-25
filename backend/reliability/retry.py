@@ -42,7 +42,7 @@ import logging
 import random
 import time
 from dataclasses import dataclass, field
-from typing import Any, Callable, Sequence, Type, TypeVar
+from typing import Any, Callable, Type, TypeVar
 
 logger = logging.getLogger(__name__)
 

@@ -39,7 +39,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from backend.tools.llm_client import LLMClient
 
-from backend.evaluation.golden_dataset import GoldenPR, ExpectedFinding
+from backend.evaluation.golden_dataset import GoldenPR
 
 logger = logging.getLogger(__name__)
 

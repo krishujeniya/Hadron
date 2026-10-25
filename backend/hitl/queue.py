@@ -44,7 +44,6 @@
 import json
 import logging
 import os
-from datetime import datetime, timezone
 
 import httpx
 from redis.asyncio import Redis

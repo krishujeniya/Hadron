@@ -32,7 +32,7 @@ import os
 import sys
 import time
 import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 # ─── path setup ───────────────────────────────────────────────────────────────
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -40,7 +40,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # SQLAlchemy async + aiosqlite for in-memory Postgres simulation
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy import event
 
 # ─── logging ──────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -218,7 +217,6 @@ async def test_enqueue_writes_postgres_and_redis():
 
         # Assert Postgres row exists
         async with factory() as session:
-            from sqlalchemy import select
             from backend.database.models import HITLReview
             row = await session.get(HITLReview, hitl_id)
             assert row is not None, "HITLReview row not found in DB"
@@ -288,7 +286,7 @@ async def test_resolve_dispute_approve():
         # Pre-insert a HITLReview row in pending status
         hitl_id = str(uuid.uuid4())
         review_id = str(uuid.uuid4())
-        from backend.database.models import HITLReview, HITLFeedback
+        from backend.database.models import HITLReview
 
         async with factory() as session:
             async with session.begin():
@@ -321,8 +319,6 @@ async def test_resolve_dispute_approve():
             # to be a no-op so the test can run without a real Postgres.
             # WHY: with_for_update() is a Postgres-specific lock. The logic is still
             # tested — only the locking mechanism is skipped in SQLite.
-            from sqlalchemy import select
-            original_select = select
 
             # Pass a bare session (no active transaction) — resolve_dispute
             # calls session.begin() internally. Starting begin() inside begin() raises.

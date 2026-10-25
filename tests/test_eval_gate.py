@@ -53,7 +53,6 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-import pytest_asyncio
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -181,40 +180,41 @@ diff --git a/utils/crypto.py b/utils/crypto.py
     # not at the source module, so the patches stick when nodes call them.
     # -------------------------------------------------------------------
 
+    from backend.integrations.github_models import PRMetadata
+    mock_metadata = PRMetadata(
+        number=input_data["pr_number"],
+        title=input_data["pr_title"],
+        body=input_data.get("pr_description", ""),
+        user_login=input_data["author"],
+        head_commit_sha=input_data["head_commit_sha"],
+        base_branch_name=input_data["base_branch"],
+        changed_files_count=1,
+    )
+
     # Mock 1: GitHub client — return our synthetic diff instead of fetching real PR
     mock_github = AsyncMock()
-    mock_github.get_pull_request_diff.return_value = synthetic_diff
-    mock_github.get_pull_request.return_value = {
-        "title": input_data["pr_title"],
-        "body":  input_data.get("pr_description", ""),
-        "user":  {"login": input_data["author"]},
-        "head":  {"sha": input_data["head_commit_sha"]},
-    }
-    # post_review raises 401 on fake repo — that's fine, review is saved before posting
-    mock_github.post_review.side_effect = Exception("eval_gate: skipping GitHub post")
+    mock_github.get_pr_diff.return_value = synthetic_diff
+    mock_github.get_pr_metadata.return_value = mock_metadata
+    mock_github.get_pr_files.return_value = ["payments/processor.py", "utils/crypto.py"]
+    mock_github.post_pr_review.side_effect = Exception("eval_gate: skipping GitHub post")
 
-    # Mock 2: Qdrant search — return empty (no codebase index for this fake repo)
-    mock_qdrant = MagicMock()
-    mock_qdrant.search_similar_code = AsyncMock(return_value=[])
+    mock_client_ctx = MagicMock()
+    mock_client_ctx.__aenter__ = AsyncMock(return_value=mock_github)
+    mock_client_ctx.__aexit__ = AsyncMock(return_value=False)
+    mock_github_cls = MagicMock(return_value=mock_client_ctx)
 
-    # Mock 3: Postgres session — we don't care about persistence in the eval gate
+    # Mock 2: Postgres session — we don't care about persistence in the eval gate
     mock_session = AsyncMock()
     mock_session.__aenter__ = AsyncMock(return_value=mock_session)
     mock_session.__aexit__ = AsyncMock(return_value=False)
     mock_session_factory = MagicMock(return_value=mock_session)
 
     with (
+        patch("backend.orchestrator.nodes.GitHubClient", mock_github_cls),
         patch(
-            "backend.orchestrator.nodes.github_client",
-            mock_github,
-        ),
-        patch(
-            "backend.memory.qdrant_client.qdrant_client",
-            mock_qdrant,
-        ),
-        patch(
-            "backend.orchestrator.nodes.get_session_factory",
-            return_value=mock_session_factory,
+            "backend.orchestrator.nodes.retrieve_context_for_diff",
+            new_callable=AsyncMock,
+            return_value="",
         ),
         patch(
             "backend.database.postgres.get_session_factory",

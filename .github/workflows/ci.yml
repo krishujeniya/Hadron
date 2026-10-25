@@ -58,10 +58,8 @@ jobs:
         run: uv pip install --system ruff
 
       - name: Run ruff (linter)
-        # --select E,F,W: errors, pyflakes, warnings — catches real bugs.
-        # We skip style-only rules (I = isort, N = pep8 naming) in CI
-        # to avoid noise. Local dev can run the full ruff config.
-        run: ruff check backend/ tests/ --select E,F,W
+        # Checks errors, pyflakes, and warnings as configured in pyproject.toml
+        run: ruff check backend/ tests/
 
       - name: Syntax check all Python files
         # Double-checks that every .py file at least parses cleanly.

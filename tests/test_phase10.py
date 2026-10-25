@@ -14,7 +14,6 @@ AuditLogger tests use a tmp_path fixture to avoid file-system side effects.
 from __future__ import annotations
 
 import json
-import logging
 import time
 import uuid
 from pathlib import Path
@@ -92,7 +91,7 @@ def test_traced_creates_span_and_measures_duration():
 
 def test_traced_captures_exception_on_span():
     """traced() records the exception type on span.error without swallowing it."""
-    ctx = TraceContext.create(f"review_{uuid.uuid4().hex[:8]}")
+    TraceContext.create(f"review_{uuid.uuid4().hex[:8]}")
     with pytest.raises(ValueError):
         with traced("failing_op") as span:
             raise ValueError("test error")
@@ -104,7 +103,7 @@ def test_traced_captures_exception_on_span():
 
 def test_add_cost_tag_sets_all_fields():
     """add_cost_tag() must set all four required LLM attribution tags."""
-    ctx = TraceContext.create(f"review_{uuid.uuid4().hex[:8]}")
+    TraceContext.create(f"review_{uuid.uuid4().hex[:8]}")
     with traced("llm_call") as span:
         span.add_cost_tag(
             model="claude-3-5-sonnet",

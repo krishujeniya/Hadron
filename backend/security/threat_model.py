@@ -57,7 +57,7 @@ except ImportError:
     class StrEnum(str, Enum):  # type: ignore[no-redef]
         pass
 
-from backend.security.masking import MaskingContext, MaskingPolicy, SensitiveKind
+from backend.security.masking import MaskingContext, MaskingPolicy
 from backend.security.injection_guard import (
     InjectionSeverity,
     PromptInjectionDetector,

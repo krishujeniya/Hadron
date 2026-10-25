@@ -21,7 +21,6 @@
 #
 # NO external services needed (no LLM calls, no Redis, no Postgres, no Qdrant).
 
-import asyncio
 import logging
 from pathlib import Path
 from unittest.mock import patch
@@ -30,7 +29,7 @@ import pytest
 
 from backend.core.exceptions import PromptNotFoundError
 from backend.models.enums import AgentType
-from backend.prompts.registry import PromptRegistry, registry
+from backend.prompts.registry import PromptRegistry
 
 
 # ---------------------------------------------------------------------------

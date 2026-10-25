@@ -44,7 +44,6 @@ get_settings.cache_clear()
 import backend.main as _main_module  # noqa: E402 (intentional late import)
 
 import pytest
-from unittest.mock import AsyncMock, patch
 from fastapi.testclient import TestClient
 
 

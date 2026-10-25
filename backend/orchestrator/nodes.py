@@ -237,7 +237,10 @@ async def build_context(state: PRReviewState) -> dict[str, Any]:
     return {
         # PR content for agents
         "pr_diff": pr_diff,
-        "changed_files": [f.filename for f in pr_files],
+        "changed_files": [
+            f.filename if hasattr(f, "filename") else (f["filename"] if isinstance(f, dict) and "filename" in f else str(f))
+            for f in pr_files
+        ],
         "retrieved_context": retrieved_context,
         # Metadata fields — now populated from the real GitHub API
         # (previously these were set by the orchestrator engine stub)

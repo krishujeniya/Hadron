@@ -37,7 +37,6 @@ from backend.tools.sandbox import Sandbox, SandboxViolationError
 from backend.tools.capability_scope import (
     CapabilityViolationError,
     check_capability,
-    get_allowed_tools,
     raise_if_not_allowed,
 )
 from backend.models.enums import AgentType

@@ -31,7 +31,6 @@
 # Callers get a clean error (MemoryStoreError) not a raw redis exception.
 
 import logging
-from typing import Any
 
 import redis.asyncio as aioredis
 

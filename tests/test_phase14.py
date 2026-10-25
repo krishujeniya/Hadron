@@ -20,8 +20,6 @@
 #   cd ~/Desktop/ai-pr-review-agent
 #   python3 -m pytest tests/smoke_phase14.py -v
 
-import asyncio
-from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest

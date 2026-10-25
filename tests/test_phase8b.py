@@ -23,9 +23,8 @@
 # All tests are synchronous where possible (no LLM calls, no DB).
 # aggregate_results tests mock the state dict directly.
 
-import asyncio
 from dataclasses import FrozenInstanceError
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 

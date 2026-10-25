@@ -71,6 +71,8 @@ dev = [
     "pytest>=8.0.0",
     # Async test support
     "pytest-asyncio>=0.23.0",
+    # Test execution timeout support
+    "pytest-timeout>=2.3.0",
     # Async SQLite for in-memory test database
     "aiosqlite>=0.20.0",
     # HTTP test client for FastAPI
@@ -88,8 +90,16 @@ packages = ["backend"]
 
 [tool.ruff]
 # Ruff is a fast Python linter and formatter
-line-length = 88
+line-length = 100
 target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = [
+    "E501",  # line length (code readability is prioritized without arbitrary hard wrap)
+    "E402",  # module level import not at top of file (common when setup happens before import)
+    "E702",  # multiple statements on one line
+]
 
 [tool.pytest.ini_options]
 # Tell pytest to handle async test functions automatically

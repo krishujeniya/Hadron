@@ -58,10 +58,10 @@ import logging
 import re
 from typing import Any
 
-from backend.config.settings import Settings, get_settings
+from backend.config.settings import Settings
 from backend.memory.embedder import EmbeddingError, embed_text
 # TIGER: was Qdrant search — now pgvectorscale DiskANN hybrid retrieval
-from backend.memory.tiger_client import CodeChunk, get_tiger_memory
+from backend.memory.tiger_client import get_tiger_memory
 
 logger = logging.getLogger(__name__)
 
@@ -175,8 +175,6 @@ async def retrieve_context_for_diff(
     if not repo_full_name or not repo_full_name.strip():
         logger.debug("retrieve_context | empty_repo -> returning ''")
         return ""
-
-    cfg = settings or get_settings()
 
     # Step 1: Extract entities or fallback to diff prefix
     entities = extract_diff_entities(diff)
