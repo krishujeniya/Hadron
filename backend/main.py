@@ -298,6 +298,23 @@ app.include_router(auth_router)           # GitHub account auth & repository sel
 # -------------------------------------------------------------------------
 
 @app.get(
+    "/",
+    tags=["ops"],
+    summary="Root status",
+    description="Returns basic application status and version info.",
+)
+async def root() -> dict:
+    """Root endpoint for status inspection and deployment validation."""
+    return {
+        "status": "online",
+        "name": "Hadron Autonomous AI PR Review Agent",
+        "version": APP_VERSION,
+        "docs": "/docs" if settings.is_development else None,
+        "health": "/health",
+    }
+
+
+@app.get(
     "/health/live",
     tags=["ops"],
     summary="Liveness probe",
