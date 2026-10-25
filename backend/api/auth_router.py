@@ -346,24 +346,14 @@ async def list_account_repos(
         logger.debug("list_account_repos | local DB check: %s", exc)
 
     # Default fallback repo if none found
-    if not repos and account == "ayush488-glitch":
+    if not repos and account.lower() in ("krishujeniya", "hadron"):
         repos.append(
             RepositoryItem(
                 id="default_1",
-                name="ai-pr-review-agent",
-                full_name="ayush488-glitch/ai-pr-review-agent",
-                description="Production-grade AI Pull Request Review Agent",
-                html_url="https://github.com/ayush488-glitch/ai-pr-review-agent",
-                default_branch="main",
-            )
-        )
-        repos.append(
-            RepositoryItem(
-                id="default_2",
-                name="test-pr-review-demo",
-                full_name="ayush488-glitch/test-pr-review-demo",
-                description="Demo repository for PR review testing",
-                html_url="https://github.com/ayush488-glitch/test-pr-review-demo",
+                name="Hadron",
+                full_name=f"{account}/Hadron",
+                description="Autonomous Multi-Agent AI PR Review Engine",
+                html_url=f"https://github.com/{account}/Hadron",
                 default_branch="main",
             )
         )

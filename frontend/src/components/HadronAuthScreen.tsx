@@ -102,11 +102,11 @@ export function HadronAuthScreen() {
           <div className="mt-4 pt-4 border-t border-border/60">
             <div className="text-[11px] text-muted mb-2">Or inspect demo account:</div>
             <button
-              onClick={() => connectAccount("ayush488-glitch")}
+              onClick={() => connectAccount("krishujeniya")}
               disabled={isSubmitting}
               className="w-full py-2 px-3 rounded-lg border border-border bg-bg hover:border-accent/50 text-xs font-mono text-muted hover:text-white transition flex items-center justify-between"
             >
-              <span>@ayush488-glitch (Hadron Demo)</span>
+              <span>@krishujeniya (Hadron Live)</span>
               <span className="text-accent text-[10px]">Open →</span>
             </button>
           </div>

@@ -152,7 +152,7 @@ While the core multi-agent fan-out topology (Security, Quality, Test Coverage, D
 - **Location:** [`tests/test_phase5.py`](file:///home/ai/Documents/projects/Freelance/Hadron/tests/test_phase5.py), [`tests/test_phase6.py`](file:///home/ai/Documents/projects/Freelance/Hadron/tests/test_phase6.py), [`tests/test_phase7.py`](file:///home/ai/Documents/projects/Freelance/Hadron/tests/test_phase7.py), and [`tests/test_phase8.py`](file:///home/ai/Documents/projects/Freelance/Hadron/tests/test_phase8.py)
 - **Fault Mechanism:** Legacy test files contain top-level procedural code with hardcoded developer paths:
   ```python
-  sys.path.insert(0, "/Users/ayushsingh/Desktop/ai-pr-review-agent")
+  sys.path.insert(0, "/path/to/Hadron")
   ```
   `pytest` collects 0 tests from these files, causing dead file clutter.
 - **Fix:** Remove hardcoded paths and legacy uncollected test scripts; standardize all tests using `pytest` conventions in `test_phase5b.py` through `test_phase8b.py`.
@@ -604,7 +604,7 @@ Use this vector asset in `frontend/src/components/Shell.tsx` and as `favicon.svg
 
 - [x] **Task 6.4: Remove Legacy Dead Test Scripts and Fix Developer Mac Paths**
   - **Files:** [`tests/test_phase5.py`](file:///home/ai/Documents/projects/Freelance/Hadron/tests/test_phase5.py), [`tests/test_phase6.py`](file:///home/ai/Documents/projects/Freelance/Hadron/tests/test_phase6.py), [`tests/test_phase7.py`](file:///home/ai/Documents/projects/Freelance/Hadron/tests/test_phase7.py), [`tests/test_phase8.py`](file:///home/ai/Documents/projects/Freelance/Hadron/tests/test_phase8.py)
-  - **Action:** Delete procedural scripts with hardcoded Mac paths (`/Users/ayushsingh/...`); verify standard `pytest` suite in `tests/test_phase*b.py` covers all gates.
+  - **Action:** Delete procedural scripts with hardcoded legacy paths; verify standard `pytest` suite in `tests/test_phase*b.py` covers all gates.
   - **Verification:** Run `.venv/bin/pytest tests/`; verify all collected tests pass with zero warnings.
 
 ---

@@ -94,8 +94,8 @@ async def list_reviews_endpoint(
     ),
     account: str | None = Query(
         default=None,
-        description="Filter by GitHub account/owner (e.g. 'ayush488-glitch').",
-        examples=["ayush488-glitch"],
+        description="Filter by GitHub account/owner (e.g. 'krishujeniya').",
+        examples=["krishujeniya"],
     ),
     status_filter: str | None = Query(
         default=None,

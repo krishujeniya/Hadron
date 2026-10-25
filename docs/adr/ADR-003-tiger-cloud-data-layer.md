@@ -2,7 +2,7 @@
 
 **Status:** Accepted  
 **Date:** 2026-06-03  
-**Author:** Ayush Singh  
+**Author:** Krish Ujeniya  
 **Supersedes:** None (new decision)  
 **Related:** ADR-001 (LangGraph orchestrator), ADR-002 (modular monolith)
 

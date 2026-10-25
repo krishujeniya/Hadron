@@ -20,11 +20,11 @@
 #     "head": { "sha": "abc123", "ref": "feature/login" },
 #     "base": { "ref": "main" },
 #     "diff_url": "https://github.com/.../42.diff",
-#     "user": { "login": "ayush488-glitch" }
+#     "user": { "login": "krishujeniya" }
 #   },
 #   "repository": {
-#     "full_name": "ayush488-glitch/my-project",
-#     "clone_url": "https://github.com/ayush488-glitch/my-project.git"
+#     "full_name": "krishujeniya/my-project",
+#     "clone_url": "https://github.com/krishujeniya/my-project.git"
 #   }
 # }
 
@@ -64,7 +64,7 @@ class WebhookPRUser(BaseModel):
     The 'user' object inside a pull_request payload.
     Represents the GitHub user who opened the PR.
     """
-    # GitHub username. e.g. "ayush488-glitch"
+    # GitHub username. e.g. "krishujeniya"
     login: str
 
 
@@ -102,7 +102,7 @@ class WebhookRepository(BaseModel):
     The 'repository' object inside the webhook payload.
     Represents the GitHub repository.
     """
-    # Full name in format "owner/repo". e.g. "ayush488-glitch/my-project"
+    # Full name in format "owner/repo". e.g. "krishujeniya/my-project"
     full_name: str
 
     # URL to clone the repo. Used in Phase 6 for RAG indexing.
@@ -147,7 +147,7 @@ class WebhookEvent(BaseModel):
 
     @property
     def repo_full_name(self) -> str:
-        """e.g. 'ayush488-glitch/my-project'"""
+        """e.g. 'krishujeniya/my-project'"""
         return self.repository.full_name
 
     @property
@@ -167,7 +167,7 @@ class WebhookEvent(BaseModel):
 
     @property
     def pr_author(self) -> str:
-        """e.g. 'ayush488-glitch'"""
+        """e.g. 'krishujeniya'"""
         return self.pull_request.user.login
 
     @property

@@ -2,10 +2,16 @@
 # Hadron Autonomous AI PR Review Agent — .gitignore
 # =============================================================================
 
-# --- Secrets & environment ---
+# --- Secrets, credentials & environment ---
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.crt
+credentials.json
+service_account.json
 
 # --- Python bytecode ---
 __pycache__/

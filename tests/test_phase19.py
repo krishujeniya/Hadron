@@ -198,7 +198,7 @@ async def test_enqueue_writes_postgres_and_redis():
             hitl_id = await enqueue_hitl_review(
                 redis_client=mock_redis,
                 review_id=str(uuid.uuid4()),
-                repo_full_name="ayush/test-repo",
+                repo_full_name="krishujeniya/test-repo",
                 pr_number=2,
                 agent_verdict="REQUEST_CHANGES",
                 escalation_reason="3 CRITICAL agents",
@@ -221,7 +221,7 @@ async def test_enqueue_writes_postgres_and_redis():
             row = await session.get(HITLReview, hitl_id)
             assert row is not None, "HITLReview row not found in DB"
             assert row.status == "pending"
-            assert row.repo_full_name == "ayush/test-repo"
+            assert row.repo_full_name == "krishujeniya/test-repo"
 
         ok(name)
     except Exception as e:
@@ -252,7 +252,7 @@ async def test_enqueue_redis_failure_graceful():
             hitl_id = await enqueue_hitl_review(
                 redis_client=mock_redis,
                 review_id=str(uuid.uuid4()),
-                repo_full_name="ayush/test-repo",
+                repo_full_name="krishujeniya/test-repo",
                 pr_number=3,
                 agent_verdict="BLOCK",
                 escalation_reason="security agent failed",
@@ -293,7 +293,7 @@ async def test_resolve_dispute_approve():
                 row = HITLReview(
                     id=hitl_id,
                     review_id=review_id,
-                    repo_full_name="ayush/test-repo",
+                    repo_full_name="krishujeniya/test-repo",
                     pr_number=2,
                     agent_verdict="REQUEST_CHANGES",
                     escalation_reason="low confidence",
@@ -327,7 +327,7 @@ async def test_resolve_dispute_approve():
                     hitl_review_id=hitl_id,
                     human_verdict="approve",
                     reason="looks good to me",
-                    reviewer_id="ayush",
+                    reviewer_id="krishujeniya",
                 )
 
                 # Patch with_for_update to no-op for SQLite compatibility
@@ -377,7 +377,7 @@ async def test_resolve_dispute_double_claim():
                 row = HITLReview(
                     id=hitl_id,
                     review_id=review_id,
-                    repo_full_name="ayush/test-repo",
+                    repo_full_name="krishujeniya/test-repo",
                     pr_number=4,
                     agent_verdict="BLOCK",
                     escalation_reason="3 critical",

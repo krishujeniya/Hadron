@@ -9,7 +9,7 @@ Related: ADR-001, ADR-002, ADR-003, ADR-004; `docs/FUTURE_WORK.md`
 The roadmap nominally runs through Phase 20. As of this ADR, the v1
 demo is functionally complete: webhook → 4 agents → aggregator →
 GitHub post → DB persist → /reviews → /economics. End-to-end verified
-on PR #8 of `ayush488-glitch/test-pr-review-demo`.
+on `krishujeniya/Hadron`.
 
 Three phases remain on the roadmap and three were chosen for explicit
 deferral rather than partial implementation:

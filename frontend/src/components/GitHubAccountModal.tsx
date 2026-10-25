@@ -5,9 +5,9 @@ import { useGitHubAccount } from "@/lib/githubContext";
 
 const PRESET_ACCOUNTS = [
   {
-    login: "ayush488-glitch",
-    name: "Ayush Singh",
-    desc: "Project creator & test demo repo owner",
+    login: "krishujeniya",
+    name: "Krish Ujeniya",
+    desc: "Project creator & maintainer",
   },
   {
     login: "octocat",
@@ -206,7 +206,7 @@ GITHUB_CLIENT_SECRET=your_secret_here
                 type="text"
                 value={inputAccount}
                 onChange={(e) => setInputAccount(e.target.value)}
-                placeholder="e.g. ayush488-glitch, facebook, vercel"
+                placeholder="e.g. krishujeniya, facebook, vercel"
                 className="w-full bg-bg border border-border rounded-lg pl-7 pr-3 py-2 text-sm font-mono text-white placeholder-muted/60 focus:outline-none focus:border-accent"
               />
             </div>

@@ -1,10 +1,15 @@
 """One-shot ALTER: github_review_id INT -> BIGINT on reviews table."""
-import asyncio, os, re
+import os
 from pathlib import Path
 
-env = Path("/Users/ayushsingh/Desktop/ai-pr-review-agent/.env").read_text()
-m = re.search(r'^DATABASE_URL=(.+)$', env, re.M)
-url = m.group(1).strip().strip('"').strip("'")
+url = os.getenv("DATABASE_URL", "")
+if not url:
+    env_file = Path(".env")
+    if env_file.exists():
+        import re
+        m = re.search(r"^DATABASE_URL=(.+)$", env_file.read_text(), re.M)
+        if m:
+            url = m.group(1).strip().strip('"').strip("'")
 
 import asyncpg
 

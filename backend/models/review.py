@@ -163,7 +163,7 @@ class PRReview(BaseModel):
     id: UUID = Field(default_factory=uuid4)
 
     # GitHub repository full name. Format: "owner/repo"
-    # e.g. "ayush488-glitch/my-project"
+    # e.g. "krishujeniya/my-project"
     repo_full_name: str
 
     # PR number on GitHub

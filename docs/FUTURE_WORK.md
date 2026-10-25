@@ -7,7 +7,7 @@ picked up.
 
 Project status as of this writing: Phases 0, 1, 3-14, 16, 18, 19 shipped
 on the backend; Phase 2 (Next.js dashboard) shipped on the frontend.
-End-to-end verified on PR #8 of `ayush488-glitch/test-pr-review-demo`.
+End-to-end verified on `krishujeniya/Hadron`.
 
 ---
 
