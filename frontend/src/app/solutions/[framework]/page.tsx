@@ -265,15 +265,15 @@ export default function SolutionDetailPage({
         <span>/</span>
         <span className="text-muted/60">Solutions</span>
         <span>/</span>
-        <span className="text-accent">{solution.slug}</span>
+        <span className="text-white font-medium">{solution.slug}</span>
       </div>
 
       {/* Hero Header */}
       <div className="space-y-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-accent/15 text-accent border border-accent/30 font-mono">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 text-white border border-white/20 font-mono">
           <span>⚡ {solution.badge}</span>
         </div>
-        <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-foreground">
+        <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">
           {solution.title}
         </h1>
         <p className="text-lg md:text-xl text-muted max-w-3xl leading-relaxed">
@@ -282,13 +282,13 @@ export default function SolutionDetailPage({
         <div className="pt-2 flex flex-wrap items-center gap-4">
           <Link
             href="/"
-            className="px-6 py-3 rounded-xl bg-accent hover:bg-accent/90 text-white font-semibold text-sm transition shadow-lg shadow-accent/20"
+            className="px-6 py-3 rounded-xl bg-gradient-to-b from-white to-zinc-200 hover:from-zinc-100 hover:to-zinc-300 text-black font-semibold text-sm transition shadow-lg shadow-white/5"
           >
             Deploy Hadron on GitHub Free →
           </Link>
           <Link
             href="/reviews"
-            className="px-6 py-3 rounded-xl bg-panel hover:bg-surface border border-border text-foreground font-semibold text-sm transition"
+            className="px-6 py-3 rounded-xl bg-panel hover:bg-surface border border-white/10 text-foreground font-semibold text-sm transition"
           >
             Explore Live Reviews
           </Link>
@@ -297,16 +297,16 @@ export default function SolutionDetailPage({
 
       {/* Architecture Highlights */}
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold tracking-tight text-foreground border-b border-border pb-3">
+        <h2 className="text-2xl font-bold tracking-tight text-foreground border-b border-white/10 pb-3">
           Specialist Agent Capabilities
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {solution.features.map((feat, idx) => (
             <div
               key={idx}
-              className="p-5 rounded-xl border border-border bg-panel hover:border-accent/40 transition-colors space-y-2"
+              className="p-5 rounded-xl border border-white/10 bg-gradient-to-b from-zinc-900/50 to-black hover:border-white/30 transition-colors space-y-2"
             >
-              <div className="text-[11px] font-mono text-accent uppercase tracking-wider font-semibold">
+              <div className="text-[11px] font-mono text-white uppercase tracking-wider font-semibold">
                 {feat.agent}
               </div>
               <h3 className="text-base font-semibold text-foreground">
@@ -366,8 +366,8 @@ export default function SolutionDetailPage({
       </div>
 
       {/* CTA Box */}
-      <div className="rounded-2xl border border-accent/30 bg-gradient-to-r from-accent/10 via-panel to-panel p-8 text-center space-y-4">
-        <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+      <div className="rounded-2xl border border-white/15 bg-gradient-to-b from-zinc-900 via-zinc-950 to-black p-8 text-center space-y-4 shadow-xl">
+        <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">
           Accelerate Your Code Reviews With Hadron Today
         </h2>
         <p className="text-sm text-muted max-w-xl mx-auto">
@@ -375,7 +375,7 @@ export default function SolutionDetailPage({
         </p>
         <Link
           href="/"
-          className="inline-block px-8 py-3.5 rounded-xl bg-accent hover:bg-accent/90 text-white font-semibold text-sm transition shadow-lg shadow-accent/20"
+          className="inline-block px-8 py-3.5 rounded-xl bg-gradient-to-b from-white to-zinc-200 hover:from-zinc-100 hover:to-zinc-300 text-black font-semibold text-sm transition shadow-lg shadow-white/10"
         >
           Get Started with GitHub OAuth →
         </Link>

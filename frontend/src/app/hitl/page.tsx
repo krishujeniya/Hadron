@@ -24,9 +24,11 @@ export default function HITLQueuePage() {
     <div className="space-y-6">
       <div>
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-semibold">HITL Queue</h1>
+          <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">
+            HITL Queue
+          </h1>
           {currentAccount && (
-            <span className="font-mono text-xs text-accent bg-accent/10 border border-accent/20 px-2 py-0.5 rounded-full">
+            <span className="font-mono text-xs text-white bg-white/10 border border-white/20 px-2 py-0.5 rounded-full">
               @{currentAccount.login}
             </span>
           )}

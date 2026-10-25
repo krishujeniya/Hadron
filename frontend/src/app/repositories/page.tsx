@@ -20,7 +20,7 @@ export default function RepositoriesPage() {
           <p className="text-muted text-sm">No GitHub account selected to inspect repositories.</p>
           <button
             onClick={openAccountModal}
-            className="bg-accent hover:bg-accent/90 text-white font-medium text-sm py-2 px-4 rounded-lg transition"
+            className="bg-gradient-to-b from-white to-zinc-200 text-black font-semibold text-sm py-2 px-4 rounded-lg hover:from-zinc-100 hover:to-zinc-300 transition shadow-md shadow-white/5"
           >
             Select GitHub Account
           </button>
@@ -41,8 +41,10 @@ export default function RepositoriesPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold">Repositories</h1>
-            <span className="font-mono text-xs text-accent bg-accent/10 border border-accent/20 px-2 py-0.5 rounded-full">
+            <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">
+              Repositories
+            </h1>
+            <span className="font-mono text-xs text-white bg-white/10 border border-white/20 px-2 py-0.5 rounded-full">
               @{currentAccount.login}
             </span>
           </div>
@@ -55,13 +57,13 @@ export default function RepositoriesPage() {
           <button
             onClick={() => refreshRepos()}
             disabled={loadingRepos}
-            className="px-3 py-1.5 border border-border rounded-lg text-xs font-mono text-muted hover:text-white hover:bg-bg transition disabled:opacity-50"
+            className="px-3 py-1.5 border border-white/10 rounded-lg text-xs font-mono text-muted hover:text-white hover:bg-white/5 transition disabled:opacity-50"
           >
             {loadingRepos ? "Refreshing..." : "↻ Refresh"}
           </button>
           <button
             onClick={openAccountModal}
-            className="px-3 py-1.5 bg-accent/10 border border-accent/30 rounded-lg text-xs font-medium text-accent hover:bg-accent/20 transition"
+            className="px-3 py-1.5 bg-gradient-to-b from-white to-zinc-200 text-black font-semibold text-xs rounded-lg hover:from-zinc-100 hover:to-zinc-300 transition shadow-sm"
           >
             Switch Account
           </button>
@@ -96,11 +98,11 @@ export default function RepositoriesPage() {
           {filtered.map((repo) => (
             <div
               key={repo.id}
-              className="border border-border rounded-lg bg-panel p-4 flex flex-col justify-between hover:border-accent/40 transition"
+              className="border border-white/10 rounded-xl bg-gradient-to-b from-zinc-900/50 to-black p-4 flex flex-col justify-between hover:border-white/30 transition shadow-sm"
             >
               <div>
                 <div className="flex items-start justify-between gap-2">
-                  <div className="font-mono text-base font-medium text-white hover:text-accent">
+                  <div className="font-mono text-base font-medium text-white hover:text-zinc-200">
                     <a href={repo.html_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5">
                       <span>{repo.name}</span>
                       <svg className="w-3.5 h-3.5 text-muted opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -109,11 +111,11 @@ export default function RepositoriesPage() {
                     </a>
                   </div>
                   {repo.private ? (
-                    <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-warn/15 text-warn border border-warn/30">
+                    <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700">
                       Private
                     </span>
                   ) : (
-                    <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-bg text-muted border border-border">
+                    <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-black text-muted border border-white/10">
                       Public
                     </span>
                   )}
@@ -124,7 +126,7 @@ export default function RepositoriesPage() {
                 </p>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs text-muted">
+              <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-muted">
                 <div className="flex items-center gap-3 font-mono text-[11px]">
                   <span title="Stars" className="flex items-center gap-1">
                     ★ {repo.stargazers_count}
@@ -140,7 +142,7 @@ export default function RepositoriesPage() {
                 <div className="flex items-center gap-2">
                   <Link
                     href={`/reviews?repo=${encodeURIComponent(repo.full_name)}`}
-                    className="text-xs text-accent hover:underline font-mono"
+                    className="text-xs text-white hover:underline font-mono"
                   >
                     Reviews →
                   </Link>

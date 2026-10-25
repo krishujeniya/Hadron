@@ -2,10 +2,10 @@ import clsx from "clsx";
 import type { Verdict } from "@/lib/types";
 
 const COLORS: Record<string, string> = {
-  approve: "bg-ok/15 text-ok border-ok/30",
-  request_changes: "bg-err/15 text-err border-err/30",
-  dismiss: "bg-muted/15 text-muted border-muted/30",
-  comment: "bg-accent/15 text-accent border-accent/30",
+  approve: "bg-gradient-to-r from-white/20 to-white/5 text-white border-white/40 font-semibold shadow-sm",
+  request_changes: "bg-gradient-to-r from-zinc-800 to-zinc-900 text-zinc-100 border-zinc-600 font-semibold",
+  dismiss: "bg-black text-zinc-400 border-zinc-800",
+  comment: "bg-zinc-900 text-zinc-200 border-zinc-700",
 };
 
 const LABELS: Record<string, string> = {

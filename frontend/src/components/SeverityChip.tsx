@@ -1,11 +1,11 @@
 import clsx from "clsx";
 
 const COLORS: Record<string, string> = {
-  info: "bg-muted/20 text-muted",
-  low: "bg-accent/15 text-accent",
-  medium: "bg-warn/15 text-warn",
-  high: "bg-warn/25 text-warn",
-  critical: "bg-err/20 text-err",
+  info: "bg-zinc-900 text-zinc-400 border border-zinc-800",
+  low: "bg-zinc-900 text-zinc-300 border border-zinc-700",
+  medium: "bg-zinc-800 text-zinc-200 border border-zinc-600",
+  high: "bg-zinc-800 text-white border border-zinc-500 font-semibold",
+  critical: "bg-gradient-to-r from-white to-zinc-200 text-black border border-white font-bold shadow-sm shadow-white/10",
 };
 
 export function SeverityChip({ severity }: { severity: string }) {

@@ -23,9 +23,9 @@ export function FindingCard({ finding }: { finding: Finding }) {
         </span>
       </div>
       {finding.suggestion && (
-        <div className="mt-2 text-xs border-l-2 border-accent/40 pl-3 space-y-1">
-          <div className="text-accent font-medium text-[11px] uppercase tracking-wider">Recommendation</div>
-          <pre className="bg-void/60 border border-border/60 rounded p-2 font-mono text-[11px] text-foreground/90 overflow-x-auto whitespace-pre-wrap">
+        <div className="mt-2 text-xs border-l-2 border-white/60 pl-3 space-y-1">
+          <div className="text-white font-semibold text-[11px] uppercase tracking-wider">Recommendation</div>
+          <pre className="bg-black border border-white/10 rounded p-2 font-mono text-[11px] text-foreground/90 overflow-x-auto whitespace-pre-wrap">
             {finding.suggestion}
           </pre>
         </div>
@@ -43,7 +43,7 @@ export function FindingsByAgent({ findings }: { findings: Finding[] }) {
   }
   if (groups.size === 0) {
     return (
-      <div className="border border-border rounded-lg bg-panel px-4 py-3 text-sm text-muted">
+      <div className="border border-white/10 rounded-xl bg-panel px-4 py-3 text-sm text-muted">
         No findings.
       </div>
     );
@@ -51,14 +51,14 @@ export function FindingsByAgent({ findings }: { findings: Finding[] }) {
   return (
     <div className="grid gap-4">
       {[...groups.entries()].map(([agent, list]) => (
-        <div key={agent} className="border border-border rounded-lg bg-panel">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-            <span className="font-mono text-sm text-accent uppercase">{agent}</span>
-            <span className="text-xs text-muted">
+        <div key={agent} className="border border-white/10 rounded-xl bg-gradient-to-b from-zinc-900/50 to-black overflow-hidden shadow-sm">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/[0.02]">
+            <span className="font-mono text-sm font-semibold text-white uppercase tracking-wider">{agent}</span>
+            <span className="text-xs text-muted font-mono">
               {list.length} finding{list.length === 1 ? "" : "s"}
             </span>
           </div>
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-white/10">
             {list.map((f) => (
               <FindingCard key={f.id} finding={f} />
             ))}

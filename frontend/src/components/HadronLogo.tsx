@@ -47,7 +47,7 @@ export function HadronLogo({
       />
       <div className="flex flex-col">
         <div
-          className={`font-mono font-extrabold tracking-wider text-white group-hover:text-accent transition duration-150 ${titleSizes[size]}`}
+          className={`font-mono font-extrabold tracking-wider bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent group-hover:from-white group-hover:to-white transition duration-150 ${titleSizes[size]}`}
         >
           HADRON
         </div>

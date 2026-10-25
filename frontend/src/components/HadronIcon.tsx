@@ -26,25 +26,25 @@ export function HadronIcon({
     >
       <defs>
         <linearGradient id="hiPlateGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#161A23" />
-          <stop offset="100%" stop-color="#0B0D12" />
+          <stop offset="0%" stopColor="#18181B" />
+          <stop offset="100%" stopColor="#050505" />
         </linearGradient>
 
         <linearGradient id="hiBeam1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#38BDF8" />
-          <stop offset="50%" stopColor="#6366F1" />
-          <stop offset="100%" stopColor="#A855F7" />
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="50%" stopColor="#D4D4D8" />
+          <stop offset="100%" stopColor="#71717A" />
         </linearGradient>
 
         <linearGradient id="hiBeam2" x1="100%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#6366F1" />
-          <stop offset="50%" stopColor="#38BDF8" />
-          <stop offset="100%" stopColor="#10B981" />
+          <stop offset="0%" stopColor="#A1A1AA" />
+          <stop offset="50%" stopColor="#FFFFFF" />
+          <stop offset="100%" stopColor="#52525B" />
         </linearGradient>
 
         <linearGradient id="hiCore" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.8" />
-          <stop offset="100%" stopColor="#6366F1" stopOpacity="0.8" />
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
+          <stop offset="100%" stopColor="#A1A1AA" stopOpacity="0.8" />
         </linearGradient>
 
         <filter id="hiGlow" x="-20%" y="-20%" width="140%" height="140%">
@@ -65,7 +65,7 @@ export function HadronIcon({
           height="120"
           rx="28"
           fill="url(#hiPlateGrad)"
-          stroke="#1F2430"
+          stroke="#27272A"
           strokeWidth="2"
         />
       )}
@@ -135,22 +135,22 @@ export function HadronIcon({
         className={animated ? "animate-[pulse_3s_ease-in-out_infinite_1.5s]" : ""}
       />
 
-      {/* 4 Sub-Agent Quantum Nodes */}
-      {/* 01: Security (Cyan) - Top Left */}
-      <circle cx="34" cy="42" r="4.5" fill="#38BDF8" filter="url(#hiGlow)" />
-      <circle cx="34" cy="42" r="1.5" fill="#FFFFFF" />
+      {/* 4 Sub-Agent Quantum Nodes — Pure Monochrome White/Silver */}
+      {/* 01: Security - Top Left */}
+      <circle cx="34" cy="42" r="4.5" fill="#FFFFFF" filter="url(#hiGlow)" opacity="0.9" />
+      <circle cx="34" cy="42" r="1.5" fill="#000000" />
 
-      {/* 02: Quality (Indigo) - Top Right */}
-      <circle cx="94" cy="42" r="4.5" fill="#6366F1" filter="url(#hiGlow)" />
-      <circle cx="94" cy="42" r="1.5" fill="#FFFFFF" />
+      {/* 02: Quality - Top Right */}
+      <circle cx="94" cy="42" r="4.5" fill="#E4E4E7" filter="url(#hiGlow)" opacity="0.9" />
+      <circle cx="94" cy="42" r="1.5" fill="#000000" />
 
-      {/* 03: Test Coverage (Emerald) - Bottom Right */}
-      <circle cx="94" cy="86" r="4.5" fill="#10B981" filter="url(#hiGlow)" />
-      <circle cx="94" cy="86" r="1.5" fill="#FFFFFF" />
+      {/* 03: Test Coverage - Bottom Right */}
+      <circle cx="94" cy="86" r="4.5" fill="#D4D4D8" filter="url(#hiGlow)" opacity="0.9" />
+      <circle cx="94" cy="86" r="1.5" fill="#000000" />
 
-      {/* 04: Documentation (Violet) - Bottom Left */}
-      <circle cx="34" cy="86" r="4.5" fill="#A855F7" filter="url(#hiGlow)" />
-      <circle cx="34" cy="86" r="1.5" fill="#FFFFFF" />
+      {/* 04: Documentation - Bottom Left */}
+      <circle cx="34" cy="86" r="4.5" fill="#A1A1AA" filter="url(#hiGlow)" opacity="0.9" />
+      <circle cx="34" cy="86" r="1.5" fill="#000000" />
 
       {/* Central Collision Flash Nucleus */}
       <circle

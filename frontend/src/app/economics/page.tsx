@@ -22,7 +22,9 @@ export default function EconomicsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold">Economics</h1>
+        <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">
+          Economics & Cost Control
+        </h1>
         <p className="text-muted text-sm mt-1">
           LLM spend, budget headroom, and per-model breakdown. Polls every 5s.
         </p>
@@ -52,10 +54,10 @@ export default function EconomicsPage() {
               <div
                 className={`h-full transition-all ${
                   budget.exceeded
-                    ? "bg-err"
+                    ? "bg-zinc-800"
                     : budget.daily_utilization > 0.8
-                    ? "bg-warn"
-                    : "bg-accent"
+                    ? "bg-zinc-400"
+                    : "bg-gradient-to-r from-zinc-300 to-white"
                 }`}
                 style={{
                   width: `${Math.min(100, budget.daily_utilization * 100)}%`,
@@ -200,7 +202,7 @@ function Breakdown({
                 <div className="flex items-center gap-3 shrink-0">
                   <div className="w-24 h-1.5 rounded bg-bg overflow-hidden">
                     <div
-                      className="h-full bg-accent"
+                      className="h-full bg-gradient-to-r from-zinc-400 to-white"
                       style={{ width: `${Math.min(100, share * 100)}%` }}
                     />
                   </div>

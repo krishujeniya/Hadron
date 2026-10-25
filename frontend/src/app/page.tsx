@@ -36,24 +36,24 @@ export default function DashboardPage() {
     <div className="space-y-8">
       {/* Account Context Banner */}
       {currentAccount ? (
-        <div className="border border-border/80 rounded-xl bg-gradient-to-r from-panel via-panel to-accent/5 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="border border-white/10 rounded-xl bg-gradient-to-r from-zinc-950 via-zinc-900 to-black p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg shadow-black/50">
           <div className="flex items-center gap-3">
             {currentAccount.avatar_url ? (
               <img
                 src={currentAccount.avatar_url}
                 alt={currentAccount.login}
-                className="w-10 h-10 rounded-full border border-border"
+                className="w-10 h-10 rounded-full border border-white/20"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-accent/20 text-accent flex items-center justify-center font-bold">
+              <div className="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center font-bold">
                 {currentAccount.login.slice(0, 2).toUpperCase()}
               </div>
             )}
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-white">Project Scope:</span>
-                <span className="font-mono text-accent font-medium">@{currentAccount.login}</span>
-                <span className="px-1.5 py-0.2 rounded text-[10px] bg-ok/10 text-ok border border-ok/20">
+                <span className="font-mono text-white font-medium">@{currentAccount.login}</span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-white/10 text-zinc-200 border border-white/20">
                   active
                 </span>
               </div>
@@ -65,13 +65,13 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2">
             <Link
               href="/repositories"
-              className="px-3 py-1.5 bg-panel border border-border hover:border-accent text-xs font-mono text-muted hover:text-white rounded-lg transition"
+              className="px-3 py-1.5 bg-black/60 border border-white/10 hover:border-white/30 text-xs font-mono text-muted hover:text-white rounded-lg transition"
             >
               Browse Repos ({repositories.length})
             </Link>
             <button
               onClick={openAccountModal}
-              className="px-3 py-1.5 bg-accent/15 border border-accent/30 text-accent hover:bg-accent/25 text-xs font-medium rounded-lg transition"
+              className="px-3 py-1.5 bg-gradient-to-b from-white to-zinc-200 text-black hover:from-zinc-100 hover:to-zinc-300 text-xs font-semibold rounded-lg transition shadow-sm shadow-white/5"
             >
               Switch Account
             </button>
@@ -81,7 +81,9 @@ export default function DashboardPage() {
 
       {/* Title */}
       <div>
-        <h1 className="text-2xl font-semibold">Hadron Overview</h1>
+        <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">
+          Hadron Overview
+        </h1>
         <p className="text-muted text-sm mt-1">
           Autonomous multi-agent pull request review engine. Polls every 5s.
         </p>
@@ -205,18 +207,10 @@ function Stat({
   err?: boolean;
   tone?: "ok" | "warn" | "err";
 }) {
-  const color =
-    tone === "warn"
-      ? "text-warn"
-      : tone === "err"
-      ? "text-err"
-      : tone === "ok"
-      ? "text-ok"
-      : "text-white";
   return (
-    <div className="border border-border rounded-lg bg-panel px-4 py-3">
-      <div className="text-xs uppercase tracking-wide text-muted">{label}</div>
-      <div className={`text-2xl font-mono mt-1 ${color}`}>
+    <div className="border border-white/10 rounded-xl bg-gradient-to-b from-zinc-900/60 to-black/80 px-4 py-3.5 hover:border-white/20 transition-all shadow-sm">
+      <div className="text-xs uppercase tracking-wider font-mono text-zinc-400">{label}</div>
+      <div className="text-2xl font-mono font-bold mt-1.5 bg-gradient-to-r from-white via-zinc-100 to-zinc-300 bg-clip-text text-transparent">
         {err ? "—" : value ?? "…"}
       </div>
     </div>

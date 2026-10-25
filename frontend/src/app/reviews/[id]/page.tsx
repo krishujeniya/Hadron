@@ -62,13 +62,13 @@ export default function ReviewDetailPage() {
               href={prUrl}
               target="_blank"
               rel="noreferrer"
-              className="text-xs text-accent hover:underline inline-flex items-center gap-1"
+              className="text-xs text-white hover:underline inline-flex items-center gap-1 font-mono"
             >
               Open PR on GitHub →
             </a>
             <button
               onClick={copyMarkdown}
-              className="px-2.5 py-1 bg-surface border border-border hover:border-accent/40 text-xs font-medium text-foreground/80 hover:text-foreground rounded transition-colors"
+              className="px-2.5 py-1 bg-zinc-900 border border-white/10 hover:border-white/30 text-xs font-medium text-foreground/80 hover:text-white rounded-lg transition-colors"
             >
               {copied ? "✓ Copied Markdown" : "📋 Copy Review as Markdown"}
             </button>
@@ -87,12 +87,12 @@ export default function ReviewDetailPage() {
       )}
 
       {/* View Mode Tabs */}
-      <div className="flex items-center gap-2 border-b border-border pb-1">
+      <div className="flex items-center gap-2 border-b border-white/10 pb-1">
         <button
           onClick={() => setActiveTab("findings")}
           className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-t-lg transition-colors border-b-2 -mb-[5px] ${
             activeTab === "findings"
-              ? "border-accent text-accent bg-panel font-semibold"
+              ? "border-white text-white bg-zinc-900/60 font-semibold shadow-sm"
               : "border-transparent text-muted hover:text-foreground"
           }`}
         >
@@ -105,7 +105,7 @@ export default function ReviewDetailPage() {
           onClick={() => setActiveTab("diff")}
           className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-t-lg transition-colors border-b-2 -mb-[5px] ${
             activeTab === "diff"
-              ? "border-accent text-accent bg-panel font-semibold"
+              ? "border-white text-white bg-zinc-900/60 font-semibold shadow-sm"
               : "border-transparent text-muted hover:text-foreground"
           }`}
         >

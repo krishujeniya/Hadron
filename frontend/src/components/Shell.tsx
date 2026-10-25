@@ -88,13 +88,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
           {/* Hadron Logo & Header */}
           <div className="px-5 py-4 border-b border-border flex items-center justify-between">
             <HadronLogo size="sm" animated={true} />
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-accent/10 text-accent border border-accent/20">
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-white/10 text-white border border-white/20">
               v0.1.0
             </span>
           </div>
 
           {/* Authenticated GitHub Account Card */}
-          <div className="p-3 mx-3 my-3 rounded-xl border border-border/70 bg-bg/60">
+          <div className="p-3 mx-3 my-3 rounded-xl border border-border/70 bg-gradient-to-b from-panel to-bg/80">
             <div className="flex items-center gap-2.5">
               {currentAccount.avatar_url ? (
                 <img
@@ -103,7 +103,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   className="w-8 h-8 rounded-full border border-border shrink-0"
                 />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-accent/20 text-accent flex items-center justify-center font-bold text-xs shrink-0">
+                <div className="w-8 h-8 rounded-full bg-white/10 text-white flex items-center justify-center font-bold text-xs shrink-0">
                   {currentAccount.login.slice(0, 2).toUpperCase()}
                 </div>
               )}
@@ -112,7 +112,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   <span className="font-mono text-xs font-semibold text-foreground truncate">
                     @{currentAccount.login}
                   </span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-ok animate-pulse shrink-0" title="Connected" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/90 animate-pulse shrink-0" title="Connected" />
                 </div>
                 <div className="text-[10px] text-muted truncate">
                   {currentAccount.name || "GitHub Account"}
@@ -126,7 +126,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               </span>
               <button
                 onClick={logout}
-                className="text-muted hover:text-err text-[11px] font-mono transition"
+                className="text-muted hover:text-white text-[11px] font-mono transition"
                 title="Disconnect GitHub account"
               >
                 Sign out →
@@ -147,12 +147,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   className={clsx(
                     "flex items-center justify-between px-3 py-2 rounded-lg text-sm transition",
                     active
-                      ? "bg-accent/15 text-accent font-medium"
-                      : "text-muted hover:text-foreground hover:bg-bg"
+                      ? "bg-gradient-to-r from-white/15 via-white/5 to-transparent text-white font-semibold border-l-2 border-white"
+                      : "text-muted hover:text-foreground hover:bg-white/5"
                   )}
                 >
                   <span>{item.label}</span>
-                  {active && <span className="w-1.5 h-1.5 rounded-full bg-accent" />}
+                  {active && <span className="w-1.5 h-1.5 rounded-full bg-white shadow-sm shadow-white" />}
                 </Link>
               );
             })}
