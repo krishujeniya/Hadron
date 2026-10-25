@@ -2,7 +2,7 @@
 
 > **Document Type:** Production Readiness Architecture Audit, Bug Registry & Phased Engineering Roadmap  
 > **Target System:** [Hadron Codebase](file:///home/ai/Documents/projects/Freelance/Hadron)  
-> **Output Location:** [tracker.md](file:///home/ai/Documents/projects/Freelance/Hadron/tracker.md)  
+> **Output Location:** [docs/tracker.md](file:///home/ai/Documents/projects/Freelance/Hadron/docs/tracker.md)  
 > **Audit Classification:** Engineering (PhD Depth), Business & Unit Economics (MBA Depth), Enterprise Security, Cognitive UI/UX, SEO/AEO/GEO
 
 ---
