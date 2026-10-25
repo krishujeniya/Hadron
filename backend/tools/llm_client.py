@@ -115,6 +115,11 @@ _TOKEN_COSTS: dict[str, dict[str, float]] = {
     "gpt-4o":            {"input": 0.005,   "output": 0.015},
     "gpt-4o-mini":       {"input": 0.00015, "output": 0.0006},
     "gpt-3.5-turbo":     {"input": 0.0005,  "output": 0.0015},
+    # NVIDIA NIM models (including OpenAI open-weight MoE reasoning model)
+    "openai/gpt-oss-20b": {"input": 0.00015, "output": 0.0006},
+    "openai/gpt-oss-120b": {"input": 0.0005, "output": 0.0015},
+    "gpt-oss-22b":        {"input": 0.00015, "output": 0.0006},
+    "gpt-oss-20b":        {"input": 0.00015, "output": 0.0006},
     # Anthropic models
     "claude-3-5-sonnet-20241022": {"input": 0.003,  "output": 0.015},
     "claude-3-haiku-20240307":    {"input": 0.00025,"output": 0.00125},
@@ -251,9 +256,26 @@ class LLMClient:
         from backend.reliability.circuit_breaker import AGENT_BREAKERS, get_breaker, DEFAULT_LLM_BREAKER_CONFIG
 
         cfg = get_settings()
-        key = api_key or cfg.openai_api_key
+        key = api_key or getattr(cfg, "nvidia_api_key", None) or cfg.openai_api_key
 
-        client = openai.AsyncOpenAI(api_key=key)
+        # Resolve base_url and target_model for NVIDIA NIM or custom OpenAI-compatible endpoints
+        base_url = None
+        if key and key.startswith("nvapi-"):
+            base_url = getattr(cfg, "nvidia_base_url", "https://integrate.api.nvidia.com/v1")
+        elif getattr(cfg, "openai_api_base_url", None):
+            base_url = cfg.openai_api_base_url
+
+        target_model = model
+        if base_url and "nvidia" in base_url:
+            if "gpt-oss" in target_model.lower():
+                target_model = "openai/gpt-oss-20b"
+            elif target_model in ("gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"):
+                target_model = "openai/gpt-oss-20b"
+
+        # Reasoning models generate chain-of-thought before output, so ensure adequate tokens
+        req_max_tokens = max(max_tokens, 4096) if "gpt-oss" in target_model else max_tokens
+
+        client = openai.AsyncOpenAI(api_key=key, base_url=base_url)
 
         # Build the full messages list: system first, then user messages
         full_messages = [{"role": "system", "content": system_prompt}] + messages
@@ -261,7 +283,8 @@ class LLMClient:
         # OpenAI JSON mode config
         response_format = {"type": "json_object"} if json_mode else {"type": "text"}
 
-        agent = get_workflow_context().get("agent_type") or "llm_openai"
+        ctx = get_workflow_context()
+        agent = getattr(ctx, "agent_type", None) or "llm_openai"
         breaker = AGENT_BREAKERS.get(agent) or get_breaker(f"llm_{agent}", DEFAULT_LLM_BREAKER_CONFIG)
 
         async def _execute_openai_call() -> LLMResponse:
@@ -270,15 +293,20 @@ class LLMClient:
                 start = time.monotonic()
                 try:
                     response = await client.chat.completions.create(
-                        model=model,
+                        model=target_model,
                         messages=full_messages,
                         response_format=response_format,
-                        max_tokens=max_tokens,
+                        max_tokens=req_max_tokens,
                         temperature=0.1,
                     )
 
                     latency = time.monotonic() - start
-                    raw_content = response.choices[0].message.content or "{}"
+                    choice = response.choices[0]
+                    raw_content = choice.message.content or ""
+                    if not raw_content and hasattr(choice.message, "reasoning_content"):
+                        raw_content = choice.message.reasoning_content or "{}"
+                    if not raw_content:
+                        raw_content = "{}"
                     input_tokens  = response.usage.prompt_tokens
                     output_tokens = response.usage.completion_tokens
 
@@ -419,7 +447,8 @@ class LLMClient:
         from backend.observability.workflow_context import get_workflow_context
         from backend.reliability.circuit_breaker import AGENT_BREAKERS, get_breaker, DEFAULT_LLM_BREAKER_CONFIG
 
-        agent = get_workflow_context().get("agent_type") or "llm_anthropic"
+        ctx = get_workflow_context()
+        agent = getattr(ctx, "agent_type", None) or "llm_anthropic"
         breaker = AGENT_BREAKERS.get(agent) or get_breaker(f"llm_{agent}", DEFAULT_LLM_BREAKER_CONFIG)
 
         async def _execute_anthropic_call() -> LLMResponse:

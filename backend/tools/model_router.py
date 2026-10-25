@@ -101,53 +101,76 @@ def get_routing_table() -> dict[AgentType, ModelConfig]:
     Constructs the model routing table dynamically from active settings and environment.
     Evaluated per-call so runtime overrides in tests or settings updates take immediate effect.
     """
+    is_nvidia = False
+    default_model = "gpt-4o-mini"
+    sec_provider = "anthropic"
+    sec_model = "claude-3-5-sonnet-20241022"
+
     try:
         from backend.config import get_settings
         cfg = get_settings()
-        sec_provider = getattr(cfg, "security_provider", os.environ.get("SECURITY_PROVIDER", "anthropic"))
+        if (
+            getattr(cfg, "nvidia_api_key", None)
+            or (getattr(cfg, "openai_api_key", "") and cfg.openai_api_key.startswith("nvapi-"))
+            or os.environ.get("NVIDIA_API_KEY")
+            or os.environ.get("OPENAI_API_KEY", "").startswith("nvapi-")
+        ):
+            is_nvidia = True
+            default_model = getattr(cfg, "nvidia_model", "openai/gpt-oss-20b")
+
+        sec_provider = getattr(
+            cfg,
+            "security_provider",
+            os.environ.get("SECURITY_PROVIDER", "openai" if is_nvidia else "anthropic"),
+        )
         sec_model = getattr(
             cfg,
             "security_model",
             os.environ.get(
                 "SECURITY_MODEL",
-                "claude-3-5-sonnet-20241022" if sec_provider == "anthropic" else "gpt-4o",
+                default_model if (sec_provider in ("openai", "nvidia") or is_nvidia) else "claude-3-5-sonnet-20241022",
             ),
         )
     except Exception:
-        sec_provider = os.environ.get("SECURITY_PROVIDER", "anthropic")
+        if os.environ.get("NVIDIA_API_KEY") or os.environ.get("OPENAI_API_KEY", "").startswith("nvapi-"):
+            is_nvidia = True
+            default_model = "openai/gpt-oss-20b"
+        sec_provider = os.environ.get("SECURITY_PROVIDER", "openai" if is_nvidia else "anthropic")
         sec_model = os.environ.get(
             "SECURITY_MODEL",
-            "claude-3-5-sonnet-20241022" if sec_provider == "anthropic" else "gpt-4o",
+            default_model if (sec_provider in ("openai", "nvidia") or is_nvidia) else "claude-3-5-sonnet-20241022",
         )
 
-    qual_model = os.environ.get("QUALITY_MODEL", "gpt-4o-mini")
-    test_model = os.environ.get("TEST_MODEL", "gpt-4o-mini")
-    docs_model = os.environ.get("DOCS_MODEL", "gpt-4o-mini")
+    qual_model = os.environ.get("QUALITY_MODEL", default_model)
+    test_model = os.environ.get("TEST_MODEL", default_model)
+    docs_model = os.environ.get("DOCS_MODEL", default_model)
+
+    response_tokens = 4096 if is_nvidia or "gpt-oss" in qual_model else 2048
 
     return {
         AgentType.SECURITY: ModelConfig(
-            provider=sec_provider,
+            provider="openai" if sec_provider == "nvidia" else sec_provider,
             model_name=sec_model,
             context_budget_tokens=8000,
-            max_response_tokens=2048,
+            max_response_tokens=response_tokens,
         ),
         AgentType.QUALITY: ModelConfig(
             provider="openai",
             model_name=qual_model,
             context_budget_tokens=6000,
-            max_response_tokens=2048,
+            max_response_tokens=response_tokens,
         ),
         AgentType.TEST: ModelConfig(
             provider="openai",
             model_name=test_model,
             context_budget_tokens=5000,
-            max_response_tokens=2048,
+            max_response_tokens=response_tokens,
         ),
         AgentType.DOCS: ModelConfig(
             provider="openai",
             model_name=docs_model,
             context_budget_tokens=4000,
-            max_response_tokens=1024,
+            max_response_tokens=response_tokens,
         ),
     }
 

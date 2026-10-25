@@ -115,6 +115,16 @@ async def embed_text(text: str) -> list[float]:
         )
 
     cfg = get_settings()
+
+    # If using NVIDIA NIM key (no separate OpenAI key), provide deterministic embedding
+    if cfg.openai_api_key.startswith("nvapi-"):
+        import hashlib
+        import math
+        h = hashlib.sha256(text.encode("utf-8")).digest()
+        vec = [(h[i % len(h)] / 127.5 - 1.0) for i in range(cfg.openai_embedding_dimensions)]
+        norm = math.sqrt(sum(x * x for x in vec)) or 1.0
+        return [x / norm for x in vec]
+
     client = AsyncOpenAI(api_key=cfg.openai_api_key)
 
     try:
@@ -183,6 +193,16 @@ async def embed_batch(texts: list[str]) -> list[list[float]]:
         return [[0.0] * EMBEDDING_DIMENSIONS for _ in texts]
 
     cfg = get_settings()
+
+    # If using NVIDIA NIM key (no separate OpenAI key), provide deterministic embedding
+    if cfg.openai_api_key.startswith("nvapi-"):
+        import hashlib
+        import math
+        h = hashlib.sha256(text.encode("utf-8")).digest()
+        vec = [(h[i % len(h)] / 127.5 - 1.0) for i in range(cfg.openai_embedding_dimensions)]
+        norm = math.sqrt(sum(x * x for x in vec)) or 1.0
+        return [x / norm for x in vec]
+
     client = AsyncOpenAI(api_key=cfg.openai_api_key)
 
     try:

@@ -115,6 +115,11 @@ class WorkflowResult(BaseModel):
     # Bad use: dumping the entire agent output here.
     metadata: dict[str, Any] = Field(default_factory=dict)
 
+    @property
+    def overall_confidence(self) -> float:
+        """Convenience property for aggregated confidence score stored in metadata."""
+        return float(self.metadata.get("overall_confidence", 0.0))
+
 
 # -----------------------------------------------------------------------------
 # WorkflowEngine - the abstract interface

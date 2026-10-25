@@ -262,9 +262,12 @@ class BaseAgent(ABC):
             _workflow_id = None  # Phase 16: legacy callers have no workflow id
 
         # Task 5.2: Dynamic cost-aware model routing via routing advisor
+        from backend.config import get_settings
         from backend.economics.routing_advisor import classify_task_complexity, recommend_model
+        cfg_settings = get_settings()
+        is_nvidia_env = bool(getattr(cfg_settings, "nvidia_api_key", None) or cfg_settings.openai_api_key.startswith("nvapi-"))
         complexity = classify_task_complexity(self.agent_type, _diff, _pr_title)
-        if complexity == "simple" and self.agent_type != AgentType.SECURITY and "mini" not in config.model_name:
+        if not is_nvidia_env and complexity == "simple" and self.agent_type != AgentType.SECURITY and "mini" not in config.model_name:
             rec_model = recommend_model("simple")
             config = ModelConfig(
                 provider="openai",

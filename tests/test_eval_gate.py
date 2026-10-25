@@ -196,7 +196,10 @@ diff --git a/utils/crypto.py b/utils/crypto.py
     mock_github.get_pr_diff.return_value = synthetic_diff
     mock_github.get_pr_metadata.return_value = mock_metadata
     mock_github.get_pr_files.return_value = ["payments/processor.py", "utils/crypto.py"]
-    mock_github.post_pr_review.side_effect = Exception("eval_gate: skipping GitHub post")
+    mock_post_res = MagicMock()
+    mock_post_res.id = 1
+    mock_post_res.html_url = "https://github.com/octocat/acme-app/pull/42#pullrequestreview-1"
+    mock_github.post_pr_review.return_value = mock_post_res
 
     mock_client_ctx = MagicMock()
     mock_client_ctx.__aenter__ = AsyncMock(return_value=mock_github)
@@ -204,7 +207,12 @@ diff --git a/utils/crypto.py b/utils/crypto.py
     mock_github_cls = MagicMock(return_value=mock_client_ctx)
 
     # Mock 2: Postgres session — we don't care about persistence in the eval gate
+    mock_tx = MagicMock()
+    mock_tx.__aenter__ = AsyncMock(return_value=None)
+    mock_tx.__aexit__ = AsyncMock(return_value=False)
+
     mock_session = AsyncMock()
+    mock_session.begin = MagicMock(return_value=mock_tx)
     mock_session.__aenter__ = AsyncMock(return_value=mock_session)
     mock_session.__aexit__ = AsyncMock(return_value=False)
     mock_session_factory = MagicMock(return_value=mock_session)

@@ -159,6 +159,14 @@ class Settings(BaseSettings):
     # REQUIRED
     anthropic_api_key: str
 
+    # NVIDIA NIM API key & configuration (e.g. for openai/gpt-oss-20b / gpt-oss-22B)
+    nvidia_api_key: str = ""
+    nvidia_base_url: str = "https://integrate.api.nvidia.com/v1"
+    nvidia_model: str = "openai/gpt-oss-20b"
+
+    # Optional custom OpenAI-compatible base URL (overrides default when set)
+    openai_api_base_url: str = ""
+
     # -------------------------------------------------------------------------
     # Application Settings
     # -------------------------------------------------------------------------
@@ -185,6 +193,14 @@ class Settings(BaseSettings):
     # Maximum time (in seconds) a single PR review is allowed to run.
     # After this, WorkflowTimeoutError is raised.
     workflow_timeout_seconds: int = 300  # 5 minutes
+
+    # Maximum time (in seconds) an individual specialist agent review call is allowed to run.
+    # Higher default accommodates reasoning models (e.g. NVIDIA NIM openai/gpt-oss-20b).
+    agent_timeout_seconds: int = 120
+
+    # Max concurrent specialist agents executing simultaneously during fan-out review.
+    # Default 2 prevents burst 429 rate-limiting on LLM endpoints while keeping reviews fast.
+    max_concurrent_agents: int = 2
 
     # -------------------------------------------------------------------------
     # API Authentication

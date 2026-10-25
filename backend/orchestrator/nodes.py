@@ -279,12 +279,12 @@ async def build_context(state: PRReviewState) -> dict[str, Any]:
 
 # Per-agent timeout in seconds.
 # Agents doing LLM calls need time, but we cannot wait forever.
-# These are conservative values — tuned in Phase 16 (cost/economics).
+# Higher default accommodates reasoning models (e.g. NVIDIA NIM openai/gpt-oss-20b).
 _AGENT_TIMEOUTS = {
-    "security": 60,   # security agent runs multiple checks, needs more time
-    "quality":  45,
-    "test":     45,
-    "docs":     30,   # docs agent has less to check, fastest
+    "security": 120,  # security agent runs multiple checks, needs more time
+    "quality":  120,
+    "test":     120,
+    "docs":     120,
 }
 
 
@@ -308,9 +308,9 @@ async def _run_single_agent(
     """
     start_time = time.monotonic()
 
+    cfg = get_settings()
+    timeout = getattr(cfg, "agent_timeout_seconds", 120) or _AGENT_TIMEOUTS.get(agent_type, 120)
     try:
-        timeout = _AGENT_TIMEOUTS.get(agent_type, 45)
-
         # Wrap the agent call in per-agent timeout
         # asyncio.wait_for() raises asyncio.TimeoutError after `timeout` seconds
         # Phase 8: _call_agent_real now returns (findings, confidence, per_verdict_str)
@@ -360,7 +360,7 @@ async def _run_single_agent(
 
     except asyncio.TimeoutError:
         duration = time.monotonic() - start_time
-        error = f"{agent_type} agent timed out after {_AGENT_TIMEOUTS.get(agent_type, 45)}s"
+        error = f"{agent_type} agent timed out after {timeout}s"
         logger.warning(
             "agent_timeout | agent=%s workflow=%s duration=%.2fs",
             agent_type,
@@ -414,15 +414,23 @@ async def fan_out_agents(state: PRReviewState) -> dict[str, Any]:
         state["workflow_id"],
     )
 
-    # asyncio.gather() starts all 4 coroutines simultaneously.
+    cfg = get_settings()
+    max_concurrency = getattr(cfg, "max_concurrent_agents", 2)
+    sem = asyncio.Semaphore(max_concurrency)
+
+    async def _throttled_run(agent_name: str) -> AgentResultState:
+        async with sem:
+            return await _run_single_agent(agent_name, state)
+
+    # asyncio.gather() starts all 4 coroutines managed under max_concurrency semaphore.
     # return_exceptions=True means we get results back even if something raises.
     # (We handle exceptions inside _run_single_agent, so they should not
     # reach here — but return_exceptions=True is defensive belt-and-suspenders.)
     security_result, quality_result, test_result, docs_result = await asyncio.gather(
-        _run_single_agent("security", state),
-        _run_single_agent("quality", state),
-        _run_single_agent("test", state),
-        _run_single_agent("docs", state),
+        _throttled_run("security"),
+        _throttled_run("quality"),
+        _throttled_run("test"),
+        _throttled_run("docs"),
         return_exceptions=True,
     )
 
@@ -1063,6 +1071,19 @@ async def post_review(state: PRReviewState) -> dict[str, Any]:
             e.status_code,
             str(e),
             getattr(e, "response_body", ""),
+            state["workflow_id"],
+        )
+        await _save_review_record(state, None)
+        return {
+            "review_posted": False,
+            "github_review_id": None,
+            "status": ReviewStatus.COMPLETED,
+        }
+
+    except Exception as e:
+        logger.error(
+            "post_review | unexpected_error | error=%s workflow=%s",
+            str(e),
             state["workflow_id"],
         )
         await _save_review_record(state, None)
