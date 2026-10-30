@@ -433,12 +433,14 @@ class WorkerSettings:
 
     @staticmethod
     async def on_startup(ctx: dict) -> None:
-        """Connect the shared redis_client used by run_pr_review."""
-        await redis_client.connect()
-        logger.info("ARQ worker redis_client connected.")
+        """Initialize all worker process resources: DB, Tiger Cloud, Redis, and Telemetry."""
+        from backend.lifecycle import startup_process
+        await startup_process(service_name="hadron-worker")
+        logger.info("ARQ worker full resource lifecycle online.")
 
     @staticmethod
     async def on_shutdown(ctx: dict) -> None:
-        """Gracefully disconnect redis_client on worker shutdown."""
-        await redis_client.disconnect()
-        logger.info("ARQ worker redis_client disconnected.")
+        """Gracefully flush telemetry and disconnect DB, Tiger Cloud, and Redis."""
+        from backend.lifecycle import shutdown_process
+        await shutdown_process(service_name="hadron-worker")
+        logger.info("ARQ worker full resource lifecycle cleanly shut down.")

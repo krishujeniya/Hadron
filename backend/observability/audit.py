@@ -65,16 +65,18 @@ class AuditLogger:
     # ── Write helpers ─────────────────────────────────────────────────────────
 
     def _append(self, entry: dict[str, Any]) -> None:
-        """Write one JSON line.  NEVER raises -- mirrors opensre's pattern.
+        """Write one JSON line with automatic secret/token redaction.  NEVER raises -- mirrors opensre's pattern.
 
         opensre guardrails/audit.py: "Never raises on write failure" is the
         key contract.  Observability code must not crash the main workflow.
         """
         try:
+            from backend.observability.logging import redact_sensitive_data
+            clean_entry = redact_sensitive_data(entry)
             self._path.parent.mkdir(parents=True, exist_ok=True)
             with self._path.open("a", encoding="utf-8") as fh:
-                fh.write(json.dumps(entry) + "\n")
-        except OSError as exc:
+                fh.write(json.dumps(clean_entry) + "\n")
+        except Exception as exc:
             # Degrade gracefully: log the failure, don't re-raise.
             logger.warning("AuditLogger: failed to write to %s: %s", self._path, exc)
 

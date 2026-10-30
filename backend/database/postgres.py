@@ -522,3 +522,31 @@ async def init_tiger_schema() -> None:
         dsn.split("@")[-1].split("/")[0] if "@" in dsn else "local",
     )
 
+
+async def close_tiger_pool() -> None:
+    """Closes the module-level Tiger Cloud asyncpg pool."""
+    global _tiger_pool
+    if _tiger_pool is not None:
+        try:
+            if hasattr(_tiger_pool, "close"):
+                await _tiger_pool.close()
+            logger.info("Tiger Cloud asyncpg pool closed.")
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Error closing Tiger Cloud pool: %s", exc)
+        finally:
+            _tiger_pool = None
+
+
+async def close_db() -> None:
+    """Disposes the SQLAlchemy async engine connection pool."""
+    global _engine
+    if _engine is not None:
+        try:
+            await _engine.dispose()
+            logger.info("SQLAlchemy database engine disposed.")
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Error disposing database engine: %s", exc)
+        finally:
+            _engine = None
+
+

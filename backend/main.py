@@ -101,116 +101,13 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # --- STARTUP ---
-    cfg = get_settings()
-    logger.info(
-        "AI PR Review Agent starting | version=%s env=%s log_level=%s",
-        APP_VERSION,
-        cfg.app_env,
-        cfg.log_level,
-    )
-    logger.info("Max concurrent reviews: %d", cfg.max_concurrent_reviews)
-    logger.info("Confidence threshold:   %.2f", cfg.confidence_threshold)
-    logger.info("Workflow timeout:       %ds", cfg.workflow_timeout_seconds)
-
-    # Phase 4: Connect Redis
-    # redis_client is a module-level singleton (RedisClient instance).
-    # connect() creates the connection pool and pings Redis to confirm it's up.
-    #
-    # WHY try/except here (not fail-fast):
-    #   On Railway, the container must answer /health/live before env vars are
-    #   fully propagated or Upstash accepts the first connection. If Redis is
-    #   temporarily unreachable at cold boot, we log a warning and continue.
-    #   Job submissions will fail gracefully (circuit breaker) until Redis is up.
-    #   This is safer than crashing the container and retrying from scratch.
-    try:
-        await redis_client.connect()
-        logger.info("Redis connection pool ready.")
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("Redis unavailable at startup — job queue degraded: %s", exc)
-
-    # Phase 6: Postgres — create tables via ORM
-    #
-    # init_db() runs create_all() on the async SQLAlchemy engine.
-    # In production this creates tables if they don't exist (safe to call on restart).
-    #
-    # WHY try/except here (not fail-fast):
-    #   Neon serverless Postgres has a ~30s cold start after idle.
-    #   On Railway's first boot both the container AND Neon may be waking up
-    #   simultaneously. Crashing startup forces a full container restart which
-    #   hits Neon again before it's ready — a retry death spiral.
-    #   Instead we log a warning and let the /health endpoint surface the error.
-    #   The first real request that needs Postgres will retry via SQLAlchemy pool.
-    # TODO: Replace with Alembic migrations before v1.0.
-    try:
-        await init_db()
-        logger.info("Postgres tables verified/created.")
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("Postgres unavailable at startup — will retry on first request: %s", exc)
-
-    # -------------------------------------------------------------------------
-    # Tiger Cloud — init connection pool + run schema migration
-    #
-    # init_tiger_schema() creates the asyncpg pool, registers pgvector codec,
-    # runs the idempotent DDL from scripts/migrations/2026-06-tiger-init.sql,
-    # and wires the TigerMemoryClient singleton.
-    #
-    # WHY BEST-EFFORT (try/except, not fail-fast):
-    #   Tiger Cloud is the memory + events spine, but reviews can technically
-    #   run diff-only if Tiger is temporarily unreachable at cold boot.
-    #   We log the warning and let the /health endpoint surface the error.
-    #   (Production-Hardening.md: "Optional deps log warning, never crash startup.")
-    try:
-        await init_tiger_schema()
-        logger.info("Tiger Cloud ready — memory + events spine online.")
-    except Exception as exc:  # noqa: BLE001
-        logger.warning(
-            "Tiger Cloud unavailable at startup — RAG context and events disabled: %s", exc
-        )
-
-    # -------------------------------------------------------------------------
-    # Observability: Sentry & OpenTelemetry Tracing
-    # -------------------------------------------------------------------------
-    sentry_dsn = getattr(cfg, "sentry_dsn", os.environ.get("SENTRY_DSN", None))
-    if sentry_dsn:
-        try:
-            import sentry_sdk
-            sentry_sdk.init(
-                dsn=sentry_dsn,
-                environment=cfg.app_env,
-                release=APP_VERSION,
-                traces_sample_rate=0.2,
-                send_default_pii=False,
-            )
-            logger.info("Sentry initialized successfully | env=%s", cfg.app_env)
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("Sentry initialization failed: %s", exc)
-
-    otel_endpoint = getattr(cfg, "otel_endpoint", os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", None))
-    if otel_endpoint:
-        try:
-            from opentelemetry import trace
-            from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-            from opentelemetry.sdk.resources import Resource
-            from opentelemetry.sdk.trace import TracerProvider
-            from opentelemetry.sdk.trace.export import BatchSpanProcessor
-
-            resource = Resource.create({"service.name": "hadron-pr-agent", "service.version": APP_VERSION})
-            provider = TracerProvider(resource=resource)
-            processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=otel_endpoint))
-            provider.add_span_processor(processor)
-            trace.set_tracer_provider(provider)
-            logger.info("OpenTelemetry OTLP TracerProvider initialized | endpoint=%s", otel_endpoint)
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("OpenTelemetry initialization failed: %s", exc)
+    from backend.lifecycle import shutdown_process, startup_process
+    await startup_process(service_name="hadron-api", app_version=APP_VERSION)
 
     yield  # <-- server is running, accepting requests
 
     # --- SHUTDOWN ---
-    logger.info("AI PR Review Agent shutting down.")
-
-    # Phase 4: Disconnect Redis
-    # aclose() waits for in-flight operations to finish, then closes the pool.
-    await redis_client.disconnect()
+    await shutdown_process(service_name="hadron-api")
 
 
 # -------------------------------------------------------------------------

@@ -20,6 +20,7 @@ NAMING CONVENTION
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import uuid
 from dataclasses import dataclass, field
@@ -168,6 +169,41 @@ _INSERT_SQL = """
          outcome, confidence, payload)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 """
+
+_PENDING_EVENT_TASKS: set[asyncio.Task] = set()
+
+
+def dispatch_agent_event(event: AgentEvent, pool: asyncpg.Pool | None = None) -> asyncio.Task:
+    """
+    Schedules an agent event insertion in the background and registers it
+    so it can be reliably flushed before process shutdown.
+    """
+    task = asyncio.create_task(emit_agent_event(pool=pool, event=event))
+    _PENDING_EVENT_TASKS.add(task)
+    task.add_done_callback(_PENDING_EVENT_TASKS.discard)
+    return task
+
+
+async def flush_agent_events(timeout_s: float = 3.0) -> None:
+    """
+    Awaits all in-flight background agent event writes.
+    Called during process shutdown to ensure no telemetry rows are dropped.
+    """
+    if not _PENDING_EVENT_TASKS:
+        return
+    tasks = list(_PENDING_EVENT_TASKS)
+    logger.info("flush_agent_events | flushing %d pending event writes", len(tasks))
+    done, pending = await asyncio.wait(tasks, timeout=timeout_s)
+    if pending:
+        logger.warning(
+            "flush_agent_events | %d event writes still pending after %.1fs timeout",
+            len(pending),
+            timeout_s,
+        )
+        for t in pending:
+            t.cancel()
+    else:
+        logger.info("flush_agent_events | all pending event writes flushed successfully")
 
 
 async def emit_agent_event(pool: asyncpg.Pool | None = None, event: AgentEvent | None = None) -> None:

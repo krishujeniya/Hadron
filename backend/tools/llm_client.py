@@ -146,7 +146,7 @@ async def _persist_call_log(
         )
 
         # Wire Tiger Cloud agent_events hypertable telemetry
-        from backend.observability.events import AgentEvent, emit_agent_event
+        from backend.observability.events import AgentEvent, dispatch_agent_event
         from backend.database.postgres import get_tiger_pool
         event = AgentEvent(
             review_id=ctx.workflow_id or "system",
@@ -159,7 +159,7 @@ async def _persist_call_log(
             latency_ms=int(latency_seconds * 1000.0),
             payload={"is_valid_json": is_valid_json},
         )
-        asyncio.create_task(emit_agent_event(get_tiger_pool(), event))
+        dispatch_agent_event(event, pool=get_tiger_pool())
     except Exception as exc:  # pragma: no cover — defensive
         logger.warning("llm_call_log_helper_failed | error=%s", exc)
 

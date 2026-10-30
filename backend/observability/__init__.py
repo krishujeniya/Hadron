@@ -24,7 +24,13 @@ from backend.observability.alerting import (
     DEFAULT_ALERT_RULES,
 )
 from backend.observability.audit import AuditLogger
-from backend.observability.events import ReviewEvent
+from backend.observability.events import (
+    AgentEvent,
+    ReviewEvent,
+    dispatch_agent_event,
+    emit_agent_event,
+    flush_agent_events,
+)
 from backend.observability.logging import (
     StructuredLogger,
     get_logger,
@@ -32,6 +38,7 @@ from backend.observability.logging import (
     log_llm_call,
     log_review_verdict,
     log_tool_call,
+    redact_sensitive_data,
 )
 from backend.observability.tracing import (
     TraceContext,
@@ -56,7 +63,12 @@ __all__ = [
     "log_agent_verdict",
     "log_review_verdict",
     # Events
+    "AgentEvent",
     "ReviewEvent",
+    "dispatch_agent_event",
+    "emit_agent_event",
+    "flush_agent_events",
+    "redact_sensitive_data",
     # Alerting
     "AlertLevel",
     "AlertRule",

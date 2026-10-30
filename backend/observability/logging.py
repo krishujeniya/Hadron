@@ -35,12 +35,82 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import traceback as tb_module
 from datetime import datetime, timezone
 from typing import Any, Optional
 
 
 _SERVICE_NAME = "ai-pr-review-agent"
+
+# Redaction patterns for secrets, credentials, tokens, and database passwords
+_REDACT_PATTERNS = [
+    # OpenAI and Anthropic keys
+    (re.compile(r"sk-[a-zA-Z0-9_\-]{15,}"), "sk-...[REDACTED]"),
+    # GitHub tokens
+    (re.compile(r"gh[posr]_[a-zA-Z0-9]{15,}"), "gh_...[REDACTED]"),
+    # NVIDIA API keys
+    (re.compile(r"nvapi-[a-zA-Z0-9_\-]{15,}"), "nvapi-...[REDACTED]"),
+    # Bearer tokens
+    (re.compile(r"(Bearer\s+)[a-zA-Z0-9_\-\.]{15,}", re.IGNORECASE), r"\1[REDACTED]"),
+    # Database connection passwords
+    (re.compile(r"(postgres(?:ql)?(?:\+asyncpg)?://[^:]+:)[^@]+(@.+)", re.IGNORECASE), r"\1[REDACTED]\2"),
+    # Redis connection passwords
+    (re.compile(r"(redis[s]?://[^:]+:)[^@]+(@.+)", re.IGNORECASE), r"\1[REDACTED]\2"),
+]
+
+_SENSITIVE_KEYS = {
+    "token", "password", "secret", "api_key", "authorization",
+    "private_key", "code", "diff", "patch", "prompt", "raw_content"
+}
+
+
+def redact_sensitive_data(val: Any, max_string_len: int = 1024, depth: int = 0) -> Any:
+    """
+    Recursively redacts secrets, tokens, connection strings, and private code
+    while bounding string length and label cardinality.
+    """
+    if depth > 10:
+        return "[DEPTH_EXCEEDED]"
+
+    if isinstance(val, str):
+        # Bound string length
+        if len(val) > max_string_len:
+            val = val[:max_string_len] + "...[TRUNCATED]"
+        for pattern, repl in _REDACT_PATTERNS:
+            val = pattern.sub(repl, val)
+        return val
+
+    if isinstance(val, dict):
+        redacted = {}
+        # Bound cardinality (up to 50 keys)
+        for i, (k, v) in enumerate(val.items()):
+            if i >= 50:
+                redacted["..."] = "[CARDINALITY_BOUNDED]"
+                break
+            k_lower = str(k).lower()
+            # Token metrics (input_tokens, total_tokens) are numeric counters, not secrets
+            is_token_count = k_lower.endswith("tokens") or k_lower.endswith("_token_count")
+            if is_token_count:
+                redacted[k] = v
+            elif k_lower in ("code", "diff", "patch", "prompt", "raw_content"):
+                redacted[k] = "[REDACTED_CODE]"
+            elif (
+                k_lower in ("token", "auth_token", "access_token", "refresh_token", "github_token", "api_token", "bearer_token")
+                or any(s in k_lower for s in ("password", "secret", "api_key", "authorization", "private_key"))
+            ):
+                redacted[k] = "[REDACTED_SECRET]"
+            else:
+                redacted[k] = redact_sensitive_data(v, max_string_len, depth + 1)
+        return redacted
+
+    if isinstance(val, (list, tuple, set)):
+        items = [redact_sensitive_data(item, max_string_len, depth + 1) for item in list(val)[:50]]
+        if len(val) > 50:
+            items.append("[CARDINALITY_BOUNDED]")
+        return items
+
+    return val
 
 
 class StructuredLogger:
@@ -71,25 +141,41 @@ class StructuredLogger:
         span_id: Optional[str] = None,
         **tags: Any,
     ) -> dict[str, Any]:
-        """Build the JSON entry and write it to stdlib logging.
+        """Build the JSON entry and write it to stdlib logging with automated
+        redaction and workflow context enrichment.
 
         Returns the entry dict so callers can inspect it in tests.
         """
+        # Enrich with active workflow context if available
+        try:
+            from backend.observability.workflow_context import get_workflow_context
+            wf_ctx = get_workflow_context()
+        except Exception:
+            wf_ctx = None
+
+        effective_trace_id = trace_id or (wf_ctx.workflow_id if wf_ctx else None)
+
         entry: dict[str, Any] = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "service": _SERVICE_NAME,
             "logger": self._name,
             "level": logging.getLevelName(level),
             "event": event,
-            "message": message,
+            "message": redact_sensitive_data(message),
         }
-        # Omit None values to keep entries compact.
-        if trace_id is not None:
-            entry["trace_id"] = trace_id
+        if effective_trace_id is not None:
+            entry["trace_id"] = effective_trace_id
         if span_id is not None:
             entry["span_id"] = span_id
-        # Remaining typed tags -- agent_type, model, cost_usd, etc.
-        entry.update(tags)
+        if wf_ctx and wf_ctx.tenant_id:
+            entry["tenant_id"] = wf_ctx.tenant_id
+        if wf_ctx and wf_ctx.agent_type and wf_ctx.agent_type != "system":
+            entry["agent_type"] = wf_ctx.agent_type
+
+        # Redact remaining typed tags
+        redacted_tags = redact_sensitive_data(tags)
+        if isinstance(redacted_tags, dict):
+            entry.update(redacted_tags)
 
         self._stdlib.log(level, json.dumps(entry))
         return entry

@@ -410,19 +410,16 @@ async def _run_single_agent(
         )
 
         try:
-            from backend.observability.events import AgentEvent, emit_agent_event
-            asyncio.create_task(
-                emit_agent_event(
-                    None,
-                    AgentEvent(
-                        review_id=state.get("workflow_id", "") or "unknown",
-                        agent=agent_type,
-                        event_type="span.end",
-                        latency_ms=int(duration * 1000),
-                        outcome=per_verdict_str,
-                        confidence=agent_confidence,
-                        payload={"findings_count": len(findings), "success": succeeded},
-                    ),
+            from backend.observability.events import AgentEvent, dispatch_agent_event
+            dispatch_agent_event(
+                AgentEvent(
+                    review_id=state.get("workflow_id", "") or "unknown",
+                    agent=agent_type,
+                    event_type="span.end",
+                    latency_ms=int(duration * 1000),
+                    outcome=per_verdict_str,
+                    confidence=agent_confidence,
+                    payload={"findings_count": len(findings), "success": succeeded},
                 )
             )
         except Exception:
@@ -679,18 +676,15 @@ async def aggregate_results(state: PRReviewState) -> dict[str, Any]:
     # -------------------------------------------------------------------------
     def _hitl_return(reason: str, all_findings: list[dict[str, Any]], overall_confidence: float = 0.0) -> dict[str, Any]:
         try:
-            from backend.observability.events import AgentEvent, emit_agent_event
-            asyncio.create_task(
-                emit_agent_event(
-                    None,
-                    AgentEvent(
-                        review_id=state.get("workflow_id", "") or "unknown",
-                        agent="aggregator",
-                        event_type="escalation",
-                        outcome="escalated",
-                        confidence=overall_confidence,
-                        payload={"reason": reason, "findings_count": len(all_findings)},
-                    ),
+            from backend.observability.events import AgentEvent, dispatch_agent_event
+            dispatch_agent_event(
+                AgentEvent(
+                    review_id=state.get("workflow_id", "") or "unknown",
+                    agent="aggregator",
+                    event_type="escalation",
+                    outcome="escalated",
+                    confidence=overall_confidence,
+                    payload={"reason": reason, "findings_count": len(all_findings)},
                 )
             )
         except Exception:
@@ -888,18 +882,15 @@ async def aggregate_results(state: PRReviewState) -> dict[str, Any]:
     )
 
     try:
-        from backend.observability.events import AgentEvent, emit_agent_event
-        asyncio.create_task(
-            emit_agent_event(
-                None,
-                AgentEvent(
-                    review_id=state.get("workflow_id", "") or "unknown",
-                    agent="aggregator",
-                    event_type="decision",
-                    outcome=verdict.value if hasattr(verdict, "value") else str(verdict),
-                    confidence=overall_confidence,
-                    payload={"needs_human_review": False, "findings_count": len(all_findings)},
-                ),
+        from backend.observability.events import AgentEvent, dispatch_agent_event
+        dispatch_agent_event(
+            AgentEvent(
+                review_id=state.get("workflow_id", "") or "unknown",
+                agent="aggregator",
+                event_type="decision",
+                outcome=verdict.value if hasattr(verdict, "value") else str(verdict),
+                confidence=overall_confidence,
+                payload={"needs_human_review": False, "findings_count": len(all_findings)},
             )
         )
     except Exception:

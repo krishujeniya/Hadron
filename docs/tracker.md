@@ -414,10 +414,20 @@ Rollback: git checkout backend/reliability/ backend/integrations/github_client.p
 
 ### T20 — Initialize observability in every process and preserve evidence
 
-- [ ] **P1 · V/G · BE + SRE · Depends: T10, T14, T18**
+- [x] **P1 · V/G · BE + SRE · Depends: T10, T14, T18**
 - **Evidence:** API lifecycle initializes Tiger/Sentry/tracing; standalone worker startup primarily connects Redis. Separate processes cannot share an API-created singleton. Fire-and-forget events and best-effort writes do not establish an audit trail.
 - **Implement:** Shared explicit API/worker resource lifecycle; initialize/flush/close DB, vector store, telemetry and clients in each process. Use structured, redacted logs with delivery/workflow/review IDs and trusted tenant context. Persist security/audit/publication/cost events durably; sample optional diagnostics. Bound label cardinality and retention. Fix UUID/string identity inconsistencies across event writers and economics readers.
 - **Accept:** A separately launched worker emits attributed traces, persisted review/cost/audit records, and terminal status; shutdown flushes critical events. Missing telemetry is visible as degraded, not zero activity. Logs/traces contain no tokens, raw private code or unredacted connection strings.
+
+```text
+Status: DONE
+Owner: BE + SRE (Antigravity)
+Commit: working-tree
+Verification: `pytest tests/test_observability_and_evidence_t20.py` passed (7/7); full pytest suite passed (288 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-10-30.
+Evidence: Unified process lifecycle management across API (`main.py`) and worker (`arq_worker.py`) via `startup_process` and `shutdown_process` in `backend/lifecycle.py`; ensured symmetrical connection and teardown of Redis, Postgres, Tiger Cloud asyncpg pool, Sentry, and OpenTelemetry; implemented automated sensitive secret and credential redaction in `backend/observability/logging.py` covering OpenAI/Anthropic/NVIDIA keys, GitHub tokens, Bearer tokens, DB/Redis passwords, and private code blocks while preserving metric counters; injected structured `WorkflowContext` attributes (`workflow_id`, `agent_type`, `tenant_id`) into log records; bounded log metadata cardinality (<=50 items) and string length (<=1024 chars); sanitized audit logs written to JSONL; implemented managed background event registration and drain flush via `dispatch_agent_event` and `flush_agent_events` in `backend/observability/events.py` ensuring in-flight audit, publication, security, and cost events are fully persisted before process termination.
+Residual risks: none.
+Rollback: git checkout backend/database/postgres.py backend/job_queue/arq_worker.py backend/lifecycle.py backend/main.py backend/observability/ backend/orchestrator/nodes.py backend/tools/llm_client.py tests/test_observability_and_evidence_t20.py
+```
 
 ### T21 — Make health checks reflect actual capability
 
