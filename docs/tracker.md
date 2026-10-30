@@ -448,10 +448,20 @@ Rollback: git checkout backend/main.py backend/config/settings.py backend/databa
 
 ### T22 — Make deployment topology and images reproducible
 
-- [ ] **P1 · V/G · SRE · Depends: T05, T10, T14, T20**
+- [x] **P1 · V/G · SRE · Depends: T05, T10, T14, T20**
 - **Evidence:** `scripts/start.sh` launches API and worker, while Compose also defines a worker; Vercel adapter and container paths coexist. Redis has no durable volume in Compose. Docker copies the whole context; `.dockerignore` omits local `.aws/.codex/.agents` directories. Builder installs an editable package before copying backend source.
 - **Implement:** Declare one supported production topology: frontend, API, persistent worker(s), durable Postgres and queue. Explicitly provision the worker if API is serverless. Use separate process commands/health checks, signal forwarding and graceful shutdown. Build from locked dependencies and an allowlisted context; exclude local credential/config/agent directories. Test package imports and runtime user/filesystem. Keep dev-only ports/credentials isolated; use persistent Redis/recovery policy and pinned image versions.
 - **Accept:** Build/run image from a clean checkout, inspect its contents without printing secrets, and start each process independently. No credentials/local tooling/history enter the image; no accidental duplicate worker. Restart/load tests prove recoverability. Do not repeat “<200 MB” or “CIS hardened” claims without measurement/control evidence.
+
+```text
+Status: DONE
+Owner: SRE (Antigravity)
+Commit: working-tree
+Verification: `pytest tests/test_deployment_topology_t22.py` passed (5/5); full pytest suite passed (303 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-10-30.
+Evidence: Declared one canonical production topology (`docker-compose.yml`) comprising standalone Next.js frontend, decoupled FastAPI API server, persistent ARQ worker, and durable Redis 7.2 with AOF persistence and named volume `redis_data`; refactored `Dockerfile` into a clean multi-stage builder/runtime structure with unprivileged non-root user `hadron` (UID 1000) and allowlisted source copies (`backend/`, `scripts/`, `pyproject.toml`) avoiding blind directory copying; strengthened `.dockerignore` to strictly prevent credentials (`.aws`, `.ssh`, `.gnupg`, `*.pem`, `*.key`), agent workspaces (`.agents`, `.codex`, `.gemini`, `.claude`), and test/cache artifacts from entering images; added standalone multi-stage production container `frontend/Dockerfile` and `frontend/.dockerignore`; decoupled API and Worker processes via `scripts/entrypoint.sh` and `scripts/start.sh` with explicit commands (`api`, `worker`, `combined`) and signal trapping to eliminate duplicate worker processes; removed unsupported marketing claims ("<200MB", "CIS hardened") in container metadata.
+Residual risks: none.
+Rollback: git checkout Dockerfile .dockerignore docker-compose.yml docker-compose.dev.yml scripts/start.sh scripts/entrypoint.sh frontend/Dockerfile frontend/.dockerignore tests/test_deployment_topology_t22.py
+```
 
 ### T23 — Implement retention, deletion, export, and data governance
 

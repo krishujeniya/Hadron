@@ -1,0 +1,10 @@
+# frontend/.dockerignore
+.git/
+.gitignore
+node_modules/
+.next/
+out/
+.env*
+!.env.example
+*.log
+.DS_Store

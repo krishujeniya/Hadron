@@ -1,71 +1,79 @@
-# docker-compose.yml — AI PR Review Agent
+# docker-compose.yml — Declared Production Topology for Hadron Autonomous PR Review Agent
 #
-# HYBRID MODE: Neon (cloud Postgres) + local Redis + api + worker
+# Topology:
+#   1. frontend — Next.js production UI (port 3000)
+#   2. api      — FastAPI web server & webhook receiver (port 8000)
+#   3. worker   — Persistent ARQ review execution worker (decoupled from API)
+#   4. redis    — Durable job queue and idempotency store with AOF persistence
+#   5. postgres — Cloud/Managed TimescaleDB (configured via DATABASE_URL)
 #
-# WHY HYBRID:
-#   Postgres -> Neon cloud (TimescaleDB). Review data persists forever, survives laptop restarts.
-#   Redis    -> local Docker. Job queue, idempotency keys. Ephemeral is fine.
-#
-# Neon is accessed via HTTPS (port 5432 over TLS) — works from anywhere.
-# Redis (6379) local port used for job queue.
-#
-# Usage:
-#   docker-compose up --build
-#
-# For all-local dev (no cloud at all):
-#   docker-compose -f docker-compose.dev.yml up --build
+# Process Isolation Contract:
+#   - API and Worker run as separate services from the same reproducible image.
+#   - Duplicate workers are prevented by explicit process commands (['api'] and ['worker']).
+#   - Redis queue state is preserved across container restarts via the redis_data volume.
 
 services:
 
   # ---------------------------------------------------------------------------
-  # Redis — local, port 6379
+  # Redis — Persistent Job Queue & Distributed State
   # ---------------------------------------------------------------------------
   redis:
-    image: redis:7-alpine
-    container_name: prreview_redis
+    image: redis:7.2.4-alpine
+    container_name: hadron_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
-      timeout: 5s
+      timeout: 3s
       retries: 10
+      start_period: 5s
     networks:
-      - prreview_net
+      - hadron_net
 
   # ---------------------------------------------------------------------------
-  # API — FastAPI application
-  # Postgres -> Neon cloud (from .env DATABASE_URL)
-  # Redis    -> local container
+  # API — FastAPI Application & Webhook Receiver
   # ---------------------------------------------------------------------------
   api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: prreview_api
+    container_name: hadron_api
+    restart: unless-stopped
+    command: ["api"]
     ports:
-      - "${API_PORT:-8001}:8000"
+      - "${API_PORT:-8000}:8000"
     env_file:
       - .env
     environment:
-      # DATABASE_URL comes from .env -> Neon cloud (persistent)
-      # Override Redis to point at local Docker service
       REDIS_URL: "redis://redis:6379"
+      PORT: "8000"
     depends_on:
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
-      - prreview_net
+      - hadron_net
 
   # ---------------------------------------------------------------------------
-  # Worker — ARQ async job queue worker
+  # Worker — Autonomous Review Execution Worker (ARQ)
   # ---------------------------------------------------------------------------
   worker:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: prreview_worker
-    command: ["python3", "-m", "arq", "backend.job_queue.arq_worker.WorkerSettings"]
+    container_name: hadron_worker
+    restart: unless-stopped
+    command: ["worker"]
     env_file:
       - .env
     environment:
@@ -73,18 +81,53 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c 'import asyncio; from backend.memory.redis_client import redis_client; active = asyncio.run(redis_client.get_active_workers()); exit(0 if active else 1)'"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     networks:
-      - prreview_net
+      - hadron_net
+
+  # ---------------------------------------------------------------------------
+  # Frontend — Next.js Standalone Production Dashboard
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hadron_frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: "http://api:8000"
+      PORT: "3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - hadron_net
 
 # ---------------------------------------------------------------------------
 # Networks
 # ---------------------------------------------------------------------------
 networks:
-  prreview_net:
+  hadron_net:
     driver: bridge
 
 # ---------------------------------------------------------------------------
-# Volumes
+# Volumes — Persistent State
 # ---------------------------------------------------------------------------
-volumes: {}
-
+volumes:
+  redis_data:
+    driver: local

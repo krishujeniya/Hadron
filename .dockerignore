@@ -1,24 +1,60 @@
-# .dockerignore - Prevent sensitive files and build artifacts from leaking into images
-.git
+# .dockerignore — Prevent sensitive credentials, agent files, and artifacts from leaking into images
+
+# Version Control & Local Config
+.git/
 .gitignore
-.venv
+.github/
+.vercelignore
+
+# Local Credentials & Secrets (CRITICAL SECURITY BOUNDARY)
+.aws/
+.ssh/
+.gnupg/
+*.pem
+*.key
+*.cert
+*.crt
+.env*
+!.env.example
+
+# AI Agent Local Context & State
+.agents/
+.codex/
+.gemini/
+.claude/
+.system_generated/
+graphify-out/
+brain/
+
+# Python Virtual Environments & Caches
+.venv/
 venv/
 env/
 __pycache__/
 *.py[cod]
 *$py.class
+*.egg-info/
+dist/
+build/
+
+# Testing & Linting Artifacts
 .pytest_cache/
-.coverage
+.coverage*
 htmlcov/
+.ruff_cache/
+.mypy_cache/
+
+# Local SQLite & Databases
 *.db
 *.sqlite
 *.sqlite3
-.env*
-!.env.example
-node_modules/
-frontend/.next/
-frontend/out/
-frontend/node_modules/
-.DS_Store
+
+# Logs & Temporary Files
 *.log
-.system_generated/
+tmp/
+temp/
+.DS_Store
+
+# Frontend source and builds (built in dedicated frontend container)
+frontend/
+docs/
