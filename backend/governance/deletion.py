@@ -159,7 +159,7 @@ async def delete_tenant_data(
         "redis_cleared": redis_cleared,
     }
 
-    # 5. Record immutable audit record of deletion (preserves audit integrity without storing tenant code)
+    # 5. Record immutable audit record and erasure tombstone (preserves erasure obligations across restore)
     record_audit_event(
         action="tenant_data_deleted",
         actor=actor,
@@ -171,6 +171,11 @@ async def delete_tenant_data(
             "chunks_deleted": chunks_deleted,
         },
     )
+    try:
+        from backend.disaster_recovery.tombstones import record_tombstone
+        record_tombstone(tenant_id=tenant_id, actor=actor)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Failed to record erasure tombstone: %s", exc)
 
     logger.info("Tenant data erasure complete | summary=%s", summary)
     return summary

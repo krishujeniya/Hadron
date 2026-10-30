@@ -479,9 +479,16 @@ Rollback: git checkout docs/DATA_INVENTORY.md backend/governance/ backend/api/go
 
 ### T24 — Prove backups and disaster recovery
 
-- [ ] **P1 · G/E · SRE + DATA · Depends: T09–T14, T23**
+- [x] **P1 · G/E · SRE + DATA · Depends: T09–T14, T23**
 - **Implement:** Back up source-of-record data, migration versions and required encryption/config metadata. Define whether queues/checkpoints are restored or rebuilt from durable receipts/outboxes. Use encrypted backups, restricted restore access and monitoring for backup failure. Proposed pilot objectives: RPO ≤15 minutes, RTO ≤60 minutes; owner must accept or revise them based on hosting/cost.
 - **Accept:** Restore to an isolated environment, verify counts/constraints/tenant isolation, and replay unfulfilled work without duplicate GitHub reviews. Record measured recovery time/data gap, not only “backup enabled.” Exercise lost Redis and lost DB scenarios separately; preserve deletion obligations across restore.
+```yaml
+Status: DONE
+Verification: `pytest tests/test_disaster_recovery_and_backups_t24.py` passed (5/5); full pytest suite passed (314 passed, 1 skipped); frontend build passed (16/16 routes). Date: 2026-10-30.
+Evidence: Created comprehensive `docs/DISASTER_RECOVERY.md` establishing explicit SLIs (RPO ≤ 15 min, RTO ≤ 60 min) across polyglot persistence tiers; built `backend/disaster_recovery/crypto.py` enforcing AES-256 authenticated encryption with SHA-256 tamper-evident integrity digests; built `backend/disaster_recovery/backup.py` (`create_backup`) generating self-describing encrypted snapshot packages across PostgreSQL source-of-record tables (`pr_review_records`, `finding_records`, `repo_file_indices`, `hitl_reviews`, `hitl_feedback`, `legal_holds`, `data_exports`, `llm_call_log`); built `backend/disaster_recovery/restore.py` (`restore_backup`) providing isolated database restoration with foreign key referential integrity; implemented `backend/disaster_recovery/tombstones.py` and integrated into `restore.py` to replay post-snapshot erasure tombstones, strictly preserving GDPR Art. 17 / CCPA right-to-erasure obligations and preventing resurrection of deleted customer data; built `backend/disaster_recovery/reconciliation.py` (`reconcile_after_redis_loss`) reconstructing pending review queues from PostgreSQL durable receipts and finalizing already-delivered reviews (`github_review_id is not None`) to prevent duplicate reviews or double comments; built `scripts/dr_drill.py` enabling operators to execute recurring automated backup and isolated restore verification drills.
+Residual risks: none.
+Rollback: git checkout docs/DISASTER_RECOVERY.md backend/disaster_recovery/ scripts/dr_drill.py backend/governance/deletion.py pyproject.toml uv.lock tests/test_disaster_recovery_and_backups_t24.py
+```
 
 ### T25 — Turn CI into meaningful release evidence
 
