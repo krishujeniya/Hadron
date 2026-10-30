@@ -120,17 +120,40 @@ class RetryExhaustedError(Exception):
 # Delay calculation
 # ---------------------------------------------------------------------------
 
-def _compute_delay(attempt: int, config: RetryConfig) -> float:
+def _compute_delay(
+    attempt: int,
+    config: RetryConfig,
+    retry_after: float | None = None,
+    deadline: Any | None = None,
+) -> float:
     """
-    Compute sleep duration for attempt N (0-indexed).
+    Compute sleep duration for attempt N with jitter, Retry-After, and deadline clipping.
+    """
+    if retry_after is not None and retry_after > 0:
+        delay = min(float(retry_after), config.max_delay_s)
+    else:
+        delay = min(config.base_delay_s * (2 ** attempt), config.max_delay_s)
 
-    Formula: min(base * 2^attempt, max_delay) + jitter
-    Jitter: uniform(0, delay * jitter_factor)
-    """
-    delay = min(config.base_delay_s * (2 ** attempt), config.max_delay_s)
     if config.jitter:
-        delay += random.uniform(0, delay * config.jitter_factor)
-    return delay
+        # Uniform jitter between -jitter_factor and +jitter_factor
+        jitter_delta = delay * config.jitter_factor * (2 * random.random() - 1)
+        delay = max(0.01, delay + jitter_delta)
+
+    if deadline is not None and hasattr(deadline, "remaining_s"):
+        from backend.reliability.timeout import DeadlineExceededError
+        rem = deadline.remaining_s
+        if delay > rem:
+            logger.warning(
+                "retry_delay_exceeds_deadline | delay=%.2fs remaining=%.2fs",
+                delay, rem,
+            )
+            if rem <= 0.05:
+                raise DeadlineExceededError(
+                    f"Retry delay of {delay:.2f}s exceeds remaining workflow deadline ({rem:.2f}s)"
+                )
+            delay = rem
+
+    return round(delay, 3)
 
 
 # ---------------------------------------------------------------------------
@@ -192,24 +215,27 @@ async def async_retry_with_backoff(
     fn: Callable[..., Any],
     config: RetryConfig = DEFAULT_LLM_RETRY,
     *args: Any,
+    deadline: Any | None = None,
+    retry_after_getter: Callable[[Exception], float | None] | None = None,
     **kwargs: Any,
 ) -> Any:
     """
-    Async version of retry_with_backoff. Uses asyncio.sleep so the event
-    loop is not blocked during backoff delays.
-
-    Usage:
-        result = await async_retry_with_backoff(my_coro, DEFAULT_LLM_RETRY, arg)
+    Async version of retry_with_backoff. Uses asyncio.sleep with jitter and respects
+    shared deadline budgets and Retry-After headers. Re-raises CancelledError immediately.
     """
     last_exc: Exception | None = None
 
     for attempt in range(config.max_attempts):
         try:
             return await fn(*args, **kwargs)
+        except asyncio.CancelledError:
+            logger.info("async_retry_cancelled | aborting retries immediately")
+            raise
         except config.retryable_exceptions as exc:  # type: ignore[misc]
             last_exc = exc
             if attempt < config.max_attempts - 1:
-                delay = _compute_delay(attempt, config)
+                retry_after = retry_after_getter(exc) if retry_after_getter else None
+                delay = _compute_delay(attempt, config, retry_after=retry_after, deadline=deadline)
                 logger.warning(
                     "async_retry: attempt %d/%d failed (%s: %s). "
                     "Retrying in %.2fs.",

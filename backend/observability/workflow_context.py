@@ -19,18 +19,20 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from contextvars import ContextVar, Token
 from dataclasses import dataclass
-from typing import Optional
+from typing import Generator, Optional
 
 
 @dataclass(frozen=True)
 class WorkflowContext:
     workflow_id: Optional[str]
     agent_type: str    # "security", "quality", "system", etc.
+    tenant_id: Optional[str] = None
 
 
-_DEFAULT = WorkflowContext(workflow_id=None, agent_type="system")
+_DEFAULT = WorkflowContext(workflow_id=None, agent_type="system", tenant_id=None)
 
 _current: ContextVar[WorkflowContext] = ContextVar(
     "ai_pr_review_workflow_context",
@@ -43,7 +45,12 @@ def get_workflow_context() -> WorkflowContext:
     return _current.get()
 
 
-def set_workflow_context(*, workflow_id: Optional[str], agent_type: str) -> Token:
+def set_workflow_context(
+    *,
+    workflow_id: Optional[str],
+    agent_type: str,
+    tenant_id: Optional[str] = None,
+) -> Token:
     """
     Push a new context onto the stack. Returns a token to pass to reset().
 
@@ -54,9 +61,32 @@ def set_workflow_context(*, workflow_id: Optional[str], agent_type: str) -> Toke
         finally:
             reset_workflow_context(token)
     """
-    return _current.set(WorkflowContext(workflow_id=workflow_id, agent_type=agent_type))
+    return _current.set(
+        WorkflowContext(workflow_id=workflow_id, agent_type=agent_type, tenant_id=tenant_id)
+    )
 
 
 def reset_workflow_context(token: Token) -> None:
     """Restore the previous context."""
     _current.reset(token)
+
+
+@contextmanager
+def scoped_workflow_context(
+    *,
+    workflow_id: Optional[str],
+    agent_type: str,
+    tenant_id: Optional[str] = None,
+) -> Generator[WorkflowContext, None, None]:
+    """
+    Context manager guaranteeing that workflow context attribution is restored
+    after task completion or exception.
+    """
+    token = set_workflow_context(
+        workflow_id=workflow_id, agent_type=agent_type, tenant_id=tenant_id
+    )
+    try:
+        yield _current.get()
+    finally:
+        reset_workflow_context(token)
+

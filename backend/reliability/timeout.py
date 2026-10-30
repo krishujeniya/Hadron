@@ -45,8 +45,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from dataclasses import dataclass
-from typing import Any, Awaitable, Callable, TypeVar
+import time
+from dataclasses import dataclass, field
+from typing import Any, Awaitable, Callable, Optional, TypeVar
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +104,57 @@ class AgentTimeoutError(Exception):
         super().__init__(
             f"Agent '{agent_name}' timed out after {timeout_seconds:.1f}s."
         )
+
+
+class DeadlineExceededError(Exception):
+    """Raised when an operation, retry delay, or workflow exceeds its shared deadline budget."""
+    pass
+
+
+@dataclass
+class DeadlineBudget:
+    """
+    Carries a workflow-wide or stage-wide deadline budget across nested layers.
+    Ensures that retries, backoff delays, and external requests do not multiply
+    and exceed the overall allotted time.
+    """
+    total_budget_s: float
+    start_time: float = field(default_factory=time.monotonic)
+
+    @classmethod
+    def from_timeout(cls, timeout_s: float) -> "DeadlineBudget":
+        return cls(total_budget_s=max(0.05, float(timeout_s)))
+
+    @property
+    def elapsed_s(self) -> float:
+        return time.monotonic() - self.start_time
+
+    @property
+    def remaining_s(self) -> float:
+        return max(0.0, self.total_budget_s - self.elapsed_s)
+
+    @property
+    def is_expired(self) -> bool:
+        return self.remaining_s <= 0.0
+
+    def slice_for_call(self, desired_s: float) -> float:
+        """
+        Returns the smaller of desired_s and remaining_s.
+        Raises DeadlineExceededError if expired.
+        """
+        rem = self.remaining_s
+        if rem <= 0.0:
+            raise DeadlineExceededError(
+                f"Deadline budget of {self.total_budget_s:.1f}s exceeded (elapsed: {self.elapsed_s:.1f}s)"
+            )
+        return min(desired_s, rem)
+
+    def check_headroom(self, required_s: float = 0.05) -> None:
+        """Raises DeadlineExceededError if remaining budget is below required_s."""
+        if self.remaining_s < required_s:
+            raise DeadlineExceededError(
+                f"Remaining deadline budget ({self.remaining_s:.2f}s) is below required headroom ({required_s:.2f}s)"
+            )
 
 
 # ---------------------------------------------------------------------------

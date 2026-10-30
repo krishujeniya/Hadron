@@ -50,6 +50,7 @@ from backend.data.freshness import get_stale_files, mark_files_embedded
 from backend.database.postgres import get_session_factory
 from backend.memory.embedder import EmbeddingError, embed_text
 from backend.memory.tiger_client import CodeChunk, get_tiger_memory  # TIGER: was qdrant_client
+from backend.reliability.circuit_breaker import GITHUB_BREAKER
 
 logger = logging.getLogger(__name__)
 
@@ -232,7 +233,9 @@ async def fetch_repo_tree(
     # Step 1: get default branch SHA
     repo_url = f"{GITHUB_API_BASE}/repos/{repo_full_name}"
     try:
-        resp = await client.get(repo_url, headers=headers, timeout=GITHUB_REQUEST_TIMEOUT)
+        resp = await GITHUB_BREAKER.async_call(
+            client.get, repo_url, headers=headers, timeout=GITHUB_REQUEST_TIMEOUT
+        )
         resp.raise_for_status()
         repo_data = resp.json()
         default_branch = repo_data.get("default_branch", "main")
@@ -252,7 +255,9 @@ async def fetch_repo_tree(
     # Step 2: get HEAD commit SHA for default branch
     branch_url = f"{GITHUB_API_BASE}/repos/{repo_full_name}/branches/{default_branch}"
     try:
-        resp = await client.get(branch_url, headers=headers, timeout=GITHUB_REQUEST_TIMEOUT)
+        resp = await GITHUB_BREAKER.async_call(
+            client.get, branch_url, headers=headers, timeout=GITHUB_REQUEST_TIMEOUT
+        )
         resp.raise_for_status()
         branch_data = resp.json()
         tree_sha = branch_data["commit"]["commit"]["tree"]["sha"]
@@ -266,7 +271,9 @@ async def fetch_repo_tree(
     # Step 3: fetch full tree recursively (one API call for entire repo)
     tree_url = f"{GITHUB_API_BASE}/repos/{repo_full_name}/git/trees/{tree_sha}?recursive=1"
     try:
-        resp = await client.get(tree_url, headers=headers, timeout=GITHUB_REQUEST_TIMEOUT)
+        resp = await GITHUB_BREAKER.async_call(
+            client.get, tree_url, headers=headers, timeout=GITHUB_REQUEST_TIMEOUT
+        )
         resp.raise_for_status()
         tree_data = resp.json()
 
@@ -381,7 +388,9 @@ async def fetch_file_content(
 
     url = f"{GITHUB_API_BASE}/repos/{repo_full_name}/contents/{file_path}"
     try:
-        resp = await client.get(url, headers=headers, timeout=GITHUB_REQUEST_TIMEOUT)
+        resp = await GITHUB_BREAKER.async_call(
+            client.get, url, headers=headers, timeout=GITHUB_REQUEST_TIMEOUT
+        )
         resp.raise_for_status()
         data = resp.json()
 
@@ -470,9 +479,11 @@ async def ingest_repository(repo_full_name: str) -> dict[str, int]:
 
     logger.info("ingest_repository | start | repo=%s", repo_full_name)
 
-    # Use a single httpx.AsyncClient for all GitHub requests.
+    # Use a single httpx.AsyncClient with connection pooling limits for all GitHub requests.
     # (Reuse TCP connections across file fetches — reduces latency.)
-    async with httpx.AsyncClient() as client:
+    limits = httpx.Limits(max_connections=10, max_keepalive_connections=5, keepalive_expiry=30.0)
+    timeout = httpx.Timeout(connect=5.0, read=GITHUB_REQUEST_TIMEOUT, write=5.0, pool=5.0)
+    async with httpx.AsyncClient(limits=limits, timeout=timeout) as client:
 
         # Stage 1: fetch the full file tree
         tree = await fetch_repo_tree(repo_full_name, cfg.github_token, client)

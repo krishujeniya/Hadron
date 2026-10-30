@@ -397,10 +397,20 @@ Rollback: git checkout backend/economics/ backend/agents/base_agent.py backend/m
 
 ### T19 — Make external-call resilience consistent
 
-- [ ] **P1 · V/G · BE · Depends: T06, T18**
+- [x] **P1 · V/G · BE · Depends: T06, T18**
 - **Evidence:** Retry/circuit-breaker modules exist, but integrations, raw `httpx` ingestion, provider SDKs and model routing use different paths. Source comments do not prove coverage or safe write retries.
 - **Implement:** Inventory every outbound request; apply shared deadline budgets, bounded exponential backoff with jitter, Retry-After handling, connection pooling and per-provider concurrency. Separate retriable reads from ambiguous writes. Validate model capabilities/output format and current prices at configured version. Carry cancellation/deadline through stages; reset context attribution after tasks finish.
 - **Accept:** Contract tests inject connect/read timeouts, 429/403 rate limiting, 5xx, malformed output and cancellation for each adapter. Retries do not multiply across nested layers or exceed the workflow deadline; circuits recover; cancellation stops unnecessary spend.
+
+```text
+Status: DONE
+Owner: BE (Antigravity)
+Commit: working-tree
+Verification: `pytest tests/test_external_resilience_t19.py` passed (8/8); full pytest suite passed (281 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-10-30.
+Evidence: Unified outbound resilience across HTTP and LLM adapters; implemented `DeadlineBudget` and `DeadlineExceededError` in `backend/reliability/timeout.py` to slice shared deadline budgets and prevent retry amplification; added uniform jitter, `Retry-After` header clipping, and deadline clipping to `backend/reliability/retry.py` and `backend/tools/llm_client.py`; configured HTTP connection pooling limits (`max_connections=20, max_keepalive_connections=10, keepalive_expiry=30.0`); isolated idempotent reads (`GET`, `HEAD`) from ambiguous writes (`POST`, `PUT`, `PATCH`, `DELETE`) via `AmbiguousWriteError` in `backend/integrations/github_client.py` to refuse blind retries and eliminate duplicate GitHub review mutations; protected repository ingestion (`backend/data/ingestion.py`) with `GITHUB_BREAKER` and connection limits; enforced per-provider concurrency bulkheads (`_PROVIDER_SEMAPHORES`); guaranteed workflow context attribution cleanup via `scoped_workflow_context` in `BaseAgent.analyze`; handled `asyncio.CancelledError` immediately to abort in-flight work and prevent unnecessary token spend.
+Residual risks: none.
+Rollback: git checkout backend/reliability/ backend/integrations/github_client.py backend/tools/llm_client.py backend/data/ingestion.py backend/observability/workflow_context.py backend/agents/base_agent.py tests/test_external_resilience_t19.py
+```
 
 ### T20 — Initialize observability in every process and preserve evidence
 

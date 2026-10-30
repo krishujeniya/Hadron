@@ -328,7 +328,7 @@ class BaseAgent(ABC):
         # preventing concurrent fan-out agents from exceeding the daily budget.
         # BudgetExceededError -> degraded result that routes to HITL.
         from backend.economics import BudgetExceededError, BudgetGuard, estimate_call_cost
-        from backend.observability.workflow_context import set_workflow_context
+        from backend.observability.workflow_context import scoped_workflow_context
 
         guard = BudgetGuard()
         tenant = getattr(task, "tenant_id", None) if task else "default"
@@ -360,86 +360,85 @@ class BaseAgent(ABC):
                 per_verdict=AgentVerdict.CRITICAL_BLOCK,
             )
 
-        # Tag the call so llm_client persists it with the right (workflow_id,
-        # agent_type) attribution.
-        set_workflow_context(workflow_id=_workflow_id, agent_type=agent_name)
-        try:
-            response: LLMResponse = await self._dispatch_llm_call(
-                config=config,
-                system=system,
-                user_message=user_message,
-            )
-            if reservation and reservation.is_active:
-                await guard.reconcile(
-                    reservation=reservation,
-                    actual_cost_usd=response.estimated_cost_usd,
-                    model=response.model_used,
-                    input_tokens=response.input_tokens,
-                    output_tokens=response.output_tokens,
-                    latency_ms=response.latency_seconds * 1000.0,
-                    is_valid_json=response.is_valid_json,
-                    idempotency_key=f"res:{reservation.reservation_id}",
-                    call_type="llm",
+        # Scoped workflow context guarantees attribution cleanup on task finish or error
+        with scoped_workflow_context(workflow_id=_workflow_id, agent_type=agent_name, tenant_id=tenant):
+            try:
+                response: LLMResponse = await self._dispatch_llm_call(
+                    config=config,
+                    system=system,
+                    user_message=user_message,
                 )
-        except Exception as e:
-            # LLM call failed entirely (network, auth, all retries exhausted).
-            # Release reservation so headroom is restored.
-            if reservation and reservation.is_active:
-                await guard.release(reservation)
-            logger.error(
-                "agent_llm_call_failed | agent=%s error=%s",
-                agent_name, str(e), exc_info=True,
-            )
-            return AgentOutput(
-                agent_type=self.agent_type,
-                findings=[],
-                confidence=0.0,
-                tokens_used=0,
-                error_message=f"LLM call failed: {str(e)}",
-                succeeded=False,
-                failure_kind=AgentFailureKind.PROVIDER_FAILURE,
-                per_verdict=AgentVerdict.REQUEST_CHANGES,
+                if reservation and reservation.is_active:
+                    await guard.reconcile(
+                        reservation=reservation,
+                        actual_cost_usd=response.estimated_cost_usd,
+                        model=response.model_used,
+                        input_tokens=response.input_tokens,
+                        output_tokens=response.output_tokens,
+                        latency_ms=response.latency_seconds * 1000.0,
+                        is_valid_json=response.is_valid_json,
+                        idempotency_key=f"res:{reservation.reservation_id}",
+                        call_type="llm",
+                    )
+            except Exception as e:
+                # LLM call failed entirely (network, auth, all retries exhausted).
+                # Release reservation so headroom is restored.
+                if reservation and reservation.is_active:
+                    await guard.release(reservation)
+                logger.error(
+                    "agent_llm_call_failed | agent=%s error=%s",
+                    agent_name, str(e), exc_info=True,
+                )
+                return AgentOutput(
+                    agent_type=self.agent_type,
+                    findings=[],
+                    confidence=0.0,
+                    tokens_used=0,
+                    error_message=f"LLM call failed: {str(e)}",
+                    succeeded=False,
+                    failure_kind=AgentFailureKind.PROVIDER_FAILURE,
+                    per_verdict=AgentVerdict.REQUEST_CHANGES,
+                )
+
+            # STEP 4: Apply the output guardrail.
+            # Parses the LLM's response into a list of AgentFinding.
+            findings, confidence, is_valid_guardrail, failure_kind, error_message = _apply_output_guardrail(
+                response=response,
+                agent_type=agent_name,
             )
 
-        # STEP 4: Apply the output guardrail.
-        # Parses the LLM's response into a list of AgentFinding.
-        findings, confidence, is_valid_guardrail, failure_kind, error_message = _apply_output_guardrail(
-            response=response,
-            agent_type=agent_name,
-        )
+            if not is_valid_guardrail:
+                logger.warning(
+                    "agent_guardrail_failed | agent=%s failure_kind=%s error=%s",
+                    agent_name, failure_kind.value, error_message,
+                )
+                return AgentOutput(
+                    agent_type=self.agent_type,
+                    findings=[],
+                    confidence=0.0,
+                    tokens_used=response.input_tokens + response.output_tokens,
+                    error_message=error_message,
+                    succeeded=False,
+                    failure_kind=failure_kind,
+                    per_verdict=AgentVerdict.REQUEST_CHANGES,
+                )
 
-        if not is_valid_guardrail:
-            logger.warning(
-                "agent_guardrail_failed | agent=%s failure_kind=%s error=%s",
-                agent_name, failure_kind.value, error_message,
+            logger.info(
+                "agent_complete | agent=%s findings=%d confidence=%.2f "
+                "input_tokens=%d output_tokens=%d cost=$%.6f",
+                agent_name, len(findings), confidence,
+                response.input_tokens, response.output_tokens,
+                response.estimated_cost_usd,
             )
+
             return AgentOutput(
                 agent_type=self.agent_type,
-                findings=[],
-                confidence=0.0,
+                findings=findings,
+                confidence=confidence,
                 tokens_used=response.input_tokens + response.output_tokens,
-                error_message=error_message,
-                succeeded=False,
-                failure_kind=failure_kind,
-                per_verdict=AgentVerdict.REQUEST_CHANGES,
+                error_message=None,
+                per_verdict=self._derive_per_agent_verdict(findings),
             )
-
-        logger.info(
-            "agent_complete | agent=%s findings=%d confidence=%.2f "
-            "input_tokens=%d output_tokens=%d cost=$%.6f",
-            agent_name, len(findings), confidence,
-            response.input_tokens, response.output_tokens,
-            response.estimated_cost_usd,
-        )
-
-        return AgentOutput(
-            agent_type=self.agent_type,
-            findings=findings,
-            confidence=confidence,
-            tokens_used=response.input_tokens + response.output_tokens,
-            error_message=None,
-            per_verdict=self._derive_per_agent_verdict(findings),
-        )
 
     def _get_prompt_with_fallback(self, agent_name: str) -> str:
         """

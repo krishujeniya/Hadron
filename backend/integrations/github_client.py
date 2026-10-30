@@ -57,7 +57,8 @@
 
 import asyncio
 import logging
-from typing import Any
+import random
+from typing import Any, Optional
 
 import httpx
 
@@ -122,6 +123,14 @@ class GitHubNotFoundError(GitHubAPIError):
     WIKI: Stability-Patterns.md
       "Not all failures are equal — apply patterns to specific threats."
       -> 404 = deterministic failure. No retry. Raise immediately.
+    """
+    pass
+
+
+class AmbiguousWriteError(GitHubAPIError):
+    """
+    Raised when a non-idempotent write operation (POST/PATCH/DELETE) times out
+    or fails mid-transmission. Blind retry is prohibited to prevent duplicate mutations.
     """
     pass
 
@@ -197,7 +206,36 @@ _TIMEOUT = httpx.Timeout(
 # =============================================================================
 
 _MAX_RETRIES = 3
-_BACKOFF_SECONDS = [1.0, 2.0, 4.0]  # exponential backoff delays per attempt
+_BACKOFF_SECONDS = [1.0, 2.0, 4.0]  # exponential backoff base delays per attempt
+
+
+def _compute_github_delay(
+    attempt: int,
+    retry_after: int | None = None,
+    deadline: Any | None = None,
+) -> float:
+    """
+    Compute delay for GitHub retry attempt with jitter, Retry-After header,
+    and workflow deadline clipping.
+    """
+    if retry_after is not None and retry_after > 0:
+        delay = float(min(retry_after, 30))
+    else:
+        base = _BACKOFF_SECONDS[attempt] if attempt < len(_BACKOFF_SECONDS) else 4.0
+        delay = float(base)
+
+    # 25% uniform jitter
+    jitter_delta = delay * 0.25 * (2 * random.random() - 1)
+    delay = max(0.05, delay + jitter_delta)
+
+    if deadline and hasattr(deadline, "remaining_s"):
+        rem = deadline.remaining_s
+        if delay > rem:
+            if rem <= 0.05:
+                raise GitHubAPIError(f"Retry delay of {delay:.2f}s exceeds workflow deadline ({rem:.2f}s)")
+            delay = rem
+
+    return round(delay, 3)
 
 # Status codes that are worth retrying (transient server-side errors).
 # 4xx errors are deterministic — do not retry them.
@@ -281,6 +319,11 @@ class GitHubClient:
         # WIKI: Operations-Patterns.md "Trust, but verify."
         # We set Accept: application/vnd.github+json to pin the GitHub API version.
         # Without this, GitHub might return a different format in the future.
+        limits = httpx.Limits(
+            max_connections=20,
+            max_keepalive_connections=10,
+            keepalive_expiry=30.0,
+        )
         self._http = httpx.AsyncClient(
             base_url=self._base_url,
             headers={
@@ -290,6 +333,7 @@ class GitHubClient:
                 "User-Agent": "ai-pr-review-agent/1.0",  # GitHub requires User-Agent
             },
             timeout=_TIMEOUT,
+            limits=limits,
             # Follow redirects (GitHub sometimes redirects e.g. org renames)
             follow_redirects=True,
         )
@@ -561,10 +605,11 @@ class GitHubClient:
         path: str,
         json: Any = None,
         headers: dict[str, str] | None = None,
+        deadline: Any | None = None,
     ) -> Any:
         """Makes an HTTP request wrapped in the GITHUB_BREAKER circuit breaker."""
         return await GITHUB_BREAKER.async_call(
-            self._request_unwrapped, method, path, json, headers
+            self._request_unwrapped, method, path, json, headers, deadline
         )
 
     async def _request_unwrapped(
@@ -573,25 +618,27 @@ class GitHubClient:
         path: str,
         json: Any = None,
         headers: dict[str, str] | None = None,
+        deadline: Any | None = None,
     ) -> Any:
         """
         Makes an HTTP request to the GitHub API and returns the parsed JSON.
 
         Applies:
           - Timeout (_TIMEOUT config)
-          - Retry with exponential backoff (5xx and network errors only)
+          - Shared deadline budget enforcement
+          - Idempotent read retries with jitter and Retry-After handling
+          - Ambiguous write protection (no blind retries on mutated POSTs)
           - Rate limit detection (429 and X-RateLimit-Remaining header)
           - Error classification (404 -> GitHubNotFoundError, etc.)
 
         Returns:
             Parsed JSON response (dict or list, depending on endpoint).
-
-        Raises:
-            GitHubNotFoundError: 404 response.
-            GitHubRateLimitError: 429 response.
-            GitHubAPIError: Other non-2xx response, or network error after retries.
         """
+        is_idempotent = method.upper() in ("GET", "HEAD")
         for attempt in range(_MAX_RETRIES):
+            if deadline and hasattr(deadline, "check_headroom"):
+                deadline.check_headroom(0.05)
+
             try:
                 response = await self._http.request(
                     method,
@@ -599,9 +646,21 @@ class GitHubClient:
                     json=json,
                     headers=headers or {},
                 )
+            except asyncio.CancelledError:
+                logger.info("github_request_cancelled | method=%s path=%s", method, path)
+                raise
             except httpx.TimeoutException as e:
-                # WIKI: Timeouts.md — "Well-placed timeouts provide fault isolation."
-                # The timeout fired. This is a transient error — worth retrying.
+                # Ambiguous write guard: writes that time out after request transmission must not blind-retry
+                if not is_idempotent:
+                    logger.error(
+                        "github | ambiguous_write_timeout | method=%s path=%s | aborting blind retry to prevent duplicate mutation",
+                        method, path,
+                    )
+                    raise AmbiguousWriteError(
+                        f"GitHub write timed out on {method} {path} — aborting blind retry to prevent duplicate mutation",
+                        status_code=0,
+                    ) from e
+
                 logger.warning(
                     "github | request_timeout | method=%s path=%s attempt=%d/%d error=%s",
                     method,
@@ -611,7 +670,8 @@ class GitHubClient:
                     str(e),
                 )
                 if attempt < _MAX_RETRIES - 1:
-                    await asyncio.sleep(_BACKOFF_SECONDS[attempt])
+                    delay = _compute_github_delay(attempt, deadline=deadline)
+                    await asyncio.sleep(delay)
                     continue
                 raise GitHubAPIError(
                     f"GitHub API timed out after {_MAX_RETRIES} attempts: {path}",
@@ -619,8 +679,16 @@ class GitHubClient:
                 ) from e
 
             except httpx.NetworkError as e:
-                # DNS failure, connection refused, TLS error, etc.
-                # Transient — worth retrying.
+                if not is_idempotent and not isinstance(e, httpx.ConnectError):
+                    logger.error(
+                        "github | ambiguous_write_network_error | method=%s path=%s | aborting blind retry",
+                        method, path,
+                    )
+                    raise AmbiguousWriteError(
+                        f"GitHub write network failure on {method} {path} — aborting blind retry",
+                        status_code=0,
+                    ) from e
+
                 logger.warning(
                     "github | network_error | method=%s path=%s attempt=%d/%d error=%s",
                     method,
@@ -630,7 +698,8 @@ class GitHubClient:
                     type(e).__name__,
                 )
                 if attempt < _MAX_RETRIES - 1:
-                    await asyncio.sleep(_BACKOFF_SECONDS[attempt])
+                    delay = _compute_github_delay(attempt, deadline=deadline)
+                    await asyncio.sleep(delay)
                     continue
                 raise GitHubAPIError(
                     f"GitHub API network error after {_MAX_RETRIES} attempts: {path}",
@@ -638,13 +707,9 @@ class GitHubClient:
                 ) from e
 
             # --- We got an HTTP response. Check its status. ---
-
-            # Check rate limit headers on EVERY response (not just 429).
-            # WIKI: Stability-Antipatterns.md "Paranoia is just good thinking."
             self._check_rate_limit_headers(response)
 
             if response.status_code == 429:
-                # Hard rate limit hit.
                 retry_after = int(response.headers.get("Retry-After", "60"))
                 raise GitHubRateLimitError(
                     f"GitHub rate limit exceeded. Retry after {retry_after}s.",
@@ -661,10 +726,17 @@ class GitHubClient:
                 )
 
             if response.status_code in _RETRYABLE_STATUS_CODES:
-                # Transient server-side error. Retry with backoff.
+                if not is_idempotent:
+                    raise GitHubAPIError(
+                        f"GitHub API returned {response.status_code} on write {method} {path}",
+                        status_code=response.status_code,
+                        response_body=response.text,
+                    )
+
+                retry_after_hdr = response.headers.get("Retry-After")
+                ra = int(retry_after_hdr) if retry_after_hdr and retry_after_hdr.isdigit() else None
                 logger.warning(
-                    "github | retryable_error | method=%s path=%s "
-                    "status=%d attempt=%d/%d",
+                    "github | retryable_error | method=%s path=%s status=%d attempt=%d/%d",
                     method,
                     path,
                     response.status_code,
@@ -672,12 +744,11 @@ class GitHubClient:
                     _MAX_RETRIES,
                 )
                 if attempt < _MAX_RETRIES - 1:
-                    await asyncio.sleep(_BACKOFF_SECONDS[attempt])
+                    delay = _compute_github_delay(attempt, retry_after=ra, deadline=deadline)
+                    await asyncio.sleep(delay)
                     continue
-                # Exhausted retries on a server error.
                 raise GitHubAPIError(
-                    f"GitHub API returned {response.status_code} "
-                    f"after {_MAX_RETRIES} attempts: {path}",
+                    f"GitHub API returned {response.status_code} after {_MAX_RETRIES} attempts: {path}",
                     status_code=response.status_code,
                     response_body=response.text,
                 )
@@ -705,10 +776,11 @@ class GitHubClient:
         method: str,
         path: str,
         headers: dict[str, str] | None = None,
+        deadline: Any | None = None,
     ) -> bytes:
         """Makes a raw request wrapped in the GITHUB_BREAKER circuit breaker."""
         return await GITHUB_BREAKER.async_call(
-            self._request_raw_unwrapped, method, path, headers
+            self._request_raw_unwrapped, method, path, headers, deadline
         )
 
     async def _request_raw_unwrapped(
@@ -716,6 +788,7 @@ class GitHubClient:
         method: str,
         path: str,
         headers: dict[str, str] | None = None,
+        deadline: Any | None = None,
     ) -> bytes:
         """
         Like _request() but returns raw bytes instead of parsed JSON.
@@ -725,7 +798,11 @@ class GitHubClient:
 
         Applies the same retry, timeout, and error handling as _request().
         """
+        is_idempotent = method.upper() in ("GET", "HEAD")
         for attempt in range(_MAX_RETRIES):
+            if deadline and hasattr(deadline, "check_headroom"):
+                deadline.check_headroom(0.05)
+
             try:
                 # Build the request manually to merge our default headers
                 # with the override headers (e.g., Accept: ...diff).
@@ -738,15 +815,25 @@ class GitHubClient:
                     path,
                     headers=merged_headers,
                 )
+            except asyncio.CancelledError:
+                logger.info("github | raw_request_cancelled | path=%s", path)
+                raise
             except httpx.TimeoutException as e:
                 logger.warning(
-                    "github | raw_request_timeout | path=%s attempt=%d/%d",
+                    "github | raw_request_timeout | path=%s attempt=%d/%d is_idempotent=%s",
                     path,
                     attempt + 1,
                     _MAX_RETRIES,
+                    is_idempotent,
                 )
+                if not is_idempotent:
+                    raise AmbiguousWriteError(
+                        f"GitHub non-idempotent raw {method} request to {path} timed out. "
+                        "Write may have been processed by server; blind retry refused."
+                    ) from e
                 if attempt < _MAX_RETRIES - 1:
-                    await asyncio.sleep(_BACKOFF_SECONDS[attempt])
+                    delay = _compute_github_delay(attempt, deadline=deadline)
+                    await asyncio.sleep(delay)
                     continue
                 raise GitHubAPIError(
                     f"GitHub diff request timed out after {_MAX_RETRIES} attempts",
@@ -755,14 +842,21 @@ class GitHubClient:
 
             except httpx.NetworkError as e:
                 logger.warning(
-                    "github | raw_network_error | path=%s attempt=%d/%d error=%s",
+                    "github | raw_network_error | path=%s attempt=%d/%d error=%s is_idempotent=%s",
                     path,
                     attempt + 1,
                     _MAX_RETRIES,
                     type(e).__name__,
+                    is_idempotent,
                 )
+                if not is_idempotent:
+                    raise AmbiguousWriteError(
+                        f"GitHub non-idempotent raw {method} request to {path} failed with network error. "
+                        "Write state ambiguous; blind retry refused."
+                    ) from e
                 if attempt < _MAX_RETRIES - 1:
-                    await asyncio.sleep(_BACKOFF_SECONDS[attempt])
+                    delay = _compute_github_delay(attempt, deadline=deadline)
+                    await asyncio.sleep(delay)
                     continue
                 raise GitHubAPIError(
                     f"GitHub diff request network error after {_MAX_RETRIES} attempts",
@@ -772,7 +866,8 @@ class GitHubClient:
             self._check_rate_limit_headers(response)
 
             if response.status_code == 429:
-                retry_after = int(response.headers.get("Retry-After", "60"))
+                retry_after_hdr = response.headers.get("Retry-After")
+                retry_after = int(retry_after_hdr) if retry_after_hdr and retry_after_hdr.isdigit() else 60
                 raise GitHubRateLimitError(
                     f"GitHub rate limit exceeded on diff request. Retry after {retry_after}s.",
                     retry_after_seconds=retry_after,
@@ -794,7 +889,10 @@ class GitHubClient:
                     _MAX_RETRIES,
                 )
                 if attempt < _MAX_RETRIES - 1:
-                    await asyncio.sleep(_BACKOFF_SECONDS[attempt])
+                    retry_after_hdr = response.headers.get("Retry-After")
+                    retry_after = int(retry_after_hdr) if retry_after_hdr and retry_after_hdr.isdigit() else None
+                    delay = _compute_github_delay(attempt, retry_after=retry_after, deadline=deadline)
+                    await asyncio.sleep(delay)
                     continue
                 raise GitHubAPIError(
                     f"GitHub diff returned {response.status_code} "

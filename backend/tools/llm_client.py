@@ -42,14 +42,65 @@
 import asyncio
 import json
 import logging
+import random
 import time
 from dataclasses import dataclass
+from typing import Any, Optional
 
 import anthropic
 import openai
 
 from backend.core.exceptions import AgentError
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Per-provider concurrency bulkheads (prevent overwhelming providers on fan-out)
+# ---------------------------------------------------------------------------
+_PROVIDER_SEMAPHORES: dict[str, asyncio.Semaphore] = {
+    "openai": asyncio.Semaphore(10),
+    "anthropic": asyncio.Semaphore(10),
+    "nvidia": asyncio.Semaphore(10),
+}
+
+
+def get_provider_semaphore(provider: str) -> asyncio.Semaphore:
+    """Returns or creates the concurrency semaphore for a given provider."""
+    if provider not in _PROVIDER_SEMAPHORES:
+        _PROVIDER_SEMAPHORES[provider] = asyncio.Semaphore(10)
+    return _PROVIDER_SEMAPHORES[provider]
+
+
+def _compute_llm_delay(
+    attempt: int,
+    base_delay: float = 1.0,
+    retry_after: float | None = None,
+    deadline: Any | None = None,
+) -> float:
+    """
+    Computes retry backoff delay with uniform jitter and workflow deadline clipping.
+    """
+    if retry_after is not None and retry_after > 0:
+        delay = float(min(retry_after, 60.0))
+    else:
+        delay = float(base_delay * (2 ** attempt))
+
+    # 25% uniform jitter
+    jitter = delay * 0.25 * (2 * random.random() - 1)
+    delay = max(0.05, delay + jitter)
+
+    if deadline and hasattr(deadline, "remaining_s"):
+        from backend.reliability.timeout import DeadlineExceededError
+        rem = deadline.remaining_s
+        if delay > rem:
+            if rem <= 0.05:
+                raise DeadlineExceededError(
+                    f"LLM retry delay of {delay:.2f}s exceeds remaining deadline ({rem:.2f}s)"
+                )
+            delay = rem
+
+    return round(delay, 3)
+
 
 
 # ---------------------------------------------------------------------------
@@ -228,29 +279,15 @@ class LLMClient:
         json_mode: bool = True,
         max_tokens: int = 2048,
         api_key: str | None = None,
+        deadline: Any | None = None,
     ) -> LLMResponse:
         """
-        Makes one call to the OpenAI API.
-
-        Args:
-            model:         OpenAI model name. e.g. "gpt-4o-mini"
-            messages:      List of {role, content} dicts. role is "user" or "assistant".
-                           Do NOT include the system message here — pass it as system_prompt.
-            system_prompt: The agent's instructions. Sent as {"role": "system", "content": ...}
-                           Kept separate from messages so we can update the prompt
-                           without touching the message history.
-            json_mode:     If True, tells OpenAI to return valid JSON (enforced server-side).
-                           Always True for our structured output calls.
-            max_tokens:    Maximum tokens in the response. Default 2048 is enough for
-                           a list of 10-15 findings with summaries and suggestions.
-            api_key:       OpenAI API key. If None, reads from OPENAI_API_KEY env var.
-
-        Returns:
-            LLMResponse with parsed content, token counts, latency, and cost.
-
-        Raises:
-            AgentError: if the call fails after all retries.
+        Makes one call to the OpenAI API with concurrency bulkhead, shared deadline budget,
+        jittered backoff, and strict cancellation handling.
         """
+        if not model or not str(model).strip():
+            raise AgentError("Model name cannot be empty", agent_name="llm_openai")
+
         from backend.config import get_settings
         from backend.observability.workflow_context import get_workflow_context
         from backend.reliability.circuit_breaker import AGENT_BREAKERS, get_breaker, DEFAULT_LLM_BREAKER_CONFIG
@@ -266,11 +303,14 @@ class LLMClient:
             base_url = cfg.openai_api_base_url
 
         target_model = model
-        if base_url and "nvidia" in base_url:
+        is_nvidia = bool(base_url and "nvidia" in base_url)
+        if is_nvidia:
             if "gpt-oss" in target_model.lower():
                 target_model = "openai/gpt-oss-20b"
             elif target_model in ("gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"):
                 target_model = "openai/gpt-oss-20b"
+
+        provider_sem = get_provider_semaphore("nvidia" if is_nvidia else "openai")
 
         # Reasoning models generate chain-of-thought before output, so ensure adequate tokens
         req_max_tokens = max(max_tokens, 4096) if "gpt-oss" in target_model else max_tokens
@@ -289,111 +329,129 @@ class LLMClient:
 
         req_timeout = float(getattr(cfg, "agent_timeout_seconds", 120))
         async def _execute_openai_call() -> LLMResponse:
-            last_error: Exception | None = None
-            for attempt in range(self.MAX_RETRIES + 1):
-                start = time.monotonic()
-                try:
-                    response = await client.chat.completions.create(
-                        model=target_model,
-                        messages=full_messages,
-                        response_format=response_format,
-                        max_tokens=req_max_tokens,
-                        temperature=0.1,
-                        timeout=req_timeout,
-                    )
+            async with provider_sem:
+                last_error: Exception | None = None
+                for attempt in range(self.MAX_RETRIES + 1):
+                    if deadline and hasattr(deadline, "check_headroom"):
+                        deadline.check_headroom(0.05)
 
-                    latency = time.monotonic() - start
-                    choice = response.choices[0]
-                    raw_content = choice.message.content or ""
-                    if not raw_content and hasattr(choice.message, "reasoning_content"):
-                        raw_content = choice.message.reasoning_content or "{}"
-                    if not raw_content:
-                        raw_content = "{}"
-                    input_tokens  = response.usage.prompt_tokens
-                    output_tokens = response.usage.completion_tokens
+                    call_timeout = req_timeout
+                    if deadline and hasattr(deadline, "slice_for_call"):
+                        call_timeout = deadline.slice_for_call(req_timeout)
 
-                    is_valid_json = True
+                    start = time.monotonic()
                     try:
-                        parsed = json.loads(raw_content)
-                    except json.JSONDecodeError:
+                        response = await client.chat.completions.create(
+                            model=target_model,
+                            messages=full_messages,
+                            response_format=response_format,
+                            max_tokens=req_max_tokens,
+                            temperature=0.1,
+                            timeout=call_timeout,
+                        )
+
+                        latency = time.monotonic() - start
+                        choice = response.choices[0]
+                        raw_content = choice.message.content or ""
+                        if not raw_content and hasattr(choice.message, "reasoning_content"):
+                            raw_content = choice.message.reasoning_content or "{}"
+                        if not raw_content:
+                            raw_content = "{}"
+                        input_tokens  = response.usage.prompt_tokens
+                        output_tokens = response.usage.completion_tokens
+
+                        is_valid_json = True
+                        try:
+                            parsed = json.loads(raw_content)
+                        except json.JSONDecodeError:
+                            logger.warning(
+                                "openai_json_parse_failed | model=%s attempt=%d | "
+                                "trying partial extraction",
+                                model, attempt,
+                            )
+                            parsed = _try_extract_json(raw_content)
+                            is_valid_json = bool(parsed)
+
+                        cost = _compute_cost(model, input_tokens, output_tokens)
+                        logger.info(
+                            "openai_call | model=%s input_tokens=%d output_tokens=%d "
+                            "latency=%.2fs cost=$%.6f",
+                            model, input_tokens, output_tokens, latency, cost,
+                        )
+
+                        await _persist_call_log(
+                            model=model,
+                            input_tokens=input_tokens,
+                            output_tokens=output_tokens,
+                            cost_usd=cost,
+                            latency_seconds=latency,
+                            is_valid_json=is_valid_json,
+                        )
+
+                        return LLMResponse(
+                            content=parsed,
+                            input_tokens=input_tokens,
+                            output_tokens=output_tokens,
+                            model_used=model,
+                            latency_seconds=round(latency, 3),
+                            estimated_cost_usd=cost,
+                            is_valid_json=is_valid_json,
+                        )
+
+                    except asyncio.CancelledError:
+                        logger.info("openai_call_cancelled | model=%s attempt=%d", model, attempt)
+                        raise
+
+                    except openai.RateLimitError as e:
+                        last_error = e
+                        retry_after = getattr(e, "retry_after", None)
+                        if retry_after is None and hasattr(e, "response") and e.response:
+                            ra_hdr = e.response.headers.get("retry-after")
+                            if ra_hdr and ra_hdr.isdigit():
+                                retry_after = float(ra_hdr)
+                        delay = _compute_llm_delay(
+                            attempt, self.BASE_RETRY_DELAY, retry_after=retry_after, deadline=deadline
+                        )
                         logger.warning(
-                            "openai_json_parse_failed | model=%s attempt=%d | "
-                            "trying partial extraction",
-                            model, attempt,
+                            "openai_rate_limit | model=%s attempt=%d/%d | waiting %.2fs",
+                            model, attempt + 1, self.MAX_RETRIES, delay,
                         )
-                        parsed = _try_extract_json(raw_content)
-                        is_valid_json = bool(parsed)
+                        if attempt < self.MAX_RETRIES:
+                            await asyncio.sleep(delay)
 
-                    cost = _compute_cost(model, input_tokens, output_tokens)
-                    logger.info(
-                        "openai_call | model=%s input_tokens=%d output_tokens=%d "
-                        "latency=%.2fs cost=$%.6f",
-                        model, input_tokens, output_tokens, latency, cost,
-                    )
-
-                    await _persist_call_log(
-                        model=model,
-                        input_tokens=input_tokens,
-                        output_tokens=output_tokens,
-                        cost_usd=cost,
-                        latency_seconds=latency,
-                        is_valid_json=is_valid_json,
-                    )
-
-                    return LLMResponse(
-                        content=parsed,
-                        input_tokens=input_tokens,
-                        output_tokens=output_tokens,
-                        model_used=model,
-                        latency_seconds=round(latency, 3),
-                        estimated_cost_usd=cost,
-                        is_valid_json=is_valid_json,
-                    )
-
-                except openai.RateLimitError as e:
-                    last_error = e
-                    delay = self.BASE_RETRY_DELAY * (2 ** attempt)
-                    retry_after = getattr(e, "retry_after", delay)
-                    logger.warning(
-                        "openai_rate_limit | model=%s attempt=%d/%d | waiting %.1fs",
-                        model, attempt + 1, self.MAX_RETRIES, retry_after,
-                    )
-                    if attempt < self.MAX_RETRIES:
-                        await asyncio.sleep(retry_after or delay)
-
-                except openai.APIStatusError as e:
-                    last_error = e
-                    if e.status_code and 400 <= e.status_code < 500 and e.status_code != 429:
-                        logger.error(
-                            "openai_client_error | model=%s status=%d | not retrying",
-                            model, e.status_code,
+                    except openai.APIStatusError as e:
+                        last_error = e
+                        if e.status_code and 400 <= e.status_code < 500 and e.status_code != 429:
+                            logger.error(
+                                "openai_client_error | model=%s status=%d | not retrying",
+                                model, e.status_code,
+                            )
+                            raise AgentError(
+                                f"OpenAI API client error {e.status_code}: {str(e)}",
+                                agent_name=model,
+                            ) from e
+                        delay = _compute_llm_delay(attempt, self.BASE_RETRY_DELAY, deadline=deadline)
+                        logger.warning(
+                            "openai_server_error | model=%s attempt=%d/%d | waiting %.2fs",
+                            model, attempt + 1, self.MAX_RETRIES, delay,
                         )
-                        raise AgentError(
-                            f"OpenAI API client error {e.status_code}: {str(e)}",
-                            agent_name=model,
-                        ) from e
-                    delay = self.BASE_RETRY_DELAY * (2 ** attempt)
-                    logger.warning(
-                        "openai_server_error | model=%s attempt=%d/%d | waiting %.1fs",
-                        model, attempt + 1, self.MAX_RETRIES, delay,
-                    )
-                    if attempt < self.MAX_RETRIES:
-                        await asyncio.sleep(delay)
+                        if attempt < self.MAX_RETRIES:
+                            await asyncio.sleep(delay)
 
-                except Exception as e:
-                    last_error = e
-                    delay = self.BASE_RETRY_DELAY * (2 ** attempt)
-                    logger.warning(
-                        "openai_unexpected_error | model=%s attempt=%d/%d error=%s",
-                        model, attempt + 1, self.MAX_RETRIES, str(e),
-                    )
-                    if attempt < self.MAX_RETRIES:
-                        await asyncio.sleep(delay)
+                    except Exception as e:
+                        last_error = e
+                        delay = _compute_llm_delay(attempt, self.BASE_RETRY_DELAY, deadline=deadline)
+                        logger.warning(
+                            "openai_unexpected_error | model=%s attempt=%d/%d error=%s",
+                            model, attempt + 1, self.MAX_RETRIES, str(e),
+                        )
+                        if attempt < self.MAX_RETRIES:
+                            await asyncio.sleep(delay)
 
-            raise AgentError(
-                f"OpenAI call failed after {self.MAX_RETRIES + 1} attempts: {last_error}",
-                agent_name=model,
-            ) from last_error
+                raise AgentError(
+                    f"OpenAI call failed after {self.MAX_RETRIES + 1} attempts: {last_error}",
+                    agent_name=model,
+                ) from last_error
 
         return await breaker.async_call(_execute_openai_call)
 
@@ -404,35 +462,21 @@ class LLMClient:
         system_prompt: str,
         max_tokens: int = 2048,
         api_key: str | None = None,
+        deadline: Any | None = None,
     ) -> LLMResponse:
         """
-        Makes one call to the Anthropic API.
-
-        Anthropic does not have a native JSON mode like OpenAI.
-        Instead, we:
-          1. Add JSON formatting instructions to the system prompt
-          2. Add a "prefill" technique: start the assistant's response with "{"
-             so the model knows it must complete a JSON object
-          3. Parse the response, falling back to partial extraction on failure
-
-        Args:
-            model:        Anthropic model name. e.g. "claude-3-5-sonnet-20241022"
-            messages:     List of {role, content} dicts.
-            system_prompt: Agent instructions + JSON format requirement.
-            max_tokens:   Maximum tokens in the response.
-            api_key:      Anthropic API key. If None, reads from ANTHROPIC_API_KEY env var.
-
-        Returns:
-            LLMResponse — same shape as call_openai().
-
-        Raises:
-            AgentError: if the call fails after all retries.
+        Makes one call to the Anthropic API with concurrency bulkhead, shared deadline budget,
+        jittered backoff, and strict cancellation handling.
         """
+        if not model or not str(model).strip():
+            raise AgentError("Model name cannot be empty", agent_name="llm_anthropic")
+
         from backend.config import get_settings
         cfg = get_settings()
         key = api_key or cfg.anthropic_api_key
 
         client = anthropic.AsyncAnthropic(api_key=key)
+        provider_sem = get_provider_semaphore("anthropic")
 
         # Add JSON instruction to system prompt for Anthropic
         # (OpenAI handles this via response_format, Anthropic via prompt)
@@ -455,109 +499,128 @@ class LLMClient:
 
         req_timeout = float(getattr(cfg, "agent_timeout_seconds", 120))
         async def _execute_anthropic_call() -> LLMResponse:
-            last_error: Exception | None = None
-            for attempt in range(self.MAX_RETRIES + 1):
-                start = time.monotonic()
-                try:
-                    response = await client.messages.create(
-                        model=model,
-                        max_tokens=max_tokens,
-                        system=json_system,
-                        messages=prefill_messages,
-                        temperature=0.1,
-                        timeout=req_timeout,
-                    )
+            async with provider_sem:
+                last_error: Exception | None = None
+                for attempt in range(self.MAX_RETRIES + 1):
+                    if deadline and hasattr(deadline, "check_headroom"):
+                        deadline.check_headroom(0.05)
 
-                    latency = time.monotonic() - start
+                    call_timeout = req_timeout
+                    if deadline and hasattr(deadline, "slice_for_call"):
+                        call_timeout = deadline.slice_for_call(req_timeout)
 
-                    # Anthropic response: response.content is a list of ContentBlock.
-                    raw_content = ""
-                    for block in response.content:
-                        if hasattr(block, "text"):
-                            raw_content += block.text
-
-                    # Re-attach the prefill "{"
-                    full_json = "{" + raw_content
-
-                    input_tokens  = response.usage.input_tokens
-                    output_tokens = response.usage.output_tokens
-
-                    is_valid_json = True
+                    start = time.monotonic()
                     try:
-                        parsed = json.loads(full_json)
-                    except json.JSONDecodeError:
-                        logger.warning(
-                            "anthropic_json_parse_failed | model=%s attempt=%d",
-                            model, attempt,
+                        response = await client.messages.create(
+                            model=model,
+                            max_tokens=max_tokens,
+                            system=json_system,
+                            messages=prefill_messages,
+                            temperature=0.1,
+                            timeout=call_timeout,
                         )
-                        parsed = _try_extract_json(full_json)
-                        is_valid_json = bool(parsed)
 
-                    cost = _compute_cost(model, input_tokens, output_tokens)
-                    logger.info(
-                        "anthropic_call | model=%s input_tokens=%d output_tokens=%d "
-                        "latency=%.2fs cost=$%.6f",
-                        model, input_tokens, output_tokens, latency, cost,
-                    )
+                        latency = time.monotonic() - start
 
-                    await _persist_call_log(
-                        model=model,
-                        input_tokens=input_tokens,
-                        output_tokens=output_tokens,
-                        cost_usd=cost,
-                        latency_seconds=latency,
-                        is_valid_json=is_valid_json,
-                    )
+                        # Anthropic response: response.content is a list of ContentBlock.
+                        raw_content = ""
+                        for block in response.content:
+                            if hasattr(block, "text"):
+                                raw_content += block.text
 
-                    return LLMResponse(
-                        content=parsed,
-                        input_tokens=input_tokens,
-                        output_tokens=output_tokens,
-                        model_used=model,
-                        latency_seconds=round(latency, 3),
-                        estimated_cost_usd=cost,
-                        is_valid_json=is_valid_json,
-                    )
+                        # Re-attach the prefill "{"
+                        full_json = "{" + raw_content
 
-                except anthropic.RateLimitError as e:
-                    last_error = e
-                    delay = self.BASE_RETRY_DELAY * (2 ** attempt)
-                    logger.warning(
-                        "anthropic_rate_limit | model=%s attempt=%d/%d | waiting %.1fs",
-                        model, attempt + 1, self.MAX_RETRIES, delay,
-                    )
-                    if attempt < self.MAX_RETRIES:
-                        await asyncio.sleep(delay)
+                        input_tokens  = response.usage.input_tokens
+                        output_tokens = response.usage.output_tokens
 
-                except anthropic.APIStatusError as e:
-                    last_error = e
-                    if e.status_code and 400 <= e.status_code < 500 and e.status_code != 429:
-                        raise AgentError(
-                            f"Anthropic API client error {e.status_code}: {str(e)}",
-                            agent_name=model,
-                        ) from e
-                    delay = self.BASE_RETRY_DELAY * (2 ** attempt)
-                    logger.warning(
-                        "anthropic_server_error | model=%s attempt=%d/%d | waiting %.1fs",
-                        model, attempt + 1, self.MAX_RETRIES, delay,
-                    )
-                    if attempt < self.MAX_RETRIES:
-                        await asyncio.sleep(delay)
+                        is_valid_json = True
+                        try:
+                            parsed = json.loads(full_json)
+                        except json.JSONDecodeError:
+                            logger.warning(
+                                "anthropic_json_parse_failed | model=%s attempt=%d",
+                                model, attempt,
+                            )
+                            parsed = _try_extract_json(full_json)
+                            is_valid_json = bool(parsed)
 
-                except Exception as e:
-                    last_error = e
-                    delay = self.BASE_RETRY_DELAY * (2 ** attempt)
-                    logger.warning(
-                        "anthropic_unexpected | model=%s attempt=%d/%d error=%s",
-                        model, attempt + 1, self.MAX_RETRIES, str(e),
-                    )
-                    if attempt < self.MAX_RETRIES:
-                        await asyncio.sleep(delay)
+                        cost = _compute_cost(model, input_tokens, output_tokens)
+                        logger.info(
+                            "anthropic_call | model=%s input_tokens=%d output_tokens=%d "
+                            "latency=%.2fs cost=$%.6f",
+                            model, input_tokens, output_tokens, latency, cost,
+                        )
 
-            raise AgentError(
-                f"Anthropic call failed after {self.MAX_RETRIES + 1} attempts: {last_error}",
-                agent_name=model,
-            ) from last_error
+                        await _persist_call_log(
+                            model=model,
+                            input_tokens=input_tokens,
+                            output_tokens=output_tokens,
+                            cost_usd=cost,
+                            latency_seconds=latency,
+                            is_valid_json=is_valid_json,
+                        )
+
+                        return LLMResponse(
+                            content=parsed,
+                            input_tokens=input_tokens,
+                            output_tokens=output_tokens,
+                            model_used=model,
+                            latency_seconds=round(latency, 3),
+                            estimated_cost_usd=cost,
+                            is_valid_json=is_valid_json,
+                        )
+
+                    except asyncio.CancelledError:
+                        logger.info("anthropic_call_cancelled | model=%s attempt=%d", model, attempt)
+                        raise
+
+                    except anthropic.RateLimitError as e:
+                        last_error = e
+                        retry_after = getattr(e, "retry_after", None)
+                        if retry_after is None and hasattr(e, "response") and e.response:
+                            ra_hdr = e.response.headers.get("retry-after")
+                            if ra_hdr and ra_hdr.isdigit():
+                                retry_after = float(ra_hdr)
+                        delay = _compute_llm_delay(
+                            attempt, self.BASE_RETRY_DELAY, retry_after=retry_after, deadline=deadline
+                        )
+                        logger.warning(
+                            "anthropic_rate_limit | model=%s attempt=%d/%d | waiting %.2fs",
+                            model, attempt + 1, self.MAX_RETRIES, delay,
+                        )
+                        if attempt < self.MAX_RETRIES:
+                            await asyncio.sleep(delay)
+
+                    except anthropic.APIStatusError as e:
+                        last_error = e
+                        if e.status_code and 400 <= e.status_code < 500 and e.status_code != 429:
+                            raise AgentError(
+                                f"Anthropic API client error {e.status_code}: {str(e)}",
+                                agent_name=model,
+                            ) from e
+                        delay = _compute_llm_delay(attempt, self.BASE_RETRY_DELAY, deadline=deadline)
+                        logger.warning(
+                            "anthropic_server_error | model=%s attempt=%d/%d | waiting %.2fs",
+                            model, attempt + 1, self.MAX_RETRIES, delay,
+                        )
+                        if attempt < self.MAX_RETRIES:
+                            await asyncio.sleep(delay)
+
+                    except Exception as e:
+                        last_error = e
+                        delay = _compute_llm_delay(attempt, self.BASE_RETRY_DELAY, deadline=deadline)
+                        logger.warning(
+                            "anthropic_unexpected | model=%s attempt=%d/%d error=%s",
+                            model, attempt + 1, self.MAX_RETRIES, str(e),
+                        )
+                        if attempt < self.MAX_RETRIES:
+                            await asyncio.sleep(delay)
+
+                raise AgentError(
+                    f"Anthropic call failed after {self.MAX_RETRIES + 1} attempts: {last_error}",
+                    agent_name=model,
+                ) from last_error
 
         return await breaker.async_call(_execute_anthropic_call)
 
@@ -568,6 +631,7 @@ class LLMClient:
         max_tokens: int = 1024,
         model: str | None = None,
         json_mode: bool = False,
+        deadline: Any | None = None,
     ) -> LLMResponse:
         """
         Typed asynchronous completion method for evaluators, judges, and tools.
@@ -583,6 +647,7 @@ class LLMClient:
             system_prompt=system_prompt,
             json_mode=json_mode,
             max_tokens=max_tokens,
+            deadline=deadline,
         )
 
     def complete(
@@ -592,6 +657,7 @@ class LLMClient:
         max_tokens: int = 1024,
         model: str | None = None,
         json_mode: bool = False,
+        deadline: Any | None = None,
     ) -> LLMResponse:
         """
         Typed synchronous completion method for evaluator/judge.
@@ -604,6 +670,7 @@ class LLMClient:
             max_tokens=max_tokens,
             model=model,
             json_mode=json_mode,
+            deadline=deadline,
         )
         try:
             loop = asyncio.get_running_loop()

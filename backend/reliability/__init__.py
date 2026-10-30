@@ -42,6 +42,8 @@ from backend.reliability.circuit_breaker import (
 from backend.reliability.timeout import (
     TimeoutConfig,
     AgentTimeoutError,
+    DeadlineBudget,
+    DeadlineExceededError,
     DEFAULT_TIMEOUTS,
     with_timeout,
     run_agents_with_per_agent_timeout,
@@ -74,6 +76,8 @@ __all__ = [
     # timeout
     "TimeoutConfig",
     "AgentTimeoutError",
+    "DeadlineBudget",
+    "DeadlineExceededError",
     "DEFAULT_TIMEOUTS",
     "with_timeout",
     "run_agents_with_per_agent_timeout",
