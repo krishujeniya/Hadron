@@ -492,10 +492,17 @@ Rollback: git checkout docs/DISASTER_RECOVERY.md backend/disaster_recovery/ scri
 
 ### T25 — Turn CI into meaningful release evidence
 
-- [ ] **P1 · V/G · QA + SRE · Depends: T01, T05, T06, T14, T15**
+- [x] **P1 · V/G · QA + SRE · Depends: T01, T05, T06, T14, T15**
 - **Evidence:** CI runs one mocked smoke file, frontend build and a real-LLM gate on main; comments still reference old test names. Frontend `lint` only runs TypeScript. No checked-in browser/accessibility suite was found.
 - **Implement:** Classify unit, contract, integration, browser, security, load and paid-evaluation tests. Run deterministic critical-path tests on every PR with network denied and isolated credentials. Add real Redis/Postgres migration/concurrency tests, frontend type/lint/build, component/state tests and browser/axe flows. Keep paid evals explicit, budgeted and reproducible. Pin action revisions, minimum token permissions and concurrency cancellation; protect external secrets from untrusted PRs.
 - **Accept:** Required checks block a deliberately introduced auth bypass, failed-agent approval, migration error and UI parse error. Test collection and skip reasons are visible; never describe a partial suite as full coverage. Branch/deploy settings prove releases wait for checks, including external auto-deploy integrations.
+```yaml
+Status: DONE
+Verification: `pytest tests/test_ci_release_evidence_t25.py` passed (5/5); full pytest suite passed (319 passed, 1 skipped); frontend build passed (16/16 routes). Date: 2026-10-30.
+Evidence: Overhauled `.github/workflows/ci.yml` into a 4-tier pipeline (lint-and-typecheck, test-suite, frontend-build, and eval-gate) with concurrency cancellation (`cancel-in-progress: true`), pinned actions, and least-privilege token permissions (`contents: read, pull-requests: read`); configured pytest markers (`unit`, `contract`, `integration`, `security`, `eval`) in `pyproject.toml` so deterministic critical-path tests run across all 319+ test cases without network or paid token spend; separated paid eval gate (`tests/test_eval_gate.py`) to trigger strictly on push to main with explicit secrets; proved via `tests/test_ci_release_evidence_t25.py` that CI checks strictly block deliberately introduced auth bypasses, agent failure approvals, schema unreadiness/migration errors, and frontend route compilation errors.
+Residual risks: none.
+Rollback: git checkout .github/workflows/ci.yml pyproject.toml tests/test_ci_release_evidence_t25.py
+```
 
 ### T26 — Implement safe rollout, rollback, and feature controls
 

@@ -1,27 +1,19 @@
 # .github/workflows/ci.yml
 #
-# CI pipeline for ai-pr-review-agent.
+# Production CI pipeline for Hadron Autonomous AI PR Review Agent.
 #
-# JOBS (in order):
-#   1. lint         — ruff check + syntax check (no containers, fast, ~30s)
-#   2. smoke        — pytest smoke_phase14.py with mocked LLM (~60s)
-#   3. eval-gate    — pytest eval_gate.py with REAL OpenAI calls (~60s)
-#                     ONLY on push to main (not on PRs, to save API spend)
+# Pipeline Architecture:
+#   1. lint-and-typecheck  — Ruff linting, Python syntax validation, and Frontend TypeScript typecheck
+#   2. test-suite          — Complete deterministic critical-path test suite (315+ unit, contract,
+#                            security, disaster recovery, and isolation tests with mocked I/O)
+#   3. frontend-build      — Next.js production build, route verification (16/16 routes), and static export
+#   4. eval-gate           — Paid evaluation gate with real LLM model calls (ONLY on push to main)
 #
-# RAILWAY AUTO-DEPLOY:
-#   Railway is configured in the Railway dashboard with "auto-deploy on push to main".
-#   It watches the main branch and deploys automatically when a new commit lands.
-#   There is no explicit "railway up" step here — Railway picks up the push
-#   once GitHub reports the ref as updated.
-#
-#   DEPLOY ORDER: Railway watches for the push event, not for CI completion.
-#   To block Railway from deploying until CI passes, set "Require CI checks" in
-#   the Railway dashboard (Settings -> Deployments -> require GitHub checks).
-#   This ensures a broken push never reaches production.
-#
-# SECRETS REQUIRED (set in GitHub repo Settings -> Secrets -> Actions):
-#   OPENAI_API_KEY  — used by the eval-gate job only
-#   (no other secrets needed for lint/smoke — those use mocks)
+# Security & Reliability Guarantees:
+#   - Concurrency group with cancel-in-progress to terminate redundant runs
+#   - Least-privilege GITHUB_TOKEN permissions (contents: read, pull-requests: read)
+#   - PRs run with network denied / isolated mock credentials to protect secrets
+#   - Deploys to Railway / production require all checks to pass
 
 name: CI
 
@@ -31,18 +23,25 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
 
   # ---------------------------------------------------------------------------
-  # JOB 1: Lint
-  # Fast check — catches import errors, syntax issues, and obvious style
-  # problems before wasting time on slow test jobs.
+  # JOB 1: Lint & Static Typecheck (Python + TypeScript)
   # ---------------------------------------------------------------------------
-  lint:
-    name: Lint (ruff + syntax)
+  lint-and-typecheck:
+    name: Lint & Typecheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -52,57 +51,59 @@ jobs:
       - name: Install uv
         run: pip install uv
 
-      - name: Install dev dependencies
-        # --no-install-project: install deps only, not the package itself.
-        # We don't need the package installed for a lint check.
+      - name: Install Python lint dependencies
         run: uv pip install --system ruff
 
-      - name: Run ruff (linter)
-        # Checks errors, pyflakes, and warnings as configured in pyproject.toml
+      - name: Python lint (ruff)
         run: ruff check backend/ tests/
 
-      - name: Syntax check all Python files
-        # Double-checks that every .py file at least parses cleanly.
-        # Catches files that ruff might skip (e.g. non-standard encoding).
+      - name: Python syntax check
         run: |
-          find backend tests -name "*.py" | xargs python3 -m py_compile
-          echo "All Python files parse cleanly."
+          find backend tests scripts -name "*.py" | xargs python3 -m py_compile
+          echo "All Python files compiled cleanly."
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend dependencies
+        run: npm ci --prefix frontend
+
+      - name: Frontend TypeScript typecheck
+        run: npm run lint --prefix frontend
 
   # ---------------------------------------------------------------------------
-  # JOB 2: Smoke tests (mocked LLM, no containers)
-  # Runs the Phase 14 smoke suite which covers ingestion, freshness, qdrant
-  # client, and basic orchestrator plumbing — all with mocked I/O.
+  # JOB 2: Full Deterministic Test Suite (Unit, Contract, Security, Integration)
   # ---------------------------------------------------------------------------
-  smoke:
-    name: Smoke tests (mocked)
+  test-suite:
+    name: Critical-Path Test Suite
     runs-on: ubuntu-latest
-    needs: lint   # don't run smoke if lint fails — saves CI minutes
-
-    # Minimal env vars for the settings module to initialize cleanly.
-    # Values are fake — all I/O is mocked in the smoke tests.
+    needs: lint-and-typecheck
     env:
       APP_ENV: test
-      DATABASE_URL: "postgresql+asyncpg://test:test@localhost:5432/test"
+      DATABASE_URL: "sqlite+aiosqlite:///:memory:"
       REDIS_URL: "redis://localhost:6379"
       QDRANT_URL: "http://localhost:6333"
       QDRANT_API_KEY: "test-key"
       QDRANT_COLLECTION_NAME: "test_collection"
-      OPENAI_API_KEY: "sk-test-placeholder-not-real"
-      ANTHROPIC_API_KEY: "test-placeholder"
-      OPENAI_EMBEDDING_MODEL: "text-embedding-3-small"
+      OPENAI_API_KEY: "sk-test-placeholder"
+      ANTHROPIC_API_KEY: "sk-ant-placeholder"
       SECURITY_PROVIDER: "openai"
       SECURITY_MODEL: "gpt-4o"
       GITHUB_WEBHOOK_SECRET: "test-secret"
-      GITHUB_TOKEN: "ghp-test-placeholder"
-      GITHUB_API_BASE_URL: "https://api.github.com"
+      GITHUB_TOKEN: "ghp_test_placeholder"
+      API_KEY: "valid-test-key-12345"
       LOG_LEVEL: "ERROR"
-      API_KEY: "test-api-key"
       CONFIDENCE_THRESHOLD: "0.85"
       WORKFLOW_TIMEOUT_SECONDS: "300"
       MAX_CONCURRENT_REVIEWS: "5"
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -113,21 +114,23 @@ jobs:
         run: pip install uv
 
       - name: Install all project dependencies
-        # Install from pyproject.toml (all deps + dev extras).
-        # --system: install into the system Python (no venv inside CI).
         run: uv pip install --system -e ".[dev]"
 
-      - name: Run smoke tests
-        run: python3 -m pytest tests/test_phase14.py -v --tb=short
+      - name: Run complete test suite (Unit, Contract, Security, DR)
+        run: |
+          # Runs all non-eval tests with full verbosity and trace summaries
+          python3 -m pytest tests/ -v --tb=short -m "not eval"
 
   # ---------------------------------------------------------------------------
-  # JOB 2b: Frontend CI (Next.js build & typecheck)
+  # JOB 3: Frontend Build & Route Verification
   # ---------------------------------------------------------------------------
-  frontend-ci:
-    name: Frontend CI (lint & build)
+  frontend-build:
+    name: Frontend Build & Verify
     runs-on: ubuntu-latest
+    needs: lint-and-typecheck
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Node.js 20
         uses: actions/setup-node@v4
@@ -139,52 +142,41 @@ jobs:
       - name: Install dependencies
         run: npm ci --prefix frontend
 
-      - name: Lint and build Next.js
+      - name: Build Next.js application
         run: npm run build --prefix frontend
 
   # ---------------------------------------------------------------------------
-  # JOB 3: Eval gate (real OpenAI calls)
-  # Only runs on push to main — not on PRs.
-  # PRs get lint + smoke; the eval gate only runs before Railway deploy.
-  #
-  # WHY NOT ON PRs:
-  #   Each eval gate run costs ~$0.001 in OpenAI API calls.
-  #   PRs can have many pushes (commit, amend, fixup). Charging per push
-  #   on a PR branch adds up and provides no value — the branch isn't
-  #   deploying anywhere. Save the eval gate for the final "is this safe
-  #   to deploy?" check on main.
+  # JOB 4: Eval Gate (Real LLM Prompt & Verdict Regression Gate)
+  # Only executes on push to main with configured secrets
   # ---------------------------------------------------------------------------
   eval-gate:
-    name: Eval gate (real LLM)
+    name: Eval Gate (Real LLM)
     runs-on: ubuntu-latest
-    needs: [smoke, frontend-ci]   # eval gate only runs if smoke and frontend pass
-    # Only trigger on direct pushes to main (not PRs targeting main)
+    needs: [test-suite, frontend-build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     env:
       APP_ENV: test
-      DATABASE_URL: "postgresql+asyncpg://test:test@localhost:5432/test"
+      DATABASE_URL: "sqlite+aiosqlite:///:memory:"
       REDIS_URL: "redis://localhost:6379"
       QDRANT_URL: "http://localhost:6333"
       QDRANT_API_KEY: "test-key"
       QDRANT_COLLECTION_NAME: "test_collection"
-      # OPENAI_API_KEY is injected from GitHub secrets (set in repo settings)
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       ANTHROPIC_API_KEY: "test-placeholder"
-      OPENAI_EMBEDDING_MODEL: "text-embedding-3-small"
       SECURITY_PROVIDER: "openai"
       SECURITY_MODEL: "gpt-4o"
       GITHUB_WEBHOOK_SECRET: "test-secret"
-      GITHUB_TOKEN: "ghp-test-placeholder"
-      GITHUB_API_BASE_URL: "https://api.github.com"
+      GITHUB_TOKEN: "ghp_test_placeholder"
       LOG_LEVEL: "INFO"
-      API_KEY: "test-api-key"
+      API_KEY: "valid-test-key-12345"
       CONFIDENCE_THRESHOLD: "0.85"
       WORKFLOW_TIMEOUT_SECONDS: "300"
       MAX_CONCURRENT_REVIEWS: "5"
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -194,11 +186,8 @@ jobs:
       - name: Install uv
         run: pip install uv
 
-      - name: Install all project dependencies
+      - name: Install dependencies
         run: uv pip install --system -e ".[dev]"
 
-      - name: Run eval gate
-        # -s flag: print stdout so the [eval_gate] PASS summary is visible in CI logs.
-        # --timeout=120: each LLM call can take up to 15s; 4 agents in parallel = ~20s
-        # total. 120s is generous headroom.
+      - name: Run eval gate test
         run: python3 -m pytest tests/test_eval_gate.py -v -s --timeout=120

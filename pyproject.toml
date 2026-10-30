@@ -89,3 +89,11 @@ ignore = [
 [tool.pytest.ini_options]
 # Tell pytest to handle async test functions automatically
 asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = [
+    "unit: fast in-memory unit tests with mocked I/O",
+    "contract: contract and API boundary acceptance tests",
+    "integration: multi-component integration tests (Redis, SQLite, Postgres)",
+    "security: auth, RBAC, admission bounds, and isolation tests",
+    "eval: paid evaluation tests requiring real LLM providers and live API keys",
+]
