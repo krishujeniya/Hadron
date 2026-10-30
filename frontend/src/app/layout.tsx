@@ -39,18 +39,8 @@ const schemaOrgData = {
       applicationCategory: "DeveloperApplication",
       operatingSystem: "All",
       description:
-        "Autonomous multi-agent pull request review engine combining LangGraph, Tiger Cloud TimescaleDB telemetry, and pgvectorscale DiskANN retrieval.",
+        "Multi-agent pull request review engine combining LangGraph orchestration, Tiger Cloud telemetry, and semantic code retrieval.",
       url: "https://hadron.dev",
-      offers: {
-        "@type": "Offer",
-        price: "29.00",
-        priceCurrency: "USD",
-      },
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: "4.9",
-        reviewCount: "128",
-      },
     },
     {
       "@type": "Organization",
@@ -67,7 +57,7 @@ const schemaOrgData = {
           acceptedAnswer: {
             "@type": "Answer",
             "text":
-              "Hadron is an autonomous multi-agent pull request review engine that coordinates Security, Quality, Test, and Docs agents in parallel to perform fast, hallucination-free code reviews.",
+              "Hadron is an autonomous multi-agent pull request review engine that coordinates Security, Quality, Test, and Docs agents in parallel with calibrated confidence scoring and human-in-the-loop escalation.",
           },
         },
         {

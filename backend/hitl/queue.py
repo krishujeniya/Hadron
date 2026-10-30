@@ -214,6 +214,30 @@ async def get_pending_queue(
     return list(result.scalars().all())
 
 
+async def count_pending_queue(
+    session: AsyncSession,
+    *,
+    repo_full_name: str | None = None,
+    account: str | None = None,
+) -> int:
+    """
+    Return total count of pending HITL items for accurate pagination.
+    """
+    from sqlalchemy import func
+    stmt = (
+        select(func.count())
+        .select_from(HITLReview)
+        .where(HITLReview.status.in_(["pending", "in_review"]))
+    )
+    if repo_full_name:
+        stmt = stmt.where(HITLReview.repo_full_name == repo_full_name)
+    if account:
+        stmt = stmt.where(HITLReview.repo_full_name.like(f"{account}/%"))
+
+    result = await session.execute(stmt)
+    return result.scalar() or 0
+
+
 # ---------------------------------------------------------------------------
 # get_hitl_review
 #

@@ -100,8 +100,8 @@ def _build_input_data(payload: dict) -> dict:
 # ---------------------------------------------------------------------------
 
 pytestmark = pytest.mark.skipif(
-    not os.environ.get("OPENAI_API_KEY"),
-    reason="OPENAI_API_KEY not set — skipping eval gate (real LLM calls required)",
+    not os.environ.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY") in ("sk-test", "sk-placeholder"),
+    reason="OPENAI_API_KEY not set or placeholder — skipping eval gate (real LLM calls required)",
 )
 
 

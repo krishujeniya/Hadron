@@ -2,35 +2,26 @@
 #
 # OpenAI embedding client — the bridge between raw text and vector space.
 #
-# MODEL CHOICE: text-embedding-3-small
-# (From RAG-Architecture.md wiki, "Dense Embeddings"):
+# MODEL CHOICE: text-embedding-3-large
+# (From RAG-Architecture.md wiki, "Dense Embeddings" and ADR-003):
 #   "Dense (embeddings) captures semantic understanding:
 #    'maximum thrust at depth' even if phrased differently."
-#   text-embedding-3-small: 1536 dimensions, $0.02/1M tokens, fast.
-#   text-embedding-3-large: 3072 dimensions, 5x cost, marginal gain for code.
-#   For code semantics (function bodies, class signatures), 1536 dims is sufficient.
+#   text-embedding-3-large: 256 dimensions via Matryoshka dimensionality reduction,
+#   matching VECTOR(256) in code_chunks (ADR-003).
+#   Provides 6x less storage with the same recall curve on code.
 #
-# CHUNKING STRATEGY: chunk by FILE, not by token count
+# CHUNKING STRATEGY: chunk by FILE / AST, not by arbitrary token count
 # (From RAG-Architecture.md wiki, "Token-Limit Chunking" Anti-Pattern):
 #   "Splitting documents purely on character/token count destroys section
 #    hierarchy, making it impossible to trace answers to their source location."
-#   For code: a FILE is the natural structural unit. Splitting mid-function
-#   destroys the semantic unit the agent needs to reason about.
-#   If a file is very large (>8000 chars), we truncate rather than split —
-#   the first 8000 chars of a file contain the most semantically dense content
-#   (imports, class signatures, key functions at the top).
-#   This is a deliberate trade-off: truncation vs. destroying structure.
+#   For code: AST boundaries and semantic file units preserve structure.
 #
 # INPUT LENGTH GUARD: 8000 chars
-# OpenAI's text-embedding-3-small supports 8191 tokens (~32k chars) input.
-# We cap at 8000 chars (a conservative character-based approximation of ~2000 tokens)
-# to ensure we stay well within the model's limit without needing a tokenizer.
-# (Production-Hardening.md: "Validate input length before calling external APIs.")
+# OpenAI's text-embedding-3 supports 8191 tokens (~32k chars) input.
+# We cap at 8000 chars (conservative approximation) to ensure safety.
 #
 # ASYNC CLIENT:
 # AsyncOpenAI is used throughout. All calls are async coroutines.
-# The embedder is stateless — no singleton, no connection pool.
-# Each call creates its own API request. OpenAI handles connection pooling.
 #
 # GRACEFUL DEGRADATION:
 # (From Production-Hardening.md wiki, "Circuit Breaker" + "Graceful Degradation"):
@@ -38,8 +29,19 @@
 #   EmbeddingError. The caller (context_retriever.py) catches EmbeddingError
 #   and returns "" — the pipeline continues without RAG context.
 #   The embedder NEVER crashes the review pipeline.
+#
+# STRICT CONTRACT & SEMANTIC VALIDITY (Gate B — T13):
+#   - Explicit EmbeddingContract: provider, model, dimension, normalization, and namespace.
+#   - Strict shape guarantees: embed_batch(N texts) returns exactly N vectors of dimension D.
+#   - Empty input policy: zero vector of exact dimension D.
+#   - No fake fallback: cryptographic hash is NOT an embedding. Non-OpenAI keys (like nvapi-)
+#     raise EmbeddingError to explicitly disable retrieval rather than polluting vector space.
+#   - Synthetic test vectors are confined strictly to test environments via set_test_embedder.
 
 import logging
+import math
+from dataclasses import dataclass
+from typing import Any, Callable
 
 from openai import AsyncOpenAI
 
@@ -52,22 +54,70 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 # Maximum input length for embedding.
-# (See module docstring for rationale: character-based approximation of token limit.)
 MAX_EMBED_CHARS = 8_000
 
-# Embedding vector dimensionality for text-embedding-3-small.
-# Must match the Tiger Cloud code_chunks table VECTOR dimension (defined in 2026-06-tiger-init.sql).
-EMBEDDING_DIMENSIONS = 1536
+# Default embedding dimensionality (reads from settings if available).
+# text-embedding-3-large truncated to 256 dimensions matches code_chunks VECTOR(256) (ADR-003).
+DEFAULT_EMBEDDING_DIMENSIONS = 256
+EMBEDDING_DIMENSIONS = DEFAULT_EMBEDDING_DIMENSIONS
+
+
+@dataclass(frozen=True)
+class EmbeddingContract:
+    """
+    Formal embedding contract across storage, models, and retrieval.
+    Enforces unified dimensions, normalization, namespace, and versioning.
+    """
+    provider: str = "openai"
+    model: str = "text-embedding-3-large"
+    dimension: int = 256
+    normalized: bool = True
+    namespace: str = "code_chunks"
+    version: str = "v1"
+
+
+def get_embedding_contract() -> EmbeddingContract:
+    """Returns the active embedding contract derived from configuration."""
+    cfg = get_settings()
+    model = getattr(cfg, "openai_embedding_model", "text-embedding-3-large")
+    dims = getattr(cfg, "openai_embedding_dimensions", DEFAULT_EMBEDDING_DIMENSIONS)
+    return EmbeddingContract(
+        provider="openai",
+        model=model,
+        dimension=dims,
+        normalized=True,
+        namespace="code_chunks",
+        version="v1",
+    )
+
+
+def normalize_vector(vec: list[float]) -> list[float]:
+    """Applies L2 normalization so cosine distance equals dot product."""
+    if not vec:
+        return vec
+    norm = math.sqrt(sum(x * x for x in vec))
+    if norm == 0.0 or math.isclose(norm, 1.0, rel_tol=1e-5):
+        return vec
+    return [x / norm for x in vec]
+
+
+# Optional test hook to confine synthetic vectors exclusively to tests
+_test_embedder_override: Callable[[list[str]], Any] | None = None
+
+
+def set_test_embedder(fn: Callable[[list[str]], Any] | None) -> None:
+    """Confines synthetic vectors exclusively to test environments."""
+    global _test_embedder_override
+    _test_embedder_override = fn
 
 
 class EmbeddingError(Exception):
     """
-    Raised when an embedding API call fails.
+    Raised when an embedding API call fails or when semantic embeddings are unavailable.
 
     Callers (specifically context_retriever.py) catch this and return ""
     (graceful degradation: no RAG context, review still runs).
     Never propagates to the user or crashes the review.
-    (Production-Hardening.md: "Circuit Breaker — fail gracefully on external API failure.")
     """
     pass
 
@@ -78,7 +128,7 @@ class EmbeddingError(Exception):
 
 async def embed_text(text: str) -> list[float]:
     """
-    Embeds a single text string into a 1536-dimensional vector.
+    Embeds a single text string into a contract-dimensional vector (default 256).
 
     Designed for: embedding a PR diff summary or a code search query.
     One API call per call to this function.
@@ -87,23 +137,35 @@ async def embed_text(text: str) -> list[float]:
     If text > MAX_EMBED_CHARS, truncates to MAX_EMBED_CHARS.
     We truncate from the end (preserve the beginning — imports and
     class signatures are at the top and are semantically richest).
-    (RAG-Architecture.md: "structure-aware chunking preserves traceability.")
 
     Args:
         text: The text to embed. Will be truncated if over 8000 chars.
 
     Returns:
-        List of 1536 floats (the embedding vector).
+        List of contract-dimensional floats (the normalized embedding vector).
 
     Raises:
-        EmbeddingError: on any OpenAI API failure. Caller handles gracefully.
+        EmbeddingError: on any API failure or unavailable provider. Caller handles gracefully.
     """
+    contract = get_embedding_contract()
+    dims = contract.dimension
+
     if not text or not text.strip():
-        # Empty text: return zero vector rather than calling the API.
-        # Zero vector has cosine similarity 0 with everything — effectively
-        # returns no relevant results in Qdrant. Safe fallback.
-        logger.debug("embed_text | empty_text | returning zero vector")
-        return [0.0] * EMBEDDING_DIMENSIONS
+        # Empty text: explicit zero vector policy of exact contract dimensions
+        logger.debug("embed_text | empty_text | returning zero vector of dimension %d", dims)
+        return [0.0] * dims
+
+    # Confine synthetic vectors to tests if test hook is active
+    if _test_embedder_override is not None:
+        raw_res = await _test_embedder_override([text])
+        vec = raw_res[0]
+        if len(vec) != dims:
+            raise EmbeddingError(f"Test embedder returned dimension {len(vec)}, expected {dims}")
+        return normalize_vector(vec)
+
+    # Phase 11 & Gate A (T08): Redact secrets / PII before dispatching to embedding provider
+    from backend.security.masking import redact_text
+    text, _ = redact_text(text)
 
     # Truncate to MAX_EMBED_CHARS if needed
     original_len = len(text)
@@ -116,31 +178,61 @@ async def embed_text(text: str) -> list[float]:
 
     cfg = get_settings()
 
-    # If using NVIDIA NIM key (no separate OpenAI key), provide deterministic embedding
+    # Reject non-OpenAI keys (e.g. nvapi-) masquerading as OpenAI embedding provider.
+    # A cryptographic hash is not a semantic embedding; disable retrieval cleanly.
     if cfg.openai_api_key.startswith("nvapi-"):
-        import hashlib
-        import math
-        h = hashlib.sha256(text.encode("utf-8")).digest()
-        vec = [(h[i % len(h)] / 127.5 - 1.0) for i in range(cfg.openai_embedding_dimensions)]
-        norm = math.sqrt(sum(x * x for x in vec)) or 1.0
-        return [x / norm for x in vec]
+        raise EmbeddingError(
+            "NVIDIA NIM does not provide text-embedding-3 embeddings. "
+            "Semantic retrieval is disabled. Configure a supported OpenAI embedding key or disable RAG."
+        )
 
-    client = AsyncOpenAI(api_key=cfg.openai_api_key)
+    if not cfg.openai_api_key or cfg.openai_api_key == "change-me-in-production":
+        raise EmbeddingError("OpenAI API key is missing or unconfigured. Cannot generate embeddings.")
+
+    client = AsyncOpenAI(api_key=cfg.openai_api_key, base_url=cfg.openai_api_base_url or None)
 
     try:
-        response = await client.embeddings.create(
-            model=cfg.openai_embedding_model,
-            input=text,
-        )
+        kwargs = {"model": contract.model, "input": text}
+        if "text-embedding-3" in contract.model:
+            kwargs["dimensions"] = dims
+        response = await client.embeddings.create(**kwargs)
         vector = response.data[0].embedding
+
+        # Gate B T18: Record embedding cost in budget scope
+        try:
+            from backend.economics import record_cost_entry
+            from backend.observability.workflow_context import get_workflow_context
+            ctx = get_workflow_context()
+            tok_count = getattr(response.usage, "total_tokens", len(text) // 4)
+            emb_cost = round((tok_count / 1000.0) * 0.00013, 8)
+            asyncio.create_task(
+                record_cost_entry(
+                    workflow_id=getattr(ctx, "workflow_id", None),
+                    tenant_id=getattr(ctx, "tenant_id", None),
+                    agent_type="embedder",
+                    model=contract.model,
+                    input_tokens=tok_count,
+                    cost_usd=emb_cost,
+                    call_type="embedding",
+                )
+            )
+        except Exception:
+            pass
+
+        if len(vector) != dims:
+            raise EmbeddingError(
+                f"Embedding provider returned vector of dimension {len(vector)}, expected {dims}"
+            )
 
         logger.debug(
             "embed_text | success | model=%s dims=%d input_chars=%d",
-            cfg.openai_embedding_model, len(vector), len(text),
+            contract.model, len(vector), len(text),
         )
 
-        return vector
+        return normalize_vector(vector)
 
+    except EmbeddingError:
+        raise
     except Exception as e:
         raise EmbeddingError(
             f"OpenAI embedding call failed: {type(e).__name__}: {e}"
@@ -155,28 +247,36 @@ async def embed_batch(texts: list[str]) -> list[list[float]]:
     One API call for all texts (much more efficient than N separate calls).
     OpenAI's embedding API accepts up to ~2048 inputs per request.
 
-    BATCH TRUNCATION:
-    Each text in the batch is truncated independently to MAX_EMBED_CHARS.
-    If any text is empty, it gets a zero vector (same as embed_text).
+    BATCH TRUNCATION & SHAPE GUARANTEES:
+    - Result length strictly equals input length (result[i] corresponds to texts[i]).
+    - Each vector strictly matches contract.dimension (256 dims).
+    - Empty or whitespace inputs yield a zero vector of exact contract dimension.
+    - Duplicate inputs receive identical embeddings in their respective slots.
 
     Args:
         texts: List of strings to embed. Empty list returns [].
 
     Returns:
-        List of 1536-dimensional vectors, one per input text.
-        Order is preserved: result[i] corresponds to texts[i].
+        List of contract-dimensional vectors, one per input text in original order.
 
     Raises:
-        EmbeddingError: on any OpenAI API failure.
+        EmbeddingError: on any API failure or unavailable provider.
     """
     if not texts:
         return []
+
+    contract = get_embedding_contract()
+    dims = contract.dimension
+
+    # Phase 11 & Gate A (T08): Redact secrets / PII from all texts before batch embedding
+    from backend.security.masking import redact_text
+    redacted_texts = [redact_text(t)[0] if t else "" for t in texts]
 
     # Truncate each text individually (preserve structural unit per chunk)
     truncated_texts: list[str] = []
     empty_indices: set[int] = set()
 
-    for i, text in enumerate(texts):
+    for i, text in enumerate(redacted_texts):
         if not text or not text.strip():
             truncated_texts.append("")   # placeholder
             empty_indices.add(i)
@@ -185,45 +285,93 @@ async def embed_batch(texts: list[str]) -> list[list[float]]:
         else:
             truncated_texts.append(text)
 
+    # Initialize results with exact length, order, and dimensions (empty indices get zero vectors)
+    results: list[list[float]] = [[0.0] * dims for _ in texts]
+
     # Separate non-empty texts for the API call
     non_empty = [(i, t) for i, t in enumerate(truncated_texts) if i not in empty_indices]
 
     if not non_empty:
         # All texts were empty
-        return [[0.0] * EMBEDDING_DIMENSIONS for _ in texts]
+        return results
+
+    # Confine synthetic vectors to tests if test hook is active
+    if _test_embedder_override is not None:
+        indices, batch_texts = zip(*non_empty)
+        raw_res = await _test_embedder_override(list(batch_texts))
+        if len(raw_res) != len(batch_texts):
+            raise EmbeddingError(f"Test embedder returned {len(raw_res)} vectors, expected {len(batch_texts)}")
+        for position, v in zip(indices, raw_res):
+            if len(v) != dims:
+                raise EmbeddingError(f"Test embedder returned dimension {len(v)}, expected {dims}")
+            results[position] = normalize_vector(v)
+        return results
 
     cfg = get_settings()
 
-    # If using NVIDIA NIM key (no separate OpenAI key), provide deterministic embedding
+    # Reject non-OpenAI keys (e.g. nvapi-) masquerading as OpenAI embedding provider
     if cfg.openai_api_key.startswith("nvapi-"):
-        import hashlib
-        import math
-        h = hashlib.sha256(text.encode("utf-8")).digest()
-        vec = [(h[i % len(h)] / 127.5 - 1.0) for i in range(cfg.openai_embedding_dimensions)]
-        norm = math.sqrt(sum(x * x for x in vec)) or 1.0
-        return [x / norm for x in vec]
+        raise EmbeddingError(
+            "NVIDIA NIM does not provide text-embedding-3 embeddings. "
+            "Semantic retrieval is disabled. Configure a supported OpenAI embedding key or disable RAG."
+        )
 
-    client = AsyncOpenAI(api_key=cfg.openai_api_key)
+    if not cfg.openai_api_key or cfg.openai_api_key == "change-me-in-production":
+        raise EmbeddingError("OpenAI API key is missing or unconfigured. Cannot generate embeddings.")
+
+    client = AsyncOpenAI(api_key=cfg.openai_api_key, base_url=cfg.openai_api_base_url or None)
 
     try:
         indices, batch_texts = zip(*non_empty)
-        response = await client.embeddings.create(
-            model=cfg.openai_embedding_model,
-            input=list(batch_texts),
-        )
+        kwargs = {"model": contract.model, "input": list(batch_texts)}
+        if "text-embedding-3" in contract.model:
+            kwargs["dimensions"] = dims
+        response = await client.embeddings.create(**kwargs)
+
+        # Gate B T18: Record batch embedding cost in budget scope
+        try:
+            from backend.economics import record_cost_entry
+            from backend.observability.workflow_context import get_workflow_context
+            ctx = get_workflow_context()
+            tok_count = getattr(response.usage, "total_tokens", sum(len(t) for t in batch_texts) // 4)
+            emb_cost = round((tok_count / 1000.0) * 0.00013, 8)
+            asyncio.create_task(
+                record_cost_entry(
+                    workflow_id=getattr(ctx, "workflow_id", None),
+                    tenant_id=getattr(ctx, "tenant_id", None),
+                    agent_type="embedder",
+                    model=contract.model,
+                    input_tokens=tok_count,
+                    cost_usd=emb_cost,
+                    call_type="embedding",
+                )
+            )
+        except Exception:
+            pass
+
+        if len(response.data) != len(batch_texts):
+            raise EmbeddingError(
+                f"OpenAI returned {len(response.data)} embeddings, expected {len(batch_texts)}"
+            )
 
         logger.debug(
-            "embed_batch | success | model=%s batch_size=%d",
-            cfg.openai_embedding_model, len(batch_texts),
+            "embed_batch | success | model=%s batch_size=%d dims=%d",
+            contract.model, len(batch_texts), dims,
         )
 
-        # Reconstruct the full results list (empty indices get zero vectors)
-        results: list[list[float]] = [[0.0] * EMBEDDING_DIMENSIONS] * len(texts)
+        # Reconstruct the full results list with dimension and normalization guarantees
         for position, embedding_obj in zip(indices, response.data):
-            results[position] = embedding_obj.embedding
+            vec = embedding_obj.embedding
+            if len(vec) != dims:
+                raise EmbeddingError(
+                    f"Embedding provider returned vector of dimension {len(vec)}, expected {dims}"
+                )
+            results[position] = normalize_vector(vec)
 
         return results
 
+    except EmbeddingError:
+        raise
     except Exception as e:
         raise EmbeddingError(
             f"OpenAI batch embedding call failed: {type(e).__name__}: {e}"

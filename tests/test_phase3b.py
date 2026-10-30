@@ -154,7 +154,11 @@ async def client():
     the HTTP adapter layer in isolation.
     """
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        headers={"X-API-Key": "test-api-key"},
+    ) as ac:
         yield ac
 
 

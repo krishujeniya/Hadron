@@ -1,7 +1,16 @@
-# backend/auth/__init__.py
-#
-# Auth package.
-#
-# Phase 11 will build full JWT + RBAC here.
-# Phase 3 contributes: dependencies.py — the API key dependency used by
-# all read endpoints. This is the injection point that Phase 11 replaces.
+"""
+backend/auth/__init__.py
+"""
+
+from backend.auth.dependencies import get_current_principal, require_auth
+from backend.auth.principal import Principal
+from backend.auth.session_store import SessionData, SessionStore, session_store
+
+__all__ = [
+    "Principal",
+    "SessionData",
+    "SessionStore",
+    "get_current_principal",
+    "require_auth",
+    "session_store",
+]

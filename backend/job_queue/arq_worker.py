@@ -59,7 +59,11 @@ from arq.connections import RedisSettings
 from backend.config import get_settings
 from backend.core import (
     DuplicateWebhookError,
+    MemoryStoreError,
+    QueueOverloadedError,
+    TenantConcurrencyLimitError,
 )
+from backend.models.enums import ReviewStatus
 from backend.memory.redis_client import redis_client
 from backend.orchestrator.langgraph_engine import LangGraphEngine
 
@@ -78,31 +82,42 @@ _engine = LangGraphEngine()
 # The remaining arguments match what enqueue_review_job() passes.
 # =============================================================================
 
+MAX_WORKER_RETRIES = 3
+
+
+def is_retryable_error(exc: Exception | None, error_msg: str = "") -> bool:
+    """Identifies transient errors that should trigger an ARQ retry."""
+    if exc is not None:
+        from backend.core.exceptions import RetryableWorkflowError
+        import httpx
+        if isinstance(exc, (RetryableWorkflowError, httpx.TimeoutException, httpx.ConnectError, ConnectionError)):
+            return True
+    msg = (str(exc) if exc else error_msg).lower()
+    retry_markers = [
+        "timeout",
+        "connection refused",
+        "connection dropped",
+        "rate limit",
+        "503",
+        "502",
+        "temporarily unavailable",
+    ]
+    return any(marker in msg for marker in retry_markers)
+
+
 async def run_pr_review(
     ctx: dict[str, Any],
     workflow_id: str,
     input_data: dict[str, Any],
 ) -> dict[str, Any]:
     """
-    ARQ worker function: runs a full PR review.
-
-    This is called by ARQ (not by our code directly).
-    ARQ provides `ctx` with metadata about the job (job_id, retry count, etc.).
-
-    Args:
-        ctx:         ARQ context (job_id, retry count, etc.) — provided by ARQ
-        workflow_id: unique ID for this review (format: repo:pr:commit)
-        input_data:  dict with PR details from the webhook event
-
-    Returns:
-        dict summarizing the result — ARQ logs this for observability.
-
-    Raises:
-        Exception: if the review fails in a way that should trigger ARQ retry.
-        (DuplicateWebhookError is NOT re-raised — it is a non-error skip case.)
+    ARQ worker function: runs a full PR review with durable checkpointing,
+    exponential retry backoff for transient failures, and dead-letter queueing for poison jobs.
     """
+    from arq.worker import Retry
+
     job_id = ctx.get("job_id", "unknown")
-    retry_count = ctx.get("retry", 0)
+    retry_count = ctx.get("job_try", ctx.get("retry", 0))
 
     logger.info(
         "job_start | workflow_id=%s job_id=%s retry=%d",
@@ -111,39 +126,31 @@ async def run_pr_review(
         retry_count,
     )
 
-    # -------------------------------------------------------------------------
-    # Step 1: Idempotency check
-    #
-    # Before running the review, check if this exact review already ran.
-    # This can happen if:
-    #   - ARQ retried a job that already completed
-    #   - GitHub replayed the webhook after the first delivery succeeded
-    #   - The worker crashed after completing but before ACKing to ARQ
-    #
-    # Idempotency is enforced at enqueue time (enqueue_review_job checks the key
-    # before pushing to ARQ). By the time this worker function runs, the key
-    # already exists (it was set by enqueue_review_job). We do NOT re-check here
-    # — that would cause every first-run to be skipped as a false duplicate.
-
-    # -------------------------------------------------------------------------
-    # Step 2: Update workflow status to IN_PROGRESS in Redis cache
-    # -------------------------------------------------------------------------
     await redis_client.set_workflow_status(workflow_id, "in_progress")
 
-    # -------------------------------------------------------------------------
-    # Step 3: Run the workflow
-    # -------------------------------------------------------------------------
+    repo_name = input_data.get("repo_full_name", "")
+    tenant = repo_name.split("/")[0] if "/" in repo_name else (repo_name or "default")
+    await redis_client.increment_tenant_active(tenant)
+
     try:
         result = await _engine.run(workflow_id, input_data)
     except Exception as e:
-        # Defensive catch: _engine.run() should never raise (it returns
-        # WorkflowResult(status=FAILED) on error). But if LangGraph itself
-        # or an unhandled node exception leaks up, we absorb it here so ARQ
-        # does not mark the job as failed and retry (which would re-run
-        # a review that already completed and saved partially).
         logger.error(
-            "run_pr_review | unhandled_engine_error | workflow_id=%s error=%s",
-            workflow_id, e, exc_info=True,
+            "run_pr_review | engine_exception | workflow_id=%s retry=%d error=%s",
+            workflow_id, retry_count, e, exc_info=True,
+        )
+        if is_retryable_error(e) and retry_count < MAX_WORKER_RETRIES:
+            defer_time = 2 ** retry_count
+            await redis_client.set_workflow_status(workflow_id, "retrying")
+            logger.info("job_transient_error_deferring | workflow_id=%s defer=%ds", workflow_id, defer_time)
+            raise Retry(defer=defer_time) from e
+
+        # Terminal engine exception -> DLQ
+        reason = "max_retries_exceeded" if retry_count >= MAX_WORKER_RETRIES else "unhandled_engine_exception"
+        await redis_client.record_dead_letter(
+            workflow_id=workflow_id,
+            reason=reason,
+            details={"error": str(e), "retry_count": retry_count, "job_id": job_id},
         )
         await redis_client.set_workflow_status(workflow_id, "failed")
         return {
@@ -153,10 +160,35 @@ async def run_pr_review(
             "findings_count": 0,
             "error": str(e),
         }
+    finally:
+        await redis_client.decrement_tenant_active(tenant)
 
-    # -------------------------------------------------------------------------
-    # Step 4: Update final status in Redis cache
-    # -------------------------------------------------------------------------
+    # Handle workflow failure status returned by engine
+    if result.status == ReviewStatus.FAILED:
+        err_msg = result.error_message or "Workflow marked as failed"
+        if is_retryable_error(None, err_msg) and retry_count < MAX_WORKER_RETRIES:
+            defer_time = 2 ** retry_count
+            await redis_client.set_workflow_status(workflow_id, "retrying")
+            logger.info("job_failed_transient_deferring | workflow_id=%s defer=%ds", workflow_id, defer_time)
+            raise Retry(defer=defer_time)
+
+        # Permanent workflow failure or max retries -> DLQ
+        reason = "max_retries_exceeded" if retry_count >= MAX_WORKER_RETRIES else "workflow_execution_failed"
+        await redis_client.record_dead_letter(
+            workflow_id=workflow_id,
+            reason=reason,
+            details={"error": err_msg, "retry_count": retry_count, "job_id": job_id},
+        )
+        await redis_client.set_workflow_status(workflow_id, "failed")
+        return {
+            "workflow_id": workflow_id,
+            "status": "failed",
+            "verdict": None,
+            "findings_count": len(result.findings),
+            "error": err_msg,
+        }
+
+    # Workflow succeeded or completed (including HITL routing)
     await redis_client.set_workflow_status(workflow_id, result.status.value)
 
     logger.info(
@@ -231,6 +263,7 @@ async def run_pr_review(
 async def enqueue_review_job(
     workflow_id: str,
     input_data: dict[str, Any],
+    delivery_id: str | None = None,
 ) -> None:
     """
     Enqueues a PR review job in the ARQ Redis queue.
@@ -239,9 +272,10 @@ async def enqueue_review_job(
     Returns immediately — the review runs asynchronously in a worker process.
 
     Steps:
-      1. Set idempotency key in Redis (atomic, expires after 24h)
-      2. Push job payload to ARQ queue in Redis
-      3. Return — webhook router sends 200 to GitHub
+      1. Check idempotency key in Redis -> raise DuplicateWebhookError if already queued
+      2. Push job payload to ARQ queue in Redis (_job_id=workflow_id)
+      3. On successful enqueue: set idempotency key and record delivery receipt
+      4. On failure: clean up any tentative state so future retries are not falsely blocked
 
     Raises:
         DuplicateWebhookError: if this exact review is already queued.
@@ -249,13 +283,7 @@ async def enqueue_review_job(
     """
     cfg = get_settings()
 
-    # -------------------------------------------------------------------------
-    # Step 1: Check idempotency BEFORE setting the key.
-    # If key exists, raise DuplicateWebhookError -> router returns 200 silently.
-    # This is atomic enough: webhook handlers are sequential per PR (GitHub
-    # delivers one webhook at a time per repo). True concurrent duplicates
-    # are rare — and Redis SETEX is atomic anyway.
-    # -------------------------------------------------------------------------
+    # Step 1: Check idempotency BEFORE enqueueing
     already_exists = await redis_client.check_idempotency_key(workflow_id)
     if already_exists:
         logger.info(
@@ -267,23 +295,39 @@ async def enqueue_review_job(
             idempotency_key=workflow_id,
         )
 
-    # -------------------------------------------------------------------------
-    # Step 2: Set the idempotency key BEFORE enqueueing.
-    # If we enqueued first and then crashed before setting the key,
-    # a replay would not detect the duplicate. Set key first.
-    # -------------------------------------------------------------------------
-    await redis_client.set_idempotency_key(workflow_id)
+    # Step 1b: Backpressure guard — check queue depth
+    queue_depth = await redis_client.get_queue_depth()
+    max_depth = getattr(cfg, "max_queue_depth", 100)
+    if queue_depth >= max_depth:
+        logger.warning("enqueue_backpressure | queue_depth=%d max=%d", queue_depth, max_depth)
+        raise QueueOverloadedError(
+            f"Queue capacity exceeded ({queue_depth} >= {max_depth}). Backpressure active.",
+            queue_depth=queue_depth,
+            retry_after=30,
+        )
 
-    # -------------------------------------------------------------------------
-    # Step 3: Connect to ARQ pool and enqueue the job.
-    #
-    # WHY create_pool() each time instead of a module-level pool?
-    # ARQ pools are lightweight (they reuse the same underlying Redis connection).
-    # create_pool() is idempotent and fast. Keeping a module-level pool would
-    # require its own lifecycle management (startup/shutdown). Not worth it.
-    # -------------------------------------------------------------------------
+    # Step 1c: Tenant quota guard — check active concurrent reviews for this tenant
+    repo_name = input_data.get("repo_full_name", "")
+    tenant = repo_name.split("/")[0] if "/" in repo_name else (repo_name or "default")
+    max_active = getattr(cfg, "max_active_per_tenant", 3)
+    active_count = await redis_client.get_tenant_active(tenant)
+    if active_count >= max_active:
+        logger.warning(
+            "enqueue_tenant_throttled | tenant=%s active=%d max=%d",
+            tenant, active_count, max_active,
+        )
+        raise TenantConcurrencyLimitError(
+            f"Tenant '{tenant}' active review limit reached ({active_count} >= {max_active}).",
+            tenant_id=tenant,
+            retry_after=30,
+        )
+
+    # Step 2: Connect to ARQ pool and enqueue the job
     redis_settings = RedisSettings.from_dsn(cfg.redis_url)
-    arq_pool: ArqRedis = await create_pool(redis_settings)
+    try:
+        arq_pool: ArqRedis = await create_pool(redis_settings)
+    except Exception as e:
+        raise MemoryStoreError(f"Failed to connect to queue pool: {e}", store="redis") from e
 
     try:
         job = await arq_pool.enqueue_job(
@@ -292,11 +336,26 @@ async def enqueue_review_job(
             input_data,                # positional arg 2
             _job_id=workflow_id,       # ARQ job ID = workflow_id (for deduplication within ARQ)
         )
+        # Step 3: Persist idempotency and delivery receipt only on confirmed enqueue
+        await redis_client.set_idempotency_key(workflow_id)
+        if delivery_id:
+            try:
+                await redis_client.record_receipt(delivery_id, workflow_id)
+            except Exception as e:
+                logger.warning("Failed to record delivery receipt %s: %s", delivery_id, e)
         logger.info(
-            "job_enqueued | workflow_id=%s arq_job_id=%s",
+            "job_enqueued | workflow_id=%s arq_job_id=%s delivery_id=%s",
             workflow_id,
             job.job_id if job else "unknown",
+            delivery_id,
         )
+    except Exception as e:
+        # Enqueue failed: ensure idempotency key does not block future redeliveries
+        try:
+            await redis_client.delete_idempotency_key(workflow_id)
+        except Exception:
+            pass
+        raise
     finally:
         await arq_pool.aclose()
 

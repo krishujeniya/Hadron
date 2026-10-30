@@ -55,6 +55,8 @@ from backend.api.schemas import (
     review_record_to_summary,
 )
 from backend.auth.dependencies import require_auth
+from backend.auth.principal import Principal
+from backend.security.rbac import require_permission, Permission, Role
 from backend.database.postgres import get_db
 from backend.database.repository import get_review, list_reviews
 from backend.memory.redis_client import redis_client
@@ -107,12 +109,12 @@ async def list_reviews_endpoint(
         ),
         examples=["completed"],
     ),
-    # Pagination
+    # Pagination (bounded to max 100 per Gate B - T17)
     limit: int = Query(
         default=50,
         ge=1,
-        le=200,
-        description="Max reviews to return per page. Max 200.",
+        le=100,
+        description="Max reviews to return per page. Max 100.",
     ),
     offset: int = Query(
         default=0,
@@ -120,24 +122,28 @@ async def list_reviews_endpoint(
         description="Number of reviews to skip (for pagination).",
     ),
     # Dependencies
-    _auth: None = Depends(require_auth),      # enforces API key
+    principal: Principal = Depends(require_auth),      # enforces API key / session
+    _role: Role = Depends(require_permission(Permission.READ_REVIEWS)),
     session: AsyncSession = Depends(get_db),  # injects DB session
 ) -> ReviewListResponse:
     """
     List PR reviews with optional filters and pagination.
-
-    Response shape:
-        {
-            "items": [...],       # list of ReviewSummary objects
-            "total": 42,          # total matching reviews (not just this page)
-            "limit": 50,
-            "offset": 0
-        }
-
-    Pagination: use offset to page through results.
-        Page 1: offset=0,  limit=50  -> items 1-50
-        Page 2: offset=50, limit=50  -> items 51-100
+    Enforces tenant/workspace scoping unless caller has admin role.
     """
+    authorized_account = principal.account or principal.tenant_id
+    if not principal.is_admin and authorized_account:
+        if account and account.lower() != authorized_account.lower():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied: cannot access reviews for account '{account}'. Authorized workspace is '{authorized_account}'.",
+            )
+        account = authorized_account
+        if repo and not repo.lower().startswith(f"{authorized_account.lower()}/"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied: repository '{repo}' is outside your authorized workspace '{authorized_account}'.",
+            )
+
     records, total = await list_reviews(
         session,
         repo_full_name=repo,
@@ -185,21 +191,15 @@ async def list_reviews_endpoint(
 )
 async def get_review_endpoint(
     review_id: str,
-    _auth: None = Depends(require_auth),
+    principal: Principal = Depends(require_auth),
+    _role: Role = Depends(require_permission(Permission.READ_REVIEWS)),
     session: AsyncSession = Depends(get_db),
 ) -> ReviewDetail:
     """
     Get full review detail by ID.
-
-    CACHE-ASIDE STATUS OVERLAY:
-    The returned status is the Redis-cached value if available (fresher for
-    in-progress reviews), falling back to the Postgres-stored value.
-    All other fields come from Postgres (the authoritative durable store).
-
-    Returns 404 if no review with this ID exists.
+    Enforces that non-admin callers cannot access reviews from another workspace.
     """
     # Step 1: Fetch from Postgres (full data, authoritative).
-    # get_review() also loads findings via selectin (no N+1 query).
     record = await get_review(session, review_id)
 
     if record is None:
@@ -208,6 +208,15 @@ async def get_review_endpoint(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Review '{review_id}' not found.",
         )
+
+    authorized_account = principal.account or principal.tenant_id
+    if not principal.is_admin and authorized_account:
+        repo_owner = record.repo_full_name.split("/")[0] if "/" in record.repo_full_name else ""
+        if repo_owner.lower() != authorized_account.lower():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied: review '{review_id}' belongs to another workspace.",
+            )
 
     # Step 2: Cache-aside status overlay.
     # For in-progress reviews, the worker updates Redis on every state

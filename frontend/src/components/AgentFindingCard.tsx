@@ -1,70 +1,20 @@
 import { SeverityChip } from "./SeverityChip";
 import type { Finding } from "@/lib/types";
-
+const AGENTS: Record<string, string> = { security: "Security", quality: "Code quality", test_coverage: "Test coverage", documentation: "Documentation" };
 export function FindingCard({ finding }: { finding: Finding }) {
+  const confidence = Number.isFinite(finding.confidence) ? `${Math.round(finding.confidence * 100)}%` : "Not available";
   return (
-    <div className="px-4 py-3 space-y-1">
-      <div className="flex items-start gap-2">
-        <SeverityChip severity={finding.severity} />
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium">{finding.summary}</div>
-          {finding.file_path && (
-            <div className="text-xs font-mono text-muted truncate">
-              {finding.file_path}
-              {finding.line_start ? `:${finding.line_start}` : ""}
-              {finding.line_end && finding.line_end !== finding.line_start
-                ? `-${finding.line_end}`
-                : ""}
-            </div>
-          )}
-        </div>
-        <span className="text-xs text-muted shrink-0">
-          conf {(finding.confidence * 100).toFixed(0)}%
-        </span>
-      </div>
-      {finding.suggestion && (
-        <div className="mt-2 text-xs border-l-2 border-white/60 pl-3 space-y-1">
-          <div className="text-white font-semibold text-[11px] uppercase tracking-wider">Recommendation</div>
-          <pre className="bg-black border border-white/10 rounded p-2 font-mono text-[11px] text-foreground/90 overflow-x-auto whitespace-pre-wrap">
-            {finding.suggestion}
-          </pre>
-        </div>
-      )}
-    </div>
+    <article className="px-4 py-5 sm:px-5 space-y-3">
+      <div className="flex flex-wrap items-center gap-2"><SeverityChip severity={finding.severity} /><span className="text-xs text-muted">Model confidence: {confidence}</span></div>
+      <h3 className="text-sm font-medium leading-relaxed break-words">{finding.summary}</h3>
+      {finding.file_path && <p className="break-all text-xs font-mono text-muted">{finding.file_path}{finding.line_start ? `:${finding.line_start}` : ""}{finding.line_end && finding.line_end !== finding.line_start ? `–${finding.line_end}` : ""}</p>}
+      {finding.suggestion && <details className="rounded-lg border border-border bg-bg"><summary className="cursor-pointer px-3 py-3 text-sm font-medium">Suggested change</summary><pre className="overflow-x-auto whitespace-pre-wrap break-words border-t border-border p-3 font-mono text-xs leading-relaxed">{finding.suggestion}</pre></details>}
+    </article>
   );
 }
-
 export function FindingsByAgent({ findings }: { findings: Finding[] }) {
   const groups = new Map<string, Finding[]>();
-  for (const f of findings) {
-    const k = f.agent_type || "unknown";
-    if (!groups.has(k)) groups.set(k, []);
-    groups.get(k)!.push(f);
-  }
-  if (groups.size === 0) {
-    return (
-      <div className="border border-white/10 rounded-xl bg-panel px-4 py-3 text-sm text-muted">
-        No findings.
-      </div>
-    );
-  }
-  return (
-    <div className="grid gap-4">
-      {[...groups.entries()].map(([agent, list]) => (
-        <div key={agent} className="border border-white/10 rounded-xl bg-gradient-to-b from-zinc-900/50 to-black overflow-hidden shadow-sm">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/[0.02]">
-            <span className="font-mono text-sm font-semibold text-white uppercase tracking-wider">{agent}</span>
-            <span className="text-xs text-muted font-mono">
-              {list.length} finding{list.length === 1 ? "" : "s"}
-            </span>
-          </div>
-          <div className="divide-y divide-white/10">
-            {list.map((f) => (
-              <FindingCard key={f.id} finding={f} />
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+  for (const finding of findings) { const key = finding.agent_type || "unknown"; if (!groups.has(key)) groups.set(key, []); groups.get(key)!.push(finding); }
+  if (!groups.size) return <div className="rounded-xl border border-border bg-panel p-6 text-sm text-muted">No findings recorded for this review.</div>;
+  return <div className="space-y-4">{[...groups.entries()].map(([agent, list]) => <section key={agent} className="overflow-hidden rounded-xl border border-border bg-panel"><div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-surface/40 px-5 py-4"><h2 className="text-sm font-semibold">{AGENTS[agent] ?? agent.replaceAll("_", " ")}</h2><span className="text-xs text-muted">{list.length} finding{list.length === 1 ? "" : "s"}</span></div><div className="divide-y divide-border">{list.map((finding) => <FindingCard key={finding.id} finding={finding} />)}</div></section>)}</div>;
 }

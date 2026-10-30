@@ -164,6 +164,9 @@ class Settings(BaseSettings):
     nvidia_base_url: str = "https://integrate.api.nvidia.com/v1"
     nvidia_model: str = "openai/gpt-oss-20b"
 
+    # Google Gemini API key & configuration
+    gemini_api_key: str = ""
+
     # Optional custom OpenAI-compatible base URL (overrides default when set)
     openai_api_base_url: str = ""
 
@@ -203,6 +206,21 @@ class Settings(BaseSettings):
     max_concurrent_agents: int = 2
 
     # -------------------------------------------------------------------------
+    # Admission Controls, Rate Limits, and Work Bounds (Gate B - T17)
+    # -------------------------------------------------------------------------
+    max_api_body_bytes: int = 2 * 1024 * 1024       # 2 MB for REST endpoints
+    max_webhook_body_bytes: int = 10 * 1024 * 1024  # 10 MB for webhooks
+    max_headers_bytes: int = 65536                  # 64 KB total header size limit
+    max_queue_depth: int = 100                      # ARQ backpressure threshold
+    max_active_per_tenant: int = 3                  # Max concurrent/in-flight reviews per tenant
+    max_pr_files: int = 100                         # Max files reviewed per PR
+    max_pr_diff_bytes: int = 500_000                # Max diff bytes (500 KB)
+    rate_limit_api_per_minute: int = 120            # Per-principal API rate limit
+    rate_limit_webhook_per_minute: int = 60         # Per-repository webhook rate limit
+    rate_limit_auth_per_minute: int = 30            # Per-IP public auth rate limit
+    trusted_proxies: str = "127.0.0.1,::1"          # Comma-separated trusted proxy IPs
+
+    # -------------------------------------------------------------------------
     # API Authentication
     # -------------------------------------------------------------------------
 
@@ -237,7 +255,23 @@ class Settings(BaseSettings):
     )
     per_review_budget_usd: float = Field(
         default=0.50,
-        description="Advisory per-review spend cap in USD. Surfaced as a metric, not enforced.",
+        description="Per-review spend cap in USD. Enforced via reservation if enforce_per_review_budget is True.",
+    )
+    enforce_per_review_budget: bool = Field(
+        default=False,
+        description="Whether per-review budget cap is strictly enforced via reservation.",
+    )
+    budget_fail_closed: bool = Field(
+        default=False,
+        description="If True, fail closed when cost ledger is unreachable; if False, allow emergency headroom.",
+    )
+    emergency_budget_usd: float = Field(
+        default=1.00,
+        description="Maximum emergency spend allowed during a cost ledger outage.",
+    )
+    strict_price_enforcement: bool = Field(
+        default=False,
+        description="If True, reject models with unknown pricing; if False, use conservative price.",
     )
 
     # -------------------------------------------------------------------------

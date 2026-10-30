@@ -28,6 +28,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from backend.auth.dependencies import require_auth
+from backend.auth.principal import Principal
 from backend.security.rbac import require_permission, Permission, Role
 from backend.economics import (
     BudgetGuard,
@@ -58,9 +59,15 @@ class SummaryResponse(BaseModel):
 class BudgetStatusResponse(BaseModel):
     daily_cap_usd: float
     daily_spent_usd: float
+    daily_reserved_usd: float = 0.0
+    daily_committed_usd: float = 0.0
     daily_headroom_usd: float
     daily_utilization: float = Field(..., description="0.0-1.0+ ; >=1.0 means cap reached")
     per_review_cap_usd: float
+    hard_limit_enforced: bool = True
+    per_review_cap_enforced: bool = False
+    is_estimate: bool = False
+    ledger_status: str = "settled"
     exceeded: bool
 
 
@@ -107,13 +114,14 @@ async def summary(
 
 @economics_router.get("/budget", response_model=BudgetStatusResponse)
 async def budget(
-    _auth: None = Depends(require_auth),
+    principal: Principal = Depends(require_auth),
     _role: Role = Depends(require_permission(Permission.VIEW_COST_REPORT)),
 ) -> BudgetStatusResponse:
     """
-    Daily budget gauge. Returns headroom + utilization for a progress bar.
+    Daily budget gauge with active reservation tracking and ledger state.
     """
-    status_dict: dict[str, Any] = await BudgetGuard().status()
+    tenant_id = principal.account or principal.tenant_id or "default"
+    status_dict: dict[str, Any] = await BudgetGuard().status(tenant_id=tenant_id)
     return BudgetStatusResponse(**status_dict)
 
 
@@ -134,21 +142,27 @@ async def timeseries(
 @economics_router.get("/workflow/{workflow_id:path}", response_model=WorkflowCostResponse)
 async def workflow_cost(
     workflow_id: str,
-    _auth: None = Depends(require_auth),
+    principal: Principal = Depends(require_auth),
     _role: Role = Depends(require_permission(Permission.VIEW_COST_REPORT)),
 ) -> WorkflowCostResponse:
     """
     Cost rollup for one PR review run.
-
-    workflow_id format: "owner/repo:pr_number:commit_sha". We use the :path
-    converter because the id contains slashes (same convention as the reviews
-    router fix in commit 428c1d8).
+    Enforces workspace scoping.
     """
     if not workflow_id or len(workflow_id) > 255:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="workflow_id must be 1..255 chars",
         )
+
+    authorized_account = principal.account or principal.tenant_id
+    if not principal.is_admin and authorized_account:
+        repo_owner = workflow_id.split("/")[0] if "/" in workflow_id else ""
+        if repo_owner.lower() != authorized_account.lower():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied: cannot view economics for another workspace.",
+            )
 
     rollup = await get_workflow_cost(workflow_id)
     return WorkflowCostResponse(
@@ -171,6 +185,8 @@ async def workflow_cost(
 @economics_router.get("/agent-health", summary="Per-agent health from Tiger aggregate")
 async def get_agent_health(
     minutes: int = Query(default=60, ge=1, le=1440, description="Lookback window in minutes"),
+    _auth: None = Depends(require_auth),
+    _role: Role = Depends(require_permission(Permission.VIEW_COST_REPORT)),
 ) -> list[dict]:
     """
     Returns per-agent cost, p95 latency, and rejection rate over the last N minutes.
@@ -202,7 +218,11 @@ async def get_agent_health(
 
 
 @economics_router.get("/pr-cost/{review_id}", summary="Per-PR cost from Tiger aggregate")
-async def get_pr_cost(review_id: str) -> dict:
+async def get_pr_cost(
+    review_id: str,
+    _auth: None = Depends(require_auth),
+    _role: Role = Depends(require_permission(Permission.VIEW_COST_REPORT)),
+) -> dict:
     """
     Returns total cost, tokens, agents used, and wall time for a specific PR review.
     Source: pr_cost_hourly continuous aggregate (TimescaleDB, refreshed every hour).
@@ -235,7 +255,10 @@ async def get_pr_cost(review_id: str) -> dict:
 
 
 @economics_router.get("/daily-summary", summary="24h cost + latency summary from Tiger aggregates")
-async def get_daily_summary() -> dict:
+async def get_daily_summary(
+    _auth: None = Depends(require_auth),
+    _role: Role = Depends(require_permission(Permission.VIEW_COST_REPORT)),
+) -> dict:
     """
     Returns a 24-hour rollup: total cost, total tokens, p95 latency per agent,
     and rejection rate per agent.

@@ -187,31 +187,27 @@ async def resolve_dispute(
         hitl_review.reviewer_id = request.reviewer_id
         hitl_review.resolved_at = datetime.now(timezone.utc)
 
-        # Step 5: Flush within savepoint — savepoint commits on nested block exit.
-        # (demo-day-readiness Bug #5 pattern: save first, post second.)
+        # Step 5: Flush within savepoint and record feedback atomically in same transaction
         await session.flush()
 
-    # Commit the outer autobegin transaction so the DB state is durable
-    # before we do GitHub post + feedback recording.
+        feedback_id = await record_feedback(
+            hitl_review_id=request.hitl_review_id,
+            repo_full_name=hitl_review.repo_full_name,
+            pr_number=hitl_review.pr_number,
+            agent_verdict=hitl_review.agent_verdict,
+            human_verdict=request.human_verdict,
+            reason=request.reason,
+            context_snapshot=hitl_review.findings_snapshot,
+        )
+
+    # Commit the outer transaction so both resolution and feedback are committed atomically
     await session.commit()
 
     logger.info(
         "hitl_dispute | resolved | hitl_id=%s status=%s->%s "
-        "human_verdict=%s reviewer=%s",
+        "human_verdict=%s reviewer=%s feedback_id=%s",
         request.hitl_review_id, previous_status, new_status,
-        request.human_verdict, request.reviewer_id,
-    )
-
-    # Step 6: Record feedback (Phase 20 training signal).
-    # Build context snapshot from the findings stored on the HITL row.
-    feedback_id = await record_feedback(
-        hitl_review_id=request.hitl_review_id,
-        repo_full_name=hitl_review.repo_full_name,
-        pr_number=hitl_review.pr_number,
-        agent_verdict=hitl_review.agent_verdict,
-        human_verdict=request.human_verdict,
-        reason=request.reason,
-        context_snapshot=hitl_review.findings_snapshot,   # already JSON
+        request.human_verdict, request.reviewer_id, feedback_id,
     )
 
     # Step 7: Post to GitHub (best-effort).
@@ -259,11 +255,27 @@ async def resolve_dispute(
             comments=[],   # no inline comments (Phase 17 restores those)
         )
 
-        await github_client.post_pr_review(
-            repo_full_name=hitl_review.repo_full_name,
-            pr_number=hitl_review.pr_number,
-            payload=payload,
-        )
+        try:
+            await github_client.post_pr_review(
+                repo_full_name=hitl_review.repo_full_name,
+                pr_number=hitl_review.pr_number,
+                payload=payload,
+            )
+        except Exception as post_err:
+            if payload.event != ReviewEvent.COMMENT:
+                logger.warning(
+                    "hitl_dispute | review event %s rejected (%s), retrying as COMMENT fallback",
+                    payload.event,
+                    post_err,
+                )
+                payload.event = ReviewEvent.COMMENT
+                await github_client.post_pr_review(
+                    repo_full_name=hitl_review.repo_full_name,
+                    pr_number=hitl_review.pr_number,
+                    payload=payload,
+                )
+            else:
+                raise post_err
 
         # Mark posted in DB (non-atomic update — best effort).
         from backend.database.postgres import get_session_factory as _sf
@@ -305,22 +317,12 @@ async def resolve_dispute(
 def _human_verdict_to_github_event(human_verdict: str) -> str:
     """
     Map human verdict to GitHub review event string.
-
-    REQUEST_CHANGES is used when a dedicated bot account is configured
-    (bot account != PR author, so GitHub allows REQUEST_CHANGES).
-    Falls back to COMMENT as a safe default.
-
-    (demo-day-readiness pitfall #35: GitHub 422 when reviewer == PR author.)
+    Faithfully maps 'approve' -> 'APPROVE', 'request_changes' -> 'REQUEST_CHANGES',
+    and 'dismiss' -> 'COMMENT'.
     """
-    # TODO (Phase 19 proper): detect whether GITHUB_BOT_ACCOUNT is set.
-    # If bot account configured, use APPROVE / REQUEST_CHANGES.
-    # For now, always COMMENT — GitHub returns 422 if reviewer == PR author,
-    # which is the case when running with the developer's own GITHUB_TOKEN.
-    # The DB still records the true human_verdict; only the GitHub-visible
-    # event is downgraded to COMMENT to avoid 422.
     mapping = {
-        "approve": "COMMENT",          # COMMENT until dedicated bot account
-        "request_changes": "COMMENT",  # COMMENT until dedicated bot account
+        "approve": "APPROVE",
+        "request_changes": "REQUEST_CHANGES",
         "dismiss": "COMMENT",
     }
     return mapping.get(human_verdict, "COMMENT")

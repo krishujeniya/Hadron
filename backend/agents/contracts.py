@@ -101,6 +101,21 @@ class AgentVerdict(str, Enum):
     CRITICAL_BLOCK = "critical_block"
 
 
+class AgentFailureKind(str, Enum):
+    """
+    Taxonomy of agent execution failures.
+    Preserves exact failure reason through orchestration, state, and reporting.
+    """
+    NONE = "none"
+    PROVIDER_FAILURE = "provider_failure"
+    TIMEOUT = "timeout"
+    INVALID_OUTPUT = "invalid_output"
+    PARSE_FAILURE = "parse_failure"
+    BUDGET_DENIAL = "budget_denial"
+    CANCELLED = "cancelled"
+    INTERNAL_ERROR = "internal_error"
+
+
 # =============================================================================
 # PeerFindingSummary
 #
@@ -305,6 +320,9 @@ class VerdictRecord:
     # Empty string when succeeded=True.
     error_message: str = ""
 
+    # Taxonomy of failure kind if succeeded=False
+    failure_kind: AgentFailureKind = AgentFailureKind.NONE
+
     def to_dict(self) -> dict[str, Any]:
         """
         Converts to a plain dict for storage in LangGraph state / Postgres.
@@ -317,6 +335,7 @@ class VerdictRecord:
             "confidence":    self.confidence,
             "finding_count": self.finding_count,
             "error_message": self.error_message,
+            "failure_kind":  self.failure_kind.value if hasattr(self.failure_kind, "value") else str(self.failure_kind),
         }
 
 

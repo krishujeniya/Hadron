@@ -534,6 +534,20 @@ class GitHubClient:
         )
         return response
 
+    async def list_pr_reviews(
+        self,
+        repo_full_name: str,
+        pr_number: int,
+    ) -> list[dict[str, Any]]:
+        """
+        Lists all reviews on a pull request.
+        GitHub endpoint: GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews
+        Used for reconciling publications and preventing duplicate reviews on network timeouts.
+        """
+        path = f"/repos/{repo_full_name}/pulls/{pr_number}/reviews"
+        data = await self._request("GET", path)
+        return data if isinstance(data, list) else []
+
     # =========================================================================
     # PRIVATE REQUEST METHODS
     # All public methods funnel through _request() or _request_raw().

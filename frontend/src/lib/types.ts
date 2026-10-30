@@ -11,7 +11,7 @@ export type ReviewStatus =
   | "escalated"
   | "failed";
 
-export type Verdict = "approve" | "request_changes" | "dismiss" | "comment";
+export type Verdict = "approve" | "request_changes" | "dismiss" | "comment" | "needs_human_review";
 
 export type Severity = "critical" | "high" | "medium" | "low" | "info";
 

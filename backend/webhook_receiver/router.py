@@ -45,10 +45,13 @@ from backend.config.settings import Settings, get_settings
 from backend.core.exceptions import (
     DuplicateWebhookError,
     MemoryStoreError,
+    QueueOverloadedError,
+    TenantConcurrencyLimitError,
     WebhookParseError,
     WebhookValidationError,
 )
 from backend.job_queue.arq_worker import enqueue_review_job
+from backend.security.admission import check_webhook_rate_limit
 from backend.webhook_receiver.parser import parse_webhook_payload
 from backend.webhook_receiver.validator import validate_github_signature
 
@@ -68,19 +71,14 @@ router = APIRouter(
     summary="GitHub webhook receiver",
     description=(
         "Receives GitHub pull_request webhook events. "
-        "Validates HMAC signature, parses payload, enqueues review job."
+        "Validates HMAC signature, parses payload, deduplicates, and enqueues review job."
     ),
 )
 async def receive_github_webhook(
     request: Request,
-    # FastAPI reads these from the request headers automatically.
-    # Header() tells FastAPI: look for "X-Hub-Signature-256" in the headers.
-    # FastAPI converts underscores -> hyphens for header name lookup.
     x_hub_signature_256: str | None = Header(default=None),
     x_github_event: str | None = Header(default=None),
-    # FIX: settings is now INJECTED by FastAPI, not grabbed from a global.
-    # FastAPI calls get_settings() and passes the result in as `cfg`.
-    # In tests: override with app.dependency_overrides[get_settings] = ...
+    x_github_delivery: str | None = Header(default=None),
     cfg: Settings = Depends(get_settings),
 ) -> JSONResponse:
     """
@@ -89,37 +87,55 @@ async def receive_github_webhook(
     GitHub sends this when a pull request is opened, updated, or reopened.
     We validate the signature, parse the payload, deduplicate, and enqueue.
     The actual review runs asynchronously — we return 200 immediately.
-
-    CONTRACT:
-      Precondition:
-        - request body must be valid JSON
-        - X-Hub-Signature-256 header must be present and correct
-        - X-GitHub-Event header should be present
-      Postcondition:
-        - Returns 200 in all non-error cases (even for ignored event types)
-        - Returns 401 only when signature is invalid (not from GitHub)
-        - Returns 400 only when payload is malformed JSON
-        - Never returns 500 for business logic errors (only unhandled exceptions)
     """
+    # ------------------------------------------------------------------
+    # Step 0: Validate Content-Type and enforce payload size limits
+    # ------------------------------------------------------------------
+    content_type = request.headers.get("content-type", "")
+    if content_type and not ("application/json" in content_type or "application/x-www-form-urlencoded" in content_type):
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Unsupported Content-Type header. Expected application/json.",
+        )
 
     # ------------------------------------------------------------------
-    # Step 1: Read the raw request body as bytes
-    #
-    # WHY BYTES AND NOT JSON?
-    # The HMAC signature is computed over the exact bytes GitHub sent.
-    # If we parse JSON first, Python may change whitespace or key ordering.
-    # That changes the bytes, which changes the HMAC, which fails validation.
-    # Raw bytes first. JSON parsing happens in the parser after validation.
+    # Step 1: Read raw body with 10MB safety bound
     # ------------------------------------------------------------------
     raw_body = await request.body()
+    MAX_PAYLOAD_BYTES = 10 * 1024 * 1024  # 10 MB limit
+    if len(raw_body) > MAX_PAYLOAD_BYTES:
+        http_413 = getattr(status, "HTTP_413_CONTENT_TOO_LARGE", status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
+        raise HTTPException(
+            status_code=http_413,
+            detail="Webhook payload exceeds 10MB limit.",
+        )
+
+    # ------------------------------------------------------------------
+    # Step 1b: Check delivery receipt deduplication
+    # ------------------------------------------------------------------
+    from backend.memory.redis_client import redis_client
+    if x_github_delivery:
+        try:
+            existing_workflow = await redis_client.check_receipt(x_github_delivery)
+            if existing_workflow:
+                logger.info(
+                    "Duplicate delivery receipt | delivery_id=%s workflow_id=%s",
+                    x_github_delivery,
+                    existing_workflow,
+                )
+                return JSONResponse(
+                    content={
+                        "status": "already_processed",
+                        "delivery_id": x_github_delivery,
+                        "workflow_id": existing_workflow,
+                    },
+                    status_code=status.HTTP_200_OK,
+                )
+        except MemoryStoreError as e:
+            logger.warning("Redis unavailable during delivery receipt check: %s", e)
 
     # ------------------------------------------------------------------
     # Step 2: Validate HMAC-SHA256 signature
-    #
-    # validate_github_signature receives the secret as an argument.
-    # It does NOT reach into settings itself (Law of Demeter — it only
-    # interacts with what is passed to it).
-    # If validation fails: raises WebhookValidationError -> we return 401.
     # ------------------------------------------------------------------
     try:
         validate_github_signature(
@@ -171,6 +187,10 @@ async def receive_github_webhook(
         event.head_commit_sha[:8],   # log only first 8 chars of the SHA
     )
 
+    # Authenticated Webhook Rate Limit Policy:
+    # Throttle by target repository rather than shared GitHub source IPs.
+    await check_webhook_rate_limit(event.repo_full_name)
+
     # ------------------------------------------------------------------
     # Steps 4 + 5: Idempotency check AND enqueue (combined)
     #
@@ -181,10 +201,13 @@ async def receive_github_webhook(
     #
     # DuplicateWebhookError -> return 200 silently (not an error, expected behavior)
     # MemoryStoreError -> Redis is down, log and return 503 (caller should retry)
+    # QueueOverloadedError -> Backpressure 503 with Retry-After header
+    # TenantConcurrencyLimitError -> Throttled 429 with Retry-After header
     # ------------------------------------------------------------------
     try:
         await enqueue_review_job(
             workflow_id=event.idempotency_key,
+            delivery_id=x_github_delivery,
             input_data={
                 "repo_full_name": event.repo_full_name,
                 "pr_number": event.pr_number,
@@ -206,6 +229,22 @@ async def receive_github_webhook(
         return JSONResponse(
             content={"status": "already_queued", "idempotency_key": event.idempotency_key},
             status_code=status.HTTP_200_OK,
+        )
+    except QueueOverloadedError as e:
+        logger.warning("Webhook rejected due to queue backpressure | queue_depth=%d", e.queue_depth)
+        await redis_client.delete_idempotency_key(event.idempotency_key)
+        return JSONResponse(
+            content={"detail": "Queue capacity exceeded. Backpressure active.", "retry_after": e.retry_after},
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            headers={"Retry-After": str(e.retry_after)},
+        )
+    except TenantConcurrencyLimitError as e:
+        logger.warning("Webhook throttled due to tenant concurrency | tenant=%s", e.tenant_id)
+        await redis_client.delete_idempotency_key(event.idempotency_key)
+        return JSONResponse(
+            content={"detail": f"Tenant '{e.tenant_id}' active review limit reached.", "retry_after": e.retry_after},
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            headers={"Retry-After": str(e.retry_after)},
         )
     except MemoryStoreError as e:
         logger.error("Redis unavailable during enqueue: %s", str(e))

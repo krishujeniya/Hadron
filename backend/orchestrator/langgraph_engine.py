@@ -115,6 +115,11 @@ class LangGraphEngine(WorkflowEngine):
             retrieved_context="",
             threat_detected=False,
             threat_reason="",
+            source_coverage={},
+            diff_unavailable=False,
+            is_empty_pr=False,
+            publication_status="pending",
+            publication_error="",
         )
 
     def _state_to_result(

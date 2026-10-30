@@ -54,12 +54,13 @@
 # This is safe — better to under-use than to exceed the context window and get an error.
 # Phase 10 (Observability) will add real token counting (tiktoken for OpenAI).
 
+import json
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any
 
-from backend.agents.contracts import AgentTask, AgentVerdict
+from backend.agents.contracts import AgentFailureKind, AgentTask, AgentVerdict
 from backend.core.exceptions import PromptNotFoundError
 from backend.models.enums import AgentType, FindingSeverity
 from backend.models.findings import AgentFinding, AgentFindingRaw
@@ -111,6 +112,10 @@ class AgentOutput:
 
     # None on success; error message if the LLM call failed
     error_message: str | None = None
+
+    # Execution success flag and taxonomy of failure
+    succeeded: bool = True
+    failure_kind: AgentFailureKind = AgentFailureKind.NONE
 
     # Phase 8: per-agent verdict derived from findings.
     # APPROVE:          no HIGH or CRITICAL findings
@@ -296,9 +301,13 @@ class BaseAgent(ABC):
         # (LLMOps-Essentials.md: "Skip any layer and your car becomes a liability.")
         agent_system_instructions = self._get_prompt_with_fallback(agent_name)
 
-        # Phase 11: Redact secrets / PII before dispatching to LLM
+        # Phase 11 & Gate A (T08): Redact secrets / PII across ALL outbound context fields
         from backend.security.masking import redact_text
         masked_diff, _ = redact_text(truncated_diff)
+        masked_title, _ = redact_text(_pr_title)
+        masked_description, _ = redact_text(_pr_description)
+        masked_retrieved_context, _ = redact_text(_retrieved_context) if _retrieved_context else ("", None)
+        masked_peer_context, _ = redact_text(_peer_context) if _peer_context else ("", None)
 
         # Structure (primacy/recency: most important first AND last):
         #   [SYSTEM PROMPT]  = format instruction + agent expertise
@@ -306,41 +315,53 @@ class BaseAgent(ABC):
         system = _build_system_prompt(agent_system_instructions)
         user_message = _build_user_message(
             diff=masked_diff,
-            pr_title=_pr_title,
-            pr_description=_pr_description,
+            pr_title=masked_title,
+            pr_description=masked_description,
             repo_name=_repo_name,
             was_truncated=was_truncated,
-            retrieved_context=_retrieved_context,
-            peer_context=_peer_context,
+            retrieved_context=masked_retrieved_context,
+            peer_context=masked_peer_context,
         )
 
-        # STEP 3: Call the LLM.
-        # Phase 16: enforce daily budget cap + tag the call for cost
-        # attribution. BudgetExceededError -> degraded result that triggers
-        # HITL via the existing low-confidence escalation path.
-        from backend.economics import BudgetExceededError, BudgetGuard
+        # STEP 3: Call the LLM with atomic cost reservation.
+        # Phase 16 & Gate B T18: reserve conservative cost before dispatching,
+        # preventing concurrent fan-out agents from exceeding the daily budget.
+        # BudgetExceededError -> degraded result that routes to HITL.
+        from backend.economics import BudgetExceededError, BudgetGuard, estimate_call_cost
         from backend.observability.workflow_context import set_workflow_context
 
+        guard = BudgetGuard()
+        tenant = getattr(task, "tenant_id", None) if task else "default"
+        est_cost = estimate_call_cost(
+            config.model_name,
+            len(user_message),
+            config.max_response_tokens,
+        )
+
+        reservation = None
         try:
-            await BudgetGuard().check_daily_budget()
+            reservation = await guard.reserve(
+                amount_usd=est_cost,
+                workflow_id=_workflow_id,
+                agent_type=agent_name,
+                tenant_id=tenant,
+            )
         except BudgetExceededError as bx:
             logger.warning(
-                "agent_skipped_budget_exceeded | agent=%s spent=$%.4f cap=$%.2f",
-                agent_name, bx.current_spend_usd, bx.cap_usd,
+                "agent_skipped_budget_exceeded | agent=%s spent=$%.4f cap=$%.2f reserved=$%.4f scope=%s",
+                agent_name, bx.current_spend_usd, bx.cap_usd, bx.active_reservations_usd, bx.scope,
             )
             return AgentOutput(
                 agent_type=self.agent_type,
                 findings=[],
                 confidence=0.3,  # low → triggers HITL escalation aggregator
                 tokens_used=0,
-                error_message=f"daily_budget_exceeded: {bx}",
+                error_message=f"budget_exceeded: {bx}",
                 per_verdict=AgentVerdict.CRITICAL_BLOCK,
             )
 
         # Tag the call so llm_client persists it with the right (workflow_id,
-        # agent_type) attribution. ContextVar is per-asyncio-task, and each
-        # fan-out agent runs in its own task, so we don't need to reset on
-        # exit — siblings get isolated context automatically.
+        # agent_type) attribution.
         set_workflow_context(workflow_id=_workflow_id, agent_type=agent_name)
         try:
             response: LLMResponse = await self._dispatch_llm_call(
@@ -348,9 +369,23 @@ class BaseAgent(ABC):
                 system=system,
                 user_message=user_message,
             )
+            if reservation and reservation.is_active:
+                await guard.reconcile(
+                    reservation=reservation,
+                    actual_cost_usd=response.estimated_cost_usd,
+                    model=response.model_used,
+                    input_tokens=response.input_tokens,
+                    output_tokens=response.output_tokens,
+                    latency_ms=response.latency_seconds * 1000.0,
+                    is_valid_json=response.is_valid_json,
+                    idempotency_key=f"res:{reservation.reservation_id}",
+                    call_type="llm",
+                )
         except Exception as e:
             # LLM call failed entirely (network, auth, all retries exhausted).
-            # Return a safe empty result that triggers HITL.
+            # Release reservation so headroom is restored.
+            if reservation and reservation.is_active:
+                await guard.release(reservation)
             logger.error(
                 "agent_llm_call_failed | agent=%s error=%s",
                 agent_name, str(e), exc_info=True,
@@ -358,19 +393,36 @@ class BaseAgent(ABC):
             return AgentOutput(
                 agent_type=self.agent_type,
                 findings=[],
-                confidence=0.3,   # Low confidence -> HITL
+                confidence=0.0,
                 tokens_used=0,
                 error_message=f"LLM call failed: {str(e)}",
-                per_verdict=AgentVerdict.APPROVE,  # no positive evidence of issues
+                succeeded=False,
+                failure_kind=AgentFailureKind.PROVIDER_FAILURE,
+                per_verdict=AgentVerdict.REQUEST_CHANGES,
             )
 
         # STEP 4: Apply the output guardrail.
         # Parses the LLM's response into a list of AgentFinding.
-        # On any parse failure: returns [] findings and confidence=0.3.
-        findings, confidence = _apply_output_guardrail(
+        findings, confidence, is_valid_guardrail, failure_kind, error_message = _apply_output_guardrail(
             response=response,
             agent_type=agent_name,
         )
+
+        if not is_valid_guardrail:
+            logger.warning(
+                "agent_guardrail_failed | agent=%s failure_kind=%s error=%s",
+                agent_name, failure_kind.value, error_message,
+            )
+            return AgentOutput(
+                agent_type=self.agent_type,
+                findings=[],
+                confidence=0.0,
+                tokens_used=response.input_tokens + response.output_tokens,
+                error_message=error_message,
+                succeeded=False,
+                failure_kind=failure_kind,
+                per_verdict=AgentVerdict.REQUEST_CHANGES,
+            )
 
         logger.info(
             "agent_complete | agent=%s findings=%d confidence=%.2f "
@@ -568,6 +620,14 @@ class BaseAgent(ABC):
         """
         messages = [{"role": "user", "content": user_message}]
 
+        # Support mock client with complete() method (used in Phase 8 tests)
+        if "complete" in getattr(self._client, "__dict__", {}):
+            res = self._client.complete(model=config.model_name, messages=messages, system_prompt=system)
+            import inspect
+            if inspect.isawaitable(res):
+                return await res
+            return res
+
         if config.provider == "openai":
             return await self._client.call_openai(
                 model=config.model_name,
@@ -763,44 +823,31 @@ def _build_user_message(
 def _apply_output_guardrail(
     response: LLMResponse,
     agent_type: str,
-) -> tuple[list[AgentFinding], float]:
+) -> tuple[list[AgentFinding], float, bool, AgentFailureKind, str | None]:
     """
     Output guardrail: parses and validates the LLM's response.
-
-    This is the most important defensive function in the agent layer.
-    It handles everything that can go wrong with LLM output.
-
-    WHAT CAN GO WRONG:
-      1. The LLM returned valid JSON but with {"issues": [...]} instead of {"findings": [...]}
-         -> We try "findings", then "issues", then "results", then any list value
-      2. The LLM returned a list directly instead of {"findings": [...]}
-         -> We accept it
-      3. The LLM returned garbage (not JSON at all)
-         -> _try_extract_json() already attempted in llm_client.py
-         -> If response.is_valid_json is False, we return empty + low confidence
-      4. Findings are malformed (wrong types, missing fields)
-         -> AgentFindingRaw handles loose types, .to_finding() normalizes
-
     Returns:
-        (findings, confidence) tuple where:
-          findings: list of validated AgentFinding objects (may be empty)
-          confidence: float in [0.0, 1.0]
-            - 0.3 if output was malformed (triggers HITL)
-            - mean(finding.confidence) if output was valid and has findings
-            - 0.7 if output was valid but had zero findings (conservative)
-
-    NEVER RAISES — always returns a safe result.
+        (findings, confidence, is_valid, failure_kind, error_message)
     """
     agent_name = agent_type
 
     # Case 1: LLM output was not valid JSON at all
     if not response.is_valid_json or not response.content:
         logger.warning(
-            "guardrail_invalid_json | agent=%s | routing to HITL", agent_name
+            "guardrail_invalid_json | agent=%s | output was not valid JSON or empty", agent_name
         )
-        return [], 0.3
+        return [], 0.0, False, AgentFailureKind.PARSE_FAILURE, "Model output was not valid JSON or empty"
 
     content = response.content
+
+    # If content is a raw JSON string, attempt to parse it
+    if isinstance(content, str):
+        try:
+            parsed = json.loads(content)
+            if isinstance(parsed, (dict, list)):
+                content = parsed
+        except Exception:
+            pass
 
     # Case 2: LLM returned a dict — extract the findings list from it
     raw_list = None
@@ -821,7 +868,7 @@ def _apply_output_guardrail(
                 "guardrail_no_findings_list | agent=%s content_keys=%s",
                 agent_name, list(content.keys()),
             )
-            return [], 0.3
+            return [], 0.0, False, AgentFailureKind.INVALID_OUTPUT, "No findings list found in model JSON output"
 
     # Case 3: LLM returned a list directly — accept it
     elif isinstance(content, list):
@@ -832,7 +879,7 @@ def _apply_output_guardrail(
             "guardrail_unexpected_content_type | agent=%s type=%s",
             agent_name, type(content).__name__,
         )
-        return [], 0.3
+        return [], 0.0, False, AgentFailureKind.INVALID_OUTPUT, f"Unexpected content type: {type(content).__name__}"
 
     # Now parse each element in the list into an AgentFinding
     findings: list[AgentFinding] = []
@@ -852,15 +899,12 @@ def _apply_output_guardrail(
                 "guardrail_finding_parse_error | agent=%s index=%d error=%s",
                 agent_name, i, str(e),
             )
-            # Skip this finding — don't fail the whole review for one bad finding
 
     # Compute the overall agent confidence from the individual finding confidences
     if not findings:
-        # Valid JSON, no findings -> conservative confidence (we might have missed something)
         confidence = 0.7
     else:
-        # Mean confidence across all findings
         confidence = sum(f.confidence for f in findings) / len(findings)
         confidence = round(confidence, 4)
 
-    return findings, confidence
+    return findings, confidence, True, AgentFailureKind.NONE, None

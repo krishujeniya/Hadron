@@ -369,13 +369,15 @@ class PromptInjectionDetector:
         title: str = "",
         body: str = "",
         diff: str = "",
+        retrieved_context: str = "",
     ) -> InjectionResult:
         """
-        Scan all three PR text fields and return a merged InjectionResult.
+        Scan PR text fields (title, body, diff, retrieved_context) and return a merged InjectionResult.
 
-        The union of all matched patterns and evidence is returned. The
-        sanitized_text is not meaningful here (each field is separate) —
-        callers should call check() per-field if they need sanitized text.
+        NOTE ON SAFETY:
+        Regex masking and pattern detection are heuristic mitigations, NEVER
+        proof that prompt injection is mathematically solved. Defense-in-depth
+        is required: mandatory human-in-the-loop escalation on high/critical patterns.
         """
         results = []
         if title:
@@ -384,6 +386,8 @@ class PromptInjectionDetector:
             results.append(self.check(body, "body"))
         if diff:
             results.append(self.check(diff, "diff"))
+        if retrieved_context:
+            results.append(self.check(retrieved_context, "retrieved_context"))
 
         if not results:
             return InjectionResult(detected=False, threat_level=None)
@@ -419,15 +423,16 @@ def check_pr_for_injection(
     title: str = "",
     body: str = "",
     diff: str = "",
+    retrieved_context: str = "",
     min_severity: InjectionSeverity = InjectionSeverity.LOW,
 ) -> InjectionResult:
     """
-    Convenience: check all PR fields for prompt injection.
+    Convenience: check all PR fields (title, body, diff, retrieved_context) for prompt injection.
 
     Uses a fresh PromptInjectionDetector with the default catalogue.
     """
     detector = PromptInjectionDetector(min_severity=min_severity)
-    return detector.check_pr(title=title, body=body, diff=diff)
+    return detector.check_pr(title=title, body=body, diff=diff, retrieved_context=retrieved_context)
 
 
 def detect_injections(

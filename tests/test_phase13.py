@@ -78,9 +78,10 @@ class TestHealthEndpoints:
             # Lifespan: redis_client is an instance; patch its methods directly.
             _patch.object(_main_module.redis_client, "connect",    new=_AM()),
             _patch.object(_main_module.redis_client, "disconnect", new=_AM()),
-            # Lifespan: init_db and ensure_collection are imported names in main.
+            # Lifespan: init_db, ensure_collection, and init_tiger_schema are imported names in main.
             _patch.object(_main_module, "init_db",          new=_AM()),
             _patch.object(_main_module, "ensure_collection", new=_AM(return_value=True)),
+            _patch.object(_main_module, "init_tiger_schema", new=_AM(return_value=True)),
             # /health endpoint: the three check coroutines and circuit breaker list.
             _patch.object(_main_module, "_check_postgres",        new=_AM(return_value=pg)),
             _patch.object(_main_module, "_check_redis",           new=_AM(return_value=redis)),

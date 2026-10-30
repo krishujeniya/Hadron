@@ -294,3 +294,12 @@ class PRReviewState(TypedDict):
     # Threat ingress fields (Phase 11 Security Guard)
     threat_detected: bool
     threat_reason: str
+
+    # Source coverage and commit tracking (Gate A / T07)
+    source_coverage: dict[str, Any]
+    diff_unavailable: bool
+    is_empty_pr: bool
+
+    # Publication outbox modeling (Gate B / T11)
+    publication_status: str
+    publication_error: str

@@ -81,15 +81,18 @@ ALL_KINDS: tuple[SensitiveKind, ...] = (
 # we mask the entire match.
 
 _BUILTIN_PATTERNS: dict[str, re.Pattern[str]] = {
-    # Generic high-entropy API keys / tokens (32–64 hex chars or base64-ish)
+    # Generic high-entropy API keys / tokens (32–64 hex chars or base64-ish) or known prefixes
     "api_key": re.compile(
-        r"\b(?:api[_-]?key|apikey|api[_-]?secret)[=:\s\"'`]+([A-Za-z0-9+/=_\-]{20,64})\b",
+        r"(?:\b(?:api[_-]?key|apikey|api[_-]?secret)[=:\s\"'`]+([A-Za-z0-9+/=_\-]{20,64})\b|"
+        r"\b(sk-[A-Za-z0-9_\-]{20,64})\b|"
+        r"\b(AKIA[0-9A-Z]{16})\b|"
+        r"\b(AIza[0-9A-Za-z\-_]{35})\b)",
         re.IGNORECASE,
     ),
-    # Bearer / Authorization header tokens
+    # Bearer / Authorization header tokens, GitHub tokens, or secret assignments
     "token": re.compile(
-        r"\b(?:bearer|token|access[_-]token|auth[_-]token|secret[_-]token)"
-        r"[=:\s\"'`]+([A-Za-z0-9+/=_\-\.]{20,200})",
+        r"(?:\b(?:bearer|token|access[_-]token|auth[_-]token|secret[_-]token|secret)[=:\s\"'`]+([A-Za-z0-9+/=_\-\.]{16,200})|"
+        r"\b(gh[pousr]_[A-Za-z0-9_]{30,60})\b)",
         re.IGNORECASE,
     ),
     # Password assignments in config / code
@@ -226,25 +229,27 @@ def _find_spans(text: str, policy: MaskingPolicy) -> list[_DetectedSpan]:
         if not policy.is_kind_enabled(kind):
             continue
         for m in pattern.finditer(text):
-            # If the pattern has a capturing group, mask only the group value
+            # If the pattern has a capturing group, mask only the matched group value
             if m.lastindex:
-                start, end = m.span(1)
-                value = m.group(1)
+                start, end = m.span(m.lastindex)
+                value = m.group(m.lastindex)
             else:
                 start, end = m.span()
                 value = m.group()
-            spans.append(_DetectedSpan(start=start, end=end, kind=kind, value=value))
+            if start >= 0 and end > start:
+                spans.append(_DetectedSpan(start=start, end=end, kind=kind, value=value))
 
     # Extra patterns from policy
     for label, pattern_str in policy.extra_patterns.items():
         for m in re.finditer(pattern_str, text):
             if m.lastindex:
-                start, end = m.span(1)
-                value = m.group(1)
+                start, end = m.span(m.lastindex)
+                value = m.group(m.lastindex)
             else:
                 start, end = m.span()
                 value = m.group()
-            spans.append(_DetectedSpan(start=start, end=end, kind=label, value=value))
+            if start >= 0 and end > start:
+                spans.append(_DetectedSpan(start=start, end=end, kind=label, value=value))
 
     return _resolve_overlaps(spans)
 

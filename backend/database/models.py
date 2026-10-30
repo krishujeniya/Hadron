@@ -852,13 +852,39 @@ class LLMCallLog(Base):
         comment="Workflow id this call belonged to. NULL for system/non-workflow calls.",
     )
 
+    # Workspace / tenant scoping
+    tenant_id: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+        index=True,
+        comment="Tenant or workspace ID. NULL for unscoped/system calls.",
+    )
+
+    # Deduplication and replay protection
+    idempotency_key: Mapped[str | None] = mapped_column(
+        String(128),
+        nullable=True,
+        unique=True,
+        index=True,
+        comment="Unique idempotency key to prevent double-charging on retries/replays.",
+    )
+
     # Which specialist agent made the call. e.g. "security", "quality",
-    # "test_coverage", "docs". "system" for non-agent calls.
+    # "test_coverage", "docs", "judge", "embedder". "system" for non-agent calls.
     agent_type: Mapped[str] = mapped_column(
         String(32),
         nullable=False,
         index=True,
         comment="Agent type that made the call. 'system' for non-agent calls.",
+    )
+
+    # Call classification: llm, embedding, judge
+    call_type: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="llm",
+        index=True,
+        comment="Call type: llm, embedding, judge.",
     )
 
     # Model name as served (response.model_used, may differ from requested).
@@ -890,6 +916,14 @@ class LLMCallLog(Base):
         default=1,
     )
 
+    # Status: settled, estimated, released
+    status: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="settled",
+        comment="Ledger status: settled, estimated, released.",
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -904,6 +938,7 @@ class LLMCallLog(Base):
         # explicit composite (created_at, agent_type) for the per-agent rollup.
         Index("ix_llm_call_log_day_agent", "created_at", "agent_type"),
         Index("ix_llm_call_log_workflow", "workflow_id", "agent_type"),
+        Index("ix_llm_call_log_tenant_day", "tenant_id", "created_at"),
     )
 
     def __repr__(self) -> str:

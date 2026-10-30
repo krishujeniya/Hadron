@@ -149,23 +149,33 @@ async def build_context(state: PRReviewState) -> dict[str, Any]:
                 )
                 pr_diff = ""
                 pr_files = []
+                is_empty_pr = True
+                diff_unavailable = False
             else:
                 pr_diff = await client.get_pr_diff(repo, pr_number)
                 pr_files = await client.get_pr_files(repo, pr_number)
+                is_empty_pr = False
+                diff_unavailable = False
 
         except Exception as github_err:
-            # GitHub is unavailable or repo does not exist (e.g. local demo).
-            # Use whatever data arrived in the webhook payload.
             logger.warning(
-                "build_context | github_fetch_failed | repo=%s pr=%d error=%s "
-                "| falling back to webhook payload data",
+                "build_context | github_fetch_failed | repo=%s pr=%d error=%s",
                 repo, pr_number, github_err,
             )
-            pr_diff = state.get("pr_diff", "# diff unavailable — GitHub fetch failed")
-            pr_files = state.get("pr_files", [])
+            is_demo = bool(state.get("is_demo") or state.get("allow_stub_diff") or (cfg.app_env == "test"))
+            if is_demo:
+                pr_diff = state.get("pr_diff", "# demo diff")
+                pr_files = state.get("pr_files", [])
+                is_empty_pr = bool(len(pr_diff) == 0 and len(pr_files) == 0)
+                diff_unavailable = False
+            else:
+                # Production / non-demo: never invent fake diffs on fetch failure
+                pr_diff = ""
+                pr_files = []
+                is_empty_pr = False
+                diff_unavailable = True
 
-            # Build a minimal stub metadata from the state so downstream code
-            # that reads metadata.title / .body / .author_login still works.
+            # Build minimal metadata fallback
             from types import SimpleNamespace
             metadata = SimpleNamespace(
                 title=state.get("pr_title", f"PR #{pr_number}"),
@@ -173,8 +183,65 @@ async def build_context(state: PRReviewState) -> dict[str, Any]:
                 author_login=state.get("author_login", "unknown"),
                 head_sha=state.get("head_commit_sha", ""),
                 base_branch=state.get("base_branch", "main"),
-                changed_files_count=0,
+                changed_files_count=len(pr_files),
             )
+
+    # -------------------------------------------------------------------------
+    # Gate A / T07: Source Coverage & Bounded Processing
+    # Categorize files, record exclusions (lockfiles, binaries, minified assets)
+    # -------------------------------------------------------------------------
+    import re
+    EXCLUDED_PATTERNS = [
+        (re.compile(r"(package-lock\.json|yarn\.lock|pnpm-lock\.yaml|poetry\.lock|Cargo\.lock|Pipfile\.lock|composer\.lock)$", re.IGNORECASE), "lockfile"),
+        (re.compile(r"\.(png|jpg|jpeg|gif|ico|svg|pdf|zip|gz|wasm|exe|bin|woff|woff2|ttf|eot)$", re.IGNORECASE), "binary/media"),
+        (re.compile(r"\.(min\.js|min\.css)$", re.IGNORECASE), "minified bundle"),
+    ]
+
+    files_received = []
+    files_omitted = []
+
+    # Gate B / T17: Bounded file count limit
+    max_pr_files = getattr(cfg, "max_pr_files", 100)
+    truncation_reasons = []
+
+    if len(pr_files) > max_pr_files:
+        excess = pr_files[max_pr_files:]
+        pr_files = pr_files[:max_pr_files]
+        for ef in excess:
+            fname = ef.filename if hasattr(ef, "filename") else (ef.get("filename") if isinstance(ef, dict) else str(ef))
+            files_omitted.append({"filename": fname, "reason": f"file_limit_exceeded (max {max_pr_files})"})
+        truncation_reasons.append(f"PR touches {len(pr_files) + len(excess)} files; bounded to {max_pr_files} files.")
+
+    for f in pr_files:
+        fname = f.filename if hasattr(f, "filename") else (f["filename"] if isinstance(f, dict) and "filename" in f else str(f))
+        files_received.append(fname)
+        for pattern, reason in EXCLUDED_PATTERNS:
+            if pattern.search(fname):
+                files_omitted.append({"filename": fname, "reason": reason})
+                break
+
+    # Gate B / T17: Bounded diff size limit
+    max_diff_bytes = getattr(cfg, "max_pr_diff_bytes", 500_000)
+    if pr_diff and len(pr_diff) > max_diff_bytes:
+        logger.warning(
+            "build_context | diff_truncated | original_bytes=%d max_bytes=%d",
+            len(pr_diff), max_diff_bytes,
+        )
+        pr_diff = pr_diff[:max_diff_bytes] + "\n\n... [DIFF TRUNCATED: Exceeded 500KB safety limit] ...\n"
+        truncation_reasons.append("PR diff exceeded 500KB limit; truncated for review.")
+
+    if diff_unavailable:
+        truncation_reasons.append(f"GitHub diff fetch failed: {github_err if 'github_err' in locals() else 'unavailable'}")
+
+    source_coverage = {
+        "complete": not diff_unavailable and len(truncation_reasons) == 0,
+        "base_sha": getattr(metadata, "base_branch", state.get("base_branch", "")),
+        "head_sha": getattr(metadata, "head_sha", state.get("head_commit_sha", "")),
+        "files_received": files_received,
+        "files_omitted": files_omitted,
+        "truncation_reasons": truncation_reasons,
+        "diff_unavailable": diff_unavailable,
+    }
 
     # -------------------------------------------------------------------------
     # Step 4: RAG context retrieval.
@@ -220,6 +287,7 @@ async def build_context(state: PRReviewState) -> dict[str, Any]:
             title=metadata.title or "",
             body=metadata.body or "",
             diff=pr_diff or "",
+            retrieved_context=retrieved_context or "",
         )
         if scan_res.detected:
             logger.warning(
@@ -254,6 +322,10 @@ async def build_context(state: PRReviewState) -> dict[str, Any]:
         "threat_reason": threat_reason,
         # Status progression
         "status": ReviewStatus.IN_PROGRESS,
+        # Gate A / T07: Honest coverage tracking
+        "source_coverage": source_coverage,
+        "diff_unavailable": diff_unavailable,
+        "is_empty_pr": is_empty_pr,
     }
 
 
@@ -313,20 +385,28 @@ async def _run_single_agent(
     try:
         # Wrap the agent call in per-agent timeout
         # asyncio.wait_for() raises asyncio.TimeoutError after `timeout` seconds
-        # Phase 8: _call_agent_real now returns (findings, confidence, per_verdict_str)
-        findings, agent_confidence, per_verdict_str = await asyncio.wait_for(
+        # Phase 8 & T06: _call_agent_real returns findings, confidence, verdict, success, error, failure_kind
+        (
+            findings,
+            agent_confidence,
+            per_verdict_str,
+            succeeded,
+            error_message,
+            failure_kind_str,
+        ) = await asyncio.wait_for(
             _call_agent_real(agent_type, state),
             timeout=timeout,
         )
 
         duration = time.monotonic() - start_time
         logger.info(
-            "agent_complete | agent=%s workflow=%s duration=%.2fs findings=%d verdict=%s",
+            "agent_complete | agent=%s workflow=%s duration=%.2fs findings=%d verdict=%s success=%s",
             agent_type,
             state["workflow_id"],
             duration,
             len(findings),
-            per_verdict_str,  # Phase 8: log per-agent verdict for observability
+            per_verdict_str,
+            succeeded,
         )
 
         try:
@@ -341,7 +421,7 @@ async def _run_single_agent(
                         latency_ms=int(duration * 1000),
                         outcome=per_verdict_str,
                         confidence=agent_confidence,
-                        payload={"findings_count": len(findings)},
+                        payload={"findings_count": len(findings), "success": succeeded},
                     ),
                 )
             )
@@ -350,12 +430,12 @@ async def _run_single_agent(
 
         return AgentResultState(
             agent_type=agent_type,
-            success=True,
-            error_message="",
+            success=succeeded,
+            error_message=error_message,
             duration_seconds=round(duration, 3),
             findings=findings,
-            confidence=agent_confidence,    # Phase 8: use agent's own confidence, not recomputed
-            per_verdict=per_verdict_str,    # Phase 8: persist per-agent verdict in state
+            confidence=agent_confidence,
+            per_verdict=per_verdict_str,
         )
 
     except asyncio.TimeoutError:
@@ -374,7 +454,7 @@ async def _run_single_agent(
             duration_seconds=round(duration, 3),
             findings=[],
             confidence=0.0,
-            per_verdict="approve",  # conservative: timeout != positive evidence of issues
+            per_verdict="request_changes",  # T06: never approve on failure/timeout
         )
 
     except Exception as e:
@@ -393,7 +473,7 @@ async def _run_single_agent(
             duration_seconds=round(duration, 3),
             findings=[],
             confidence=0.0,
-            per_verdict="approve",  # conservative: error != positive evidence of issues
+            per_verdict="request_changes",  # T06: never approve on failure/error
         )
 
 
@@ -641,6 +721,44 @@ async def aggregate_results(state: PRReviewState) -> dict[str, Any]:
             reason,
         )
         return _hitl_return(reason, [])
+
+    # -------------------------------------------------------------------------
+    # Gate A / T07: Rule 0b: Unavailable PR Diff or Incomplete Coverage -> HITL
+    # A review cannot approve if GitHub diff fetch failed or coverage is incomplete.
+    # Distinguish empty PRs (valid PR with 0 changed files) from diff fetch failures.
+    # -------------------------------------------------------------------------
+    if state.get("diff_unavailable"):
+        reason = "PR diff unavailable from GitHub. Review is incomplete; cannot approve."
+        logger.warning(
+            "aggregate | diff_unavailable_hitl | workflow_id=%s reason=%s",
+            state["workflow_id"],
+            reason,
+        )
+        return _hitl_return(reason, [])
+
+    source_cov = state.get("source_coverage")
+    if source_cov and not source_cov.get("complete", True) and not state.get("is_empty_pr", False):
+        reasons = ", ".join(source_cov.get("truncation_reasons", [])) or "Incomplete source coverage"
+        logger.warning(
+            "aggregate | incomplete_source_coverage_hitl | workflow_id=%s reason=%s",
+            state["workflow_id"],
+            reasons,
+        )
+        return _hitl_return(f"Source coverage incomplete: {reasons}. Routing to human review.", [])
+
+    if state.get("is_empty_pr"):
+        logger.info("aggregate | empty_pr_approved | workflow_id=%s", state["workflow_id"])
+        return {
+            "verdict": ReviewVerdict.APPROVE,
+            "final_findings": [],
+            "overall_confidence": 1.0,
+            "needs_human_review": False,
+            "human_review_reason": "",
+            "status": ReviewStatus.POSTING,
+            "verdict_breakdown": verdict_breakdown_dicts,
+            "conflict_detected": False,
+            "partial_review": False,
+        }
 
     # -------------------------------------------------------------------------
     # Rule 1: Security agent failure -> HITL
@@ -915,6 +1033,18 @@ async def post_review(state: PRReviewState) -> dict[str, Any]:
       -> If GitHub fails: save_review() is never called. No partial state.
       -> If Postgres fails: review is already live on GitHub. We log and continue.
     """
+    if state.get("review_posted") and state.get("github_review_id"):
+        logger.info(
+            "post_review | already_posted_skipping | workflow=%s github_review_id=%s",
+            state.get("workflow_id"),
+            state.get("github_review_id"),
+        )
+        return {
+            "review_posted": True,
+            "github_review_id": state.get("github_review_id"),
+            "status": ReviewStatus.COMPLETED,
+        }
+
     if state["needs_human_review"]:
         logger.info(
             "post_review | routing_to_hitl | reason=%s workflow=%s",
@@ -1007,6 +1137,57 @@ async def post_review(state: PRReviewState) -> dict[str, Any]:
 
     try:
         async with GitHubClient(cfg) as client:
+            # Reconcile: check if a review with our stable marker was already posted to avoid duplicate writes
+            marker = f"<!-- hadron-review:{state['workflow_id']} -->"
+            try:
+                existing_reviews = await client.list_pr_reviews(
+                    repo_full_name=state["repo_full_name"],
+                    pr_number=state["pr_number"],
+                )
+                for rev in existing_reviews:
+                    if marker in (rev.get("body") or ""):
+                        reconciled_id = rev["id"]
+                        logger.info(
+                            "post_review | reconciled_existing_review | id=%d workflow=%s",
+                            reconciled_id,
+                            state["workflow_id"],
+                        )
+                        await _save_review_record(state, reconciled_id)
+                        return {
+                            "review_posted": True,
+                            "github_review_id": reconciled_id,
+                            "publication_status": "posted",
+                            "status": ReviewStatus.COMPLETED,
+                        }
+            except Exception as rec_err:
+                logger.debug("post_review | list_reviews_reconcile_skip: %s", rec_err)
+
+            # Gate A / T07: Recheck PR head commit SHA to guard against superseded commits / force pushes
+            is_demo = bool(state.get("is_demo") or state.get("allow_stub_diff") or (cfg.app_env == "test"))
+            if not is_demo and state.get("head_commit_sha"):
+                try:
+                    current_metadata = await client.get_pr_metadata(
+                        repo_full_name=state["repo_full_name"],
+                        pr_number=state["pr_number"],
+                    )
+                    if current_metadata.head_sha and current_metadata.head_sha != state["head_commit_sha"]:
+                        logger.warning(
+                            "post_review | superseded_commit_detected | workflow_id=%s expected_sha=%s current_sha=%s",
+                            state["workflow_id"],
+                            state["head_commit_sha"],
+                            current_metadata.head_sha,
+                        )
+                        return {
+                            "review_posted": False,
+                            "github_review_id": None,
+                            "superseded": True,
+                            "publication_status": "permanent_failure",
+                            "publication_error": "Commit superseded by newer head",
+                            "status": ReviewStatus.COMPLETED,
+                        }
+                except Exception as check_err:
+                    logger.warning("post_review | head_recheck_warning (non-fatal): %s", check_err)
+
             try:
                 response = await client.post_pr_review(
                     repo_full_name=state["repo_full_name"],
@@ -1048,6 +1229,8 @@ async def post_review(state: PRReviewState) -> dict[str, Any]:
         return {
             "review_posted": False,
             "github_review_id": None,
+            "publication_status": "retryable_failure",
+            "publication_error": f"Rate limited: retry after {e.retry_after_seconds}s",
             "status": ReviewStatus.COMPLETED,
         }
 
@@ -1062,6 +1245,8 @@ async def post_review(state: PRReviewState) -> dict[str, Any]:
         return {
             "review_posted": False,
             "github_review_id": None,
+            "publication_status": "permanent_failure",
+            "publication_error": "Pull request not found",
             "status": ReviewStatus.COMPLETED,
         }
 
@@ -1077,6 +1262,8 @@ async def post_review(state: PRReviewState) -> dict[str, Any]:
         return {
             "review_posted": False,
             "github_review_id": None,
+            "publication_status": "retryable_failure" if e.status_code and e.status_code >= 500 else "permanent_failure",
+            "publication_error": str(e),
             "status": ReviewStatus.COMPLETED,
         }
 
@@ -1090,6 +1277,8 @@ async def post_review(state: PRReviewState) -> dict[str, Any]:
         return {
             "review_posted": False,
             "github_review_id": None,
+            "publication_status": "retryable_failure",
+            "publication_error": str(e),
             "status": ReviewStatus.COMPLETED,
         }
 
@@ -1099,6 +1288,7 @@ async def post_review(state: PRReviewState) -> dict[str, Any]:
     return {
         "review_posted": True,
         "github_review_id": github_review_id,
+        "publication_status": "posted",
         "status": ReviewStatus.COMPLETED,
     }
 
@@ -1193,6 +1383,7 @@ def _findings_to_review_comments(
     PR-level findings or findings outside the diff hunks are left for the summary body.
     """
     comments: list[ReviewComment] = []
+    seen: set[tuple[str, int, str]] = set()
 
     for f in findings:
         file_path = f.get("file_path")
@@ -1203,6 +1394,11 @@ def _findings_to_review_comments(
             continue
 
         line = max(1, int(line_start))
+        summary = f.get("summary", "").strip()
+        dedup_key = (file_path, line, summary[:60])
+        if dedup_key in seen:
+            continue
+        seen.add(dedup_key)
 
         # Check against valid hunk lines if mapping is provided
         if valid_diff_lines is not None:
@@ -1344,10 +1540,36 @@ def _build_review_summary(
 
     findings_section = "\n".join(findings_lines) if findings_lines else "_No findings._"
 
+    # ── Review metadata & honest source coverage (Gate A / T07) ──────────────
+    head_sha = state.get("head_commit_sha") or "unknown"
+    base_branch = state.get("base_branch") or "main"
+    source_cov = state.get("source_coverage") or {}
+    files_reviewed = source_cov.get("files_received", [])
+    files_omitted = source_cov.get("files_omitted", [])
+
+    coverage_parts = []
+    if files_reviewed:
+        coverage_parts.append(f"- **Coverage:** {len(files_reviewed)} file(s) evaluated")
+    if files_omitted:
+        omitted_desc = ", ".join(f"`{f.get('filename')}` ({f.get('reason')})" for f in files_omitted[:5])
+        if len(files_omitted) > 5:
+            omitted_desc += f" (+{len(files_omitted) - 5} more)"
+        coverage_parts.append(f"- **Exclusions:** {omitted_desc}")
+    coverage_section = ("\n" + "\n".join(coverage_parts)) if coverage_parts else ""
+
+    metadata_section = f"""### Review Metadata
+- **Commit Reviewed:** `{head_sha}`
+- **Base Branch:** `{base_branch}`{coverage_section}"""
+
     # ── Assemble body ─────────────────────────────────────────────────────────
-    body = f"""## 🤖 AI PR Review Agent
+    marker = f"<!-- hadron-review:{workflow_id} -->\n"
+    body = f"""{marker}## 🤖 AI PR Review Agent
 
 {verdict_badge}
+
+---
+
+{metadata_section}
 
 ---
 
@@ -1476,4 +1698,10 @@ async def _call_agent_real(
     # Convert AgentFinding objects -> plain dicts for LangGraph state
     finding_dicts = [finding.to_state_dict() for finding in agent_output.findings]
 
-    return finding_dicts, agent_output.confidence, per_verdict_str
+    # Phase 8 & T06: Preserving agent execution status, failure kind, and errors
+    succeeded = getattr(agent_output, "succeeded", True)
+    error_message = agent_output.error_message or ""
+    failure_kind = getattr(agent_output, "failure_kind", None)
+    failure_kind_str = failure_kind.value if hasattr(failure_kind, "value") else str(failure_kind or "none")
+
+    return finding_dicts, agent_output.confidence, per_verdict_str, succeeded, error_message, failure_kind_str

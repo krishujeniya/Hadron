@@ -191,6 +191,8 @@ GITHUB_API_BASE = "https://api.github.com"
 # Rationale: embedder.py caps at 8000 chars anyway, but fetching a 500KB
 # binary that happens to have a .py extension wastes network and API quota.
 MAX_FILE_BYTES = 100_000  # 100 KB
+MAX_INGESTION_FILES = 500  # Bound on stale files per run
+MAX_CHUNKS_PER_FILE = 50   # Bound on chunks generated per file
 
 # GitHub API timeout (seconds). Per-request, not total pipeline timeout.
 GITHUB_REQUEST_TIMEOUT = 15
@@ -522,8 +524,14 @@ async def ingest_repository(repo_full_name: str) -> dict[str, int]:
             return summary
 
         # Stage 4: chunk by AST boundaries, embed and upsert each stale file
-        # Per-file error isolation: one bad file doesn't abort the rest.
-        # (Distributed-Systems-Fault-Model.md: "A fault is not a failure.")
+        # Bounded processing (Gate B / T17): cap total files and chunks per file
+        if len(stale_files) > MAX_INGESTION_FILES:
+            logger.warning(
+                "ingest_repository | stale_files_capped | total=%d max=%d",
+                len(stale_files), MAX_INGESTION_FILES,
+            )
+            stale_files = dict(list(stale_files.items())[:MAX_INGESTION_FILES])
+
         for file_path, file_sha in stale_files.items():
 
             # Stage 4a: fetch raw content
@@ -536,6 +544,8 @@ async def ingest_repository(repo_full_name: str) -> dict[str, int]:
 
             # Stage 4b: AST semantic boundary chunking
             chunks_data = chunk_code_by_ast(content, file_path)
+            if len(chunks_data) > MAX_CHUNKS_PER_FILE:
+                chunks_data = chunks_data[:MAX_CHUNKS_PER_FILE]
             file_chunks: list[CodeChunk] = []
 
             for idx, (chunk_text, symbol) in enumerate(chunks_data):

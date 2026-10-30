@@ -193,11 +193,20 @@ async def upsert_code_chunks(
     if not file_chunks:
         return
 
+    # Validate dimensions before storage operations
+    for chunk in file_chunks:
+        vector = chunk.get("vector")
+        if vector and len(vector) != EMBEDDING_DIMENSIONS:
+            raise ValueError(
+                f"Point embedding dimension mismatch for {chunk.get('file_path')}: "
+                f"expected {EMBEDDING_DIMENSIONS}, got {len(vector)}"
+            )
+
     cfg = get_settings()
     try:
         client = AsyncQdrantClient(
-            url=cfg.qdrant_url,
-            api_key=cfg.qdrant_api_key or None,
+            url=getattr(cfg, "qdrant_url", "http://localhost:6333"),
+            api_key=getattr(cfg, "qdrant_api_key", None),
             timeout=30,   # longer timeout for batch upserts
         )
 
@@ -307,6 +316,11 @@ async def search_similar_code(
     if not query_vector or all(v == 0.0 for v in query_vector):
         # Zero vector (came from empty text in embed_text): no meaningful search.
         return []
+
+    if len(query_vector) != EMBEDDING_DIMENSIONS:
+        raise ValueError(
+            f"Query vector dimension mismatch: expected {EMBEDDING_DIMENSIONS}, got {len(query_vector)}"
+        )
 
     cfg = get_settings()
     try:

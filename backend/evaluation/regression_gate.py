@@ -69,6 +69,9 @@ class EvalResult:
     severity_accuracy: float
     score: float            # JudgeScore.overall_score
     reasoning: str
+    precision: float = 1.0
+    false_positive_count: int = 0
+    judge_fallback_active: bool = False
 
 
 @dataclass
@@ -201,6 +204,9 @@ class RegressionGate:
                 severity_accuracy=js.severity_accuracy,
                 score=js.overall_score,
                 reasoning=js.reasoning,
+                precision=js.precision,
+                false_positive_count=js.false_positive_count,
+                judge_fallback_active=js.judge_fallback_active,
             ))
 
         return results
@@ -255,19 +261,30 @@ class RegressionGate:
     def check_threshold(
         self,
         results: list[EvalResult],
+        require_llm_judge: bool = False,
     ) -> tuple[bool, str]:
         """
-        Enforce PASS_THRESHOLD and SLICE_THRESHOLD.
+        Enforce PASS_THRESHOLD, SLICE_THRESHOLD, and false-positive limits.
 
         Returns (passed: bool, reason: str).
         On failure, reason explains which gate failed.
 
         Gates (checked in order):
-        1. Aggregate mean score >= PASS_THRESHOLD
-        2. Every slice mean score >= SLICE_THRESHOLD
+        1. LLM availability check (if require_llm_judge)
+        2. Clean PR false positive check
+        3. Aggregate mean score >= PASS_THRESHOLD
+        4. Every slice mean score >= SLICE_THRESHOLD
         """
         if not results:
             return False, "No eval results -- cannot determine pass/fail."
+
+        if require_llm_judge and any(r.judge_fallback_active for r in results):
+            return False, "LLM release gate failed: Judge LLM was unavailable and fell back to deterministic matching."
+
+        for r in results:
+            if r.expected_verdict == "approve" and r.false_positive_count > 0:
+                if r.score < PASS_THRESHOLD:
+                    return False, f"Clean PR {r.example_id} failed with {r.false_positive_count} false positive finding(s)."
 
         scores = [r.score for r in results]
         aggregate = sum(scores) / len(scores)

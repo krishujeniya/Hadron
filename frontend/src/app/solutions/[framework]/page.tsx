@@ -222,9 +222,10 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: {
-  params: { framework: string };
+  params: Promise<{ framework: string }>;
 }): Promise<Metadata> {
-  const item = SOLUTIONS[params.framework];
+  const { framework } = await params;
+  const item = SOLUTIONS[framework];
   if (!item) {
     return {
       title: "Solutions | Hadron Autonomous PR Review",
@@ -247,12 +248,13 @@ export async function generateMetadata({
   };
 }
 
-export default function SolutionDetailPage({
+export default async function SolutionDetailPage({
   params,
 }: {
-  params: { framework: string };
+  params: Promise<{ framework: string }>;
 }) {
-  const solution = SOLUTIONS[params.framework];
+  const { framework } = await params;
+  const solution = SOLUTIONS[framework];
   if (!solution) {
     notFound();
   }

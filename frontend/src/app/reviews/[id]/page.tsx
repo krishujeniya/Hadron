@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import useSWR from "swr";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { FindingsByAgent } from "@/components/AgentFindingCard";
 import { DiffViewer } from "@/components/DiffViewer";
@@ -15,146 +16,26 @@ import type { ReviewDetail } from "@/lib/types";
 export default function ReviewDetailPage() {
   const params = useParams<{ id: string }>();
   const id = decodeURIComponent(params.id);
-  const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<"executive" | "findings" | "diff">("executive");
-
-  // Use api.getReview (custom fetcher) instead of the URL-string fetcher so
-  // the BE-route fallback in lib/api.ts kicks in for ids containing "/".
-  const { data, error, isLoading } = useSWR<ReviewDetail>(
-    ["review-detail", id],
-    () => api.getReview(id),
-    { refreshInterval: 5000 }
-  );
-
-  if (error) return <Empty>Failed to load: {error.message}</Empty>;
-  if (isLoading || !data) return <Empty>Loading…</Empty>;
-
-  const prUrl = `https://github.com/${data.repo_full_name}/pull/${data.pr_number}`;
-
-  const copyMarkdown = () => {
-    if (!data) return;
-    const findingsMd = (data.findings || []).map(f => {
-      const loc = f.file_path ? `\`${f.file_path}${f.line_start ? `:${f.line_start}` : ""}\`` : "General";
-      const sugg = f.suggestion ? `\n> **Suggestion:**\n> \`\`\`\n> ${f.suggestion}\n> \`\`\`` : "";
-      return `### [${(f.severity || "info").toUpperCase()}] ${f.summary}\n- **Agent:** ${f.agent_type}\n- **Location:** ${loc}\n- **Confidence:** ${((f.confidence ?? 0.5) * 100).toFixed(0)}%${sugg}\n`;
-    }).join("\n");
-
-    const md = `# Hadron Review: ${data.repo_full_name} #${data.pr_number}\n\n**Verdict:** ${data.verdict || "PENDING"}\n**Overall Confidence:** ${((data.overall_confidence ?? 0) * 100).toFixed(0)}%\n**Commit:** \`${data.head_commit_sha}\`\n\n## Findings\n\n${findingsMd || "No issues found."}\n\n---\n*Reviewed autonomously by [Hadron](https://hadron.dev)*`;
-
-    navigator.clipboard.writeText(md);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
+  const [copyStatus, setCopyStatus] = useState("");
+  const [activeView, setActiveView] = useState<"findings" | "diff">("findings");
+  const { data, error, isLoading, mutate } = useSWR<ReviewDetail>(["review-detail", id], () => api.getReview(id), { refreshInterval: (review) => review && ["completed", "failed", "escalated"].includes(review.status) ? 0 : 5000 });
+  if (error) return <div role="alert" className="rounded-xl border border-border bg-panel p-6 space-y-3"><h1 className="text-xl font-semibold">Review could not be loaded</h1><p className="text-sm text-muted">Check your connection or return to the review list.</p><div className="flex gap-4"><button onClick={() => void mutate()} className="min-h-11 rounded-lg border border-border px-4 text-sm">Try again</button><Link href="/reviews" className="inline-flex min-h-11 items-center text-sm underline">Back to reviews</Link></div></div>;
+  if (isLoading || !data) return <Empty><span role="status">Loading review…</span></Empty>;
+  const review = data;
+  async function copyMarkdown() {
+    const findings = review.findings.map((finding) => `### ${finding.severity}: ${finding.summary}\n${finding.file_path || "General"}${finding.line_start ? `:${finding.line_start}` : ""}\n${finding.suggestion || ""}`).join("\n\n");
+    const markdown = `# ${review.repo_full_name} #${review.pr_number}\n\n${review.pr_title}\n\nStatus: ${review.status}\nRecommendation: ${review.verdict || "Not available"}\nCommit: ${review.head_commit_sha}\n\n${findings || "No findings recorded."}\n\nAutomated findings require human assessment.`;
+    try { await navigator.clipboard.writeText(markdown); setCopyStatus("Review copied to clipboard."); } catch { setCopyStatus("Clipboard access was unavailable. Select the review text to copy it manually."); }
+  }
   return (
     <div className="space-y-6">
-      {/* Universal Breadcrumb Spatial Traversal (Principle 49) */}
-      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs font-mono text-zinc-500">
-        <a href="/" className="hover:text-white transition-colors">Dashboard</a>
-        <span>/</span>
-        <a href="/reviews" className="hover:text-white transition-colors">Reviews</a>
-        <span>/</span>
-        <span className="text-zinc-300 font-semibold">{data.repo_full_name} #{data.pr_number}</span>
-      </nav>
-
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="text-xs text-muted font-mono truncate">{data.id}</div>
-          <h1 className="text-2xl font-semibold mt-1">
-            {data.repo_full_name} #{data.pr_number}
-          </h1>
-          <div className="text-sm text-muted mt-1">{data.pr_title}</div>
-          <div className="text-xs text-muted font-mono mt-2">
-            {data.head_commit_sha}
-          </div>
-          <div className="flex items-center gap-3 mt-3">
-            <a
-              href={prUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs text-white hover:underline inline-flex items-center gap-1 font-mono"
-            >
-              Open PR on GitHub →
-            </a>
-            <button
-              onClick={copyMarkdown}
-              className="px-2.5 py-1 bg-zinc-900 border border-white/10 hover:border-white/30 text-xs font-medium text-foreground/80 hover:text-white rounded-lg transition-colors"
-            >
-              {copied ? "✓ Copied Markdown" : "📋 Copy Review as Markdown"}
-            </button>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <ReviewStatusBadge status={data.status} />
-          <VerdictChip verdict={data.verdict} />
-        </div>
-      </div>
-
-      {data.overall_confidence != null && (
-        <div className="text-xs text-muted">
-          Overall confidence: {(data.overall_confidence * 100).toFixed(0)}%
-        </div>
-      )}
-
-      {/* View Mode Tabs */}
-      <div className="flex items-center gap-2 border-b border-white/10 pb-1">
-        <button
-          onClick={() => setActiveTab("executive")}
-          className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-t-lg transition-colors border-b-2 -mb-[5px] ${
-            activeTab === "executive"
-              ? "border-white text-white bg-zinc-900/60 font-semibold shadow-sm"
-              : "border-transparent text-muted hover:text-foreground"
-          }`}
-        >
-          <span>✨ Plain English Summary</span>
-          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/10 text-white font-mono">
-            Non-Tech
-          </span>
-        </button>
-        <button
-          onClick={() => setActiveTab("findings")}
-          className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-t-lg transition-colors border-b-2 -mb-[5px] ${
-            activeTab === "findings"
-              ? "border-white text-white bg-zinc-900/60 font-semibold shadow-sm"
-              : "border-transparent text-muted hover:text-foreground"
-          }`}
-        >
-          <span>Findings Breakdown</span>
-          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-surface text-muted">
-            {data.findings?.length ?? 0}
-          </span>
-        </button>
-        <button
-          onClick={() => setActiveTab("diff")}
-          className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-t-lg transition-colors border-b-2 -mb-[5px] ${
-            activeTab === "diff"
-              ? "border-white text-white bg-zinc-900/60 font-semibold shadow-sm"
-              : "border-transparent text-muted hover:text-foreground"
-          }`}
-        >
-          <span>Interactive Diff Viewer</span>
-          <span className="text-[10px] font-mono opacity-70">
-            [Inline Annotations]
-          </span>
-        </button>
-      </div>
-
-      {activeTab === "executive" ? (
-        <ExecutiveReviewSummary data={data} />
-      ) : activeTab === "findings" ? (
-        <FindingsByAgent findings={data.findings ?? []} />
-      ) : (
-        <DiffViewer diff={data.pr_diff || undefined} findings={data.findings ?? []} />
-      )}
-
-      {data.human_review_reason && (
-        <div className="border border-border rounded-lg bg-panel p-4">
-          <div className="text-xs uppercase tracking-wide text-muted mb-2">
-            Human review reason
-          </div>
-          <p className="text-sm whitespace-pre-wrap">{data.human_review_reason}</p>
-        </div>
-      )}
+      <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-sm text-muted"><Link href="/reviews" className="hover:text-foreground underline-offset-4 hover:underline">Reviews</Link><span aria-hidden="true">/</span><span aria-current="page">Pull request #{review.pr_number}</span></nav>
+      <header className="space-y-4"><div className="flex flex-wrap items-start justify-between gap-4"><div className="min-w-0"><p className="break-all font-mono text-xs text-muted">{review.repo_full_name} #{review.pr_number}</p><h1 className="mt-2 break-words text-2xl font-semibold tracking-tight sm:text-3xl">{review.pr_title || "Pull request review"}</h1></div><ReviewStatusBadge status={review.status} /></div><div className="flex flex-wrap items-center gap-x-4 gap-y-2"><span className="flex items-center gap-2 text-xs text-muted">Recommendation <VerdictChip verdict={review.verdict} /></span><a href={`https://github.com/${review.repo_full_name}/pull/${review.pr_number}`} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">Open on GitHub <span className="sr-only">(opens in a new tab)</span><span aria-hidden="true" className="ml-1">↗</span></a><button onClick={() => void copyMarkdown()} className="min-h-11 rounded-lg border border-border bg-panel px-3 text-sm hover:bg-surface">Copy review</button></div><p role="status" className="text-xs text-muted">{copyStatus}</p></header>
+      <ExecutiveReviewSummary data={review} />
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3"><div role="group" aria-label="Review view" className="flex gap-2"><button onClick={() => setActiveView("findings")} aria-pressed={activeView === "findings"} className={`min-h-11 rounded-lg px-4 text-sm font-medium ${activeView === "findings" ? "bg-surface text-foreground" : "text-muted hover:bg-surface"}`}>Findings ({review.findings.length})</button><button onClick={() => setActiveView("diff")} aria-pressed={activeView === "diff"} className={`min-h-11 rounded-lg px-4 text-sm font-medium ${activeView === "diff" ? "bg-surface text-foreground" : "text-muted hover:bg-surface"}`}>Code changes</button></div><span className="text-xs text-muted">Model confidence: {Number.isFinite(review.overall_confidence) ? `${Math.round(review.overall_confidence! * 100)}%` : "Not available"}</span></div>
+      <p className="text-xs text-muted">Confidence is a model estimate, not a measured probability of correctness.</p>
+      {activeView === "findings" ? <FindingsByAgent findings={review.findings ?? []} /> : <DiffViewer diff={review.pr_diff || undefined} findings={review.findings ?? []} />}
+      <details className="rounded-xl border border-border bg-panel"><summary className="cursor-pointer px-5 py-4 text-sm text-muted">Review details</summary><dl className="space-y-3 border-t border-border p-5 text-xs"><div><dt className="text-muted">Commit</dt><dd className="mt-1 break-all font-mono">{review.head_commit_sha}</dd></div><div><dt className="text-muted">Review ID</dt><dd className="mt-1 break-all font-mono">{review.id}</dd></div><div><dt className="text-muted">Updated</dt><dd className="mt-1">{new Date(review.updated_at).toLocaleString()}</dd></div></dl></details>
     </div>
   );
 }

@@ -58,6 +58,7 @@ from backend.api.auth_router import router as auth_router  # GitHub authenticati
 
 # Phase 12 circuit breaker registry — surfaced in /health
 from backend.reliability.circuit_breaker import list_breaker_summaries
+from backend.security.admission import AdmissionControlMiddleware
 
 # -------------------------------------------------------------------------
 # Read version from pyproject.toml (single source of truth)
@@ -259,6 +260,9 @@ else:
         allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type", "X-API-Key", "X-Role"],
     )
+
+# Admission control: header limits, streaming body bounds, decompression safety
+app.add_middleware(AdmissionControlMiddleware)
 
 
 # -------------------------------------------------------------------------

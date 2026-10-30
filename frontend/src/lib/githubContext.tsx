@@ -56,11 +56,10 @@ export function GitHubProvider({ children }: { children: React.ReactNode }) {
     }
     setLoadingRepos(true);
     try {
-      // Backend automatically checks HttpOnly session cookie 'hadron_token'
-      const tokenParam = currentAccount.token && !currentAccount.token.includes("...") 
-        ? `&token=${encodeURIComponent(currentAccount.token)}` 
-        : "";
-      const res = await fetch(`/api/v1/auth/repos?account=${encodeURIComponent(currentAccount.login)}${tokenParam}`);
+      // Backend automatically checks HttpOnly session cookie 'hadron_session'
+      const res = await fetch(`/api/v1/auth/repos?account=${encodeURIComponent(currentAccount.login)}`, {
+        credentials: "include",
+      });
       if (res.ok) {
         const data = await res.json();
         setRepositories(data);

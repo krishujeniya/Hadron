@@ -27,6 +27,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from backend.database.models import LLMCallLog
@@ -51,34 +52,56 @@ def _new_session() -> AsyncSession:
 async def record_llm_call(
     *,
     workflow_id: Optional[str],
+    tenant_id: Optional[str] = None,
+    idempotency_key: Optional[str] = None,
     agent_type: str,
+    call_type: str = "llm",
     model: str,
     input_tokens: int,
     output_tokens: int,
     cost_usd: float,
     latency_ms: float,
     is_valid_json: bool = True,
+    status: str = "settled",
 ) -> None:
     """
-    Persist one LLM call row. Never raises on failure.
-
-    Called from tools/llm_client.py after each successful API call. Also called
-    by tests to seed cost data deterministically.
+    Persist one LLM/embedding/judge call row with idempotency deduplication.
+    Never raises on failure.
     """
     try:
         async with _new_session() as session:
+            # Replay and duplicate safety via idempotency key
+            if idempotency_key:
+                stmt = select(LLMCallLog.id).where(LLMCallLog.idempotency_key == idempotency_key)
+                existing = (await session.execute(stmt)).scalar()
+                if existing:
+                    logger.debug(
+                        "llm_call_log_duplicate_ignored | idempotency_key=%s",
+                        idempotency_key,
+                    )
+                    return
+
             row = LLMCallLog(
                 workflow_id=workflow_id,
+                tenant_id=tenant_id,
+                idempotency_key=idempotency_key,
                 agent_type=agent_type or "system",
+                call_type=call_type,
                 model=model,
                 input_tokens=int(input_tokens),
                 output_tokens=int(output_tokens),
                 cost_usd=float(cost_usd),
                 latency_ms=float(latency_ms),
                 is_valid_json=1 if is_valid_json else 0,
+                status=status,
             )
             session.add(row)
-            await session.commit()
+            try:
+                await session.commit()
+            except IntegrityError:
+                # Race condition duplicate insert caught safely
+                logger.debug("llm_call_log_race_duplicate_caught | key=%s", idempotency_key)
+                await session.rollback()
     except Exception as exc:  # pragma: no cover — defensive
         logger.warning(
             "llm_call_log_persist_failed | agent=%s model=%s cost=%.6f error=%s",
@@ -95,30 +118,46 @@ def _utc_today_start() -> datetime:
     return datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
 
 
-async def get_daily_spend(
+async def query_daily_spend_db(
     *,
+    tenant_id: Optional[str] = None,
     at: Optional[datetime] = None,
 ) -> float:
     """
-    Total USD spent so far in the current UTC day (or the day containing `at`).
-
-    Used by BudgetGuard before each agent LLM call. Returns 0.0 if the table
-    is empty or unreachable (fail-open: never block on telemetry failure).
+    Executes the direct daily spend query against Postgres.
+    Raises on database error so the caller can distinguish DB outage from $0.00 spend.
     """
     target = at or datetime.now(timezone.utc)
     day_start = datetime(target.year, target.month, target.day, tzinfo=timezone.utc)
     day_end = day_start + timedelta(days=1)
 
+    async with _new_session() as session:
+        stmt = select(func.coalesce(func.sum(LLMCallLog.cost_usd), 0.0)).where(
+            LLMCallLog.created_at >= day_start,
+            LLMCallLog.created_at < day_end,
+        )
+        if tenant_id and tenant_id != "default":
+            stmt = stmt.where(LLMCallLog.tenant_id == tenant_id)
+
+        result = await session.execute(stmt)
+        return float(result.scalar() or 0.0)
+
+
+async def get_daily_spend(
+    *,
+    tenant_id: Optional[str] = None,
+    at: Optional[datetime] = None,
+) -> float:
+    """
+    Total USD spent so far in the current UTC day (or the day containing `at`).
+    Uses CostLedger to guarantee distinction between DB outage and zero spend.
+    """
     try:
-        async with _new_session() as session:
-            stmt = select(func.coalesce(func.sum(LLMCallLog.cost_usd), 0.0)).where(
-                LLMCallLog.created_at >= day_start,
-                LLMCallLog.created_at < day_end,
-            )
-            result = await session.execute(stmt)
-            return float(result.scalar() or 0.0)
+        from backend.economics.ledger import get_cost_ledger
+        spend, _ = await get_cost_ledger().get_daily_spend(tenant_id=tenant_id, at=at)
+        return spend
     except Exception as exc:
-        logger.warning("daily_spend_query_failed | error=%s", exc)
+        logger.warning("get_daily_spend_failed | tenant=%s error=%s", tenant_id, exc)
         return 0.0
 
 

@@ -23,20 +23,23 @@ const BASE =
     ? (process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || "")
     : "";
 
-const TOKEN = process.env.NEXT_PUBLIC_API_TOKEN ?? "";
-const API_KEY = process.env.NEXT_PUBLIC_API_KEY ?? "";
+function getCsrfToken(): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(/(?:^|; )hadron_csrf=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
 
 function headers(): HeadersInit {
   const h: Record<string, string> = { "content-type": "application/json" };
-  if (TOKEN) h["authorization"] = `Bearer ${TOKEN}`;
-  if (API_KEY) h["x-api-key"] = API_KEY;
-  h["x-role"] = process.env.NEXT_PUBLIC_DEFAULT_ROLE ?? "reviewer";
+  const csrf = getCsrfToken();
+  if (csrf) h["x-csrf-token"] = csrf;
   return h;
 }
 
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     ...init,
+    credentials: "include",
     headers: { ...headers(), ...(init?.headers ?? {}) },
     cache: "no-store",
   });

@@ -54,9 +54,9 @@
 import logging
 
 from langgraph.checkpoint.base import BaseCheckpointSaver
-from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 
+from backend.orchestrator.checkpointer import DurableCheckpointSaver
 from backend.orchestrator.nodes import (
     aggregate_results,
     build_context,
@@ -67,9 +67,9 @@ from backend.orchestrator.state import PRReviewState
 
 logger = logging.getLogger(__name__)
 
-# Shared checkpointer instance (MemorySaver / durable checkpointer)
+# Shared checkpointer instance (DurableCheckpointSaver with Redis persistence)
 # Retains workflow checkpoints keyed by thread_id (workflow_id)
-_default_checkpointer: BaseCheckpointSaver = MemorySaver()
+_default_checkpointer: BaseCheckpointSaver = DurableCheckpointSaver()
 
 
 def get_checkpointer() -> BaseCheckpointSaver:

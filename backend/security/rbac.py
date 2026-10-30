@@ -49,7 +49,7 @@ boundaries are hard to retrofit. Design them in from the beginning."
 from __future__ import annotations
 
 from enum import Enum
-from typing import Callable
+from typing import Any, Callable
 
 # Python 3.10 StrEnum shim (StrEnum added in 3.11)
 try:
@@ -133,16 +133,26 @@ _ROLE_ORDER: dict[Role, int] = {
 }
 
 
+try:
+    from fastapi import HTTPException
+except ImportError:
+    class HTTPException(Exception):  # type: ignore[no-redef]
+        def __init__(self, status_code: int, detail: str) -> None:
+            self.status_code = status_code
+            self.detail = detail
+            super().__init__(detail)
+
+
 # ---------------------------------------------------------------------------
 # PermissionDeniedError
 # ---------------------------------------------------------------------------
 
-class PermissionDeniedError(Exception):
+class PermissionDeniedError(HTTPException):
     """
     Raised when a role lacks a required permission.
 
-    Carries status_code=403 so FastAPI's exception handler (if wired)
-    returns a proper HTTP 403. Also usable outside FastAPI contexts.
+    Inherits from HTTPException(403) so FastAPI's default exception handler
+    returns a proper HTTP 403 response without extra error-handling wiring.
     """
 
     def __init__(
@@ -157,7 +167,8 @@ class PermissionDeniedError(Exception):
         _msg = message or (
             f"Role '{role}' does not have permission '{permission}'"
         )
-        super().__init__(_msg)
+        self.detail = _msg
+        super().__init__(status_code=403, detail=_msg)
 
     def to_dict(self) -> dict[str, str]:
         """Serialisable form for JSON error responses."""
@@ -165,7 +176,7 @@ class PermissionDeniedError(Exception):
             "error": "permission_denied",
             "role": str(self.role),
             "required_permission": str(self.permission),
-            "detail": str(self),
+            "detail": self.detail,
         }
 
 
@@ -243,54 +254,28 @@ DEFAULT_RBAC_POLICY = RBACPolicy()
 # FastAPI dependency factory
 # ---------------------------------------------------------------------------
 
-def require_permission(permission: Permission) -> Callable[..., Role]:
+def require_permission(permission: Permission) -> Callable[..., Any]:
     """
-    FastAPI Depends() factory. Returns a dependency that:
-      1. Reads X-Role header from the request (default: viewer)
-      2. Checks that the role has the required permission
-      3. Raises PermissionDeniedError(403) if not
-
-    Usage in a route:
-        @router.post("/eval/run")
-        async def run_eval(
-            role: Role = Depends(require_permission(Permission.TRIGGER_EVAL)),
-        ):
-            ...
-
-    In production, the API gateway sets X-Role based on the validated
-    API key. In tests, pass headers={"X-Role": "admin"} to the test client.
-
-    NOTE: This dependency does NOT validate the API key itself — that is
-    handled by require_auth() from backend/auth/dependencies.py (Phase 3).
-    Both dependencies should be used together:
-        dependencies=[Depends(require_auth), Depends(require_permission(...))]
+    FastAPI Depends() factory. Enforces server-derived authorization.
+    Verifies that the server-authenticated Principal holds the required Permission.
+    Untrusted caller-supplied X-Role headers are ignored.
     """
-    def _check_role(
-        # Lazy import to avoid circular dependency at module load time
-        # (FastAPI is not available in unit tests unless installed)
-        x_role: str = "viewer",
-    ) -> Role:
-        try:
-            role = Role(x_role.lower())
-        except ValueError:
-            role = Role.VIEWER  # Unknown role gets minimum privileges
-
-        DEFAULT_RBAC_POLICY.assert_allowed(role, permission)
-        return role
-
-    # Wrap in a real FastAPI Header dependency if FastAPI is available
     try:
-        from fastapi import Header, Depends  # noqa: F401
+        from fastapi import Depends
+        from backend.auth.dependencies import get_current_principal
+        from backend.auth.principal import Principal
 
-        def _fastapi_check(x_role: str = Header(default="viewer")) -> Role:
-            try:
-                role = Role(x_role.lower())
-            except ValueError:
-                role = Role.VIEWER
-            DEFAULT_RBAC_POLICY.assert_allowed(role, permission)
-            return role
+        async def _enforce_permission(
+            principal: Principal = Depends(get_current_principal),
+        ) -> Role:
+            DEFAULT_RBAC_POLICY.assert_allowed(principal.role, permission)
+            return principal.role
 
-        return _fastapi_check
+        return _enforce_permission
     except ImportError:
-        # Fallback for environments without FastAPI (e.g., isolated unit tests)
-        return _check_role
+        def _fallback(role: Role | str = Role.VIEWER) -> Role:
+            _role = Role(role) if isinstance(role, str) else role
+            DEFAULT_RBAC_POLICY.assert_allowed(_role, permission)
+            return _role
+
+        return _fallback

@@ -68,16 +68,24 @@ async def _persist_call_log(
     cost_usd: float,
     latency_seconds: float,
     is_valid_json: bool,
+    idempotency_key: str | None = None,
 ) -> None:
     try:
         # Lazy imports to avoid circular import at module load time
         # (economics imports models, models import Base, Base depends on settings).
+        import uuid
         from backend.economics import record_llm_call
         from backend.observability.workflow_context import get_workflow_context
         ctx = get_workflow_context()
+        tenant_id = getattr(ctx, "tenant_id", None)
+        idem_key = idempotency_key or f"{ctx.workflow_id or 'sys'}:{ctx.agent_type or 'gen'}:{model}:{uuid.uuid4()}"
+
         await record_llm_call(
             workflow_id=ctx.workflow_id,
-            agent_type=ctx.agent_type,
+            tenant_id=tenant_id,
+            idempotency_key=idem_key,
+            agent_type=ctx.agent_type or "system",
+            call_type="judge" if getattr(ctx, "agent_type", None) == "judge" else "llm",
             model=model,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
@@ -170,28 +178,20 @@ class LLMResponse:
 
 def _compute_cost(model: str, input_tokens: int, output_tokens: int) -> float:
     """
-    Estimates the cost of one LLM API call in USD.
-
-    Returns 0.0 if the model is not in our cost table (unknown models).
-    We never crash because of missing cost data — we just log it.
-
-    HOW THE MATH WORKS:
-    Cost table stores: price per 1000 tokens.
-    Actual tokens used: input_tokens + output_tokens.
-    Cost = (input_tokens / 1000) * input_price + (output_tokens / 1000) * output_price
-
-    EXAMPLE:
-    gpt-4o-mini, 1000 input tokens, 200 output tokens:
-    = (1000/1000) * 0.00015 + (200/1000) * 0.0006
-    = 0.00015 + 0.00012
-    = $0.00027 per call
+    Estimates the cost of one LLM API call in USD using canonical pricing.
+    Rejects unknown prices if strict_price_enforcement is enabled, or uses
+    an explicit conservative estimate.
     """
-    costs = _TOKEN_COSTS.get(model, {})
-    if not costs:
-        return 0.0
-    input_cost  = (input_tokens  / 1000) * costs.get("input",  0.0)
-    output_cost = (output_tokens / 1000) * costs.get("output", 0.0)
-    return round(input_cost + output_cost, 8)
+    from backend.config import get_settings
+    from backend.economics.pricing import get_token_cost
+    cfg = get_settings()
+    strict = getattr(cfg, "strict_price_enforcement", False)
+    return get_token_cost(
+        model=model,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        strict=strict,
+    )
 
 
 class LLMClient:
@@ -287,6 +287,7 @@ class LLMClient:
         agent = getattr(ctx, "agent_type", None) or "llm_openai"
         breaker = AGENT_BREAKERS.get(agent) or get_breaker(f"llm_{agent}", DEFAULT_LLM_BREAKER_CONFIG)
 
+        req_timeout = float(getattr(cfg, "agent_timeout_seconds", 120))
         async def _execute_openai_call() -> LLMResponse:
             last_error: Exception | None = None
             for attempt in range(self.MAX_RETRIES + 1):
@@ -298,6 +299,7 @@ class LLMClient:
                         response_format=response_format,
                         max_tokens=req_max_tokens,
                         temperature=0.1,
+                        timeout=req_timeout,
                     )
 
                     latency = time.monotonic() - start
@@ -451,6 +453,7 @@ class LLMClient:
         agent = getattr(ctx, "agent_type", None) or "llm_anthropic"
         breaker = AGENT_BREAKERS.get(agent) or get_breaker(f"llm_{agent}", DEFAULT_LLM_BREAKER_CONFIG)
 
+        req_timeout = float(getattr(cfg, "agent_timeout_seconds", 120))
         async def _execute_anthropic_call() -> LLMResponse:
             last_error: Exception | None = None
             for attempt in range(self.MAX_RETRIES + 1):
@@ -462,6 +465,7 @@ class LLMClient:
                         system=json_system,
                         messages=prefill_messages,
                         temperature=0.1,
+                        timeout=req_timeout,
                     )
 
                     latency = time.monotonic() - start
@@ -556,6 +560,61 @@ class LLMClient:
             ) from last_error
 
         return await breaker.async_call(_execute_anthropic_call)
+
+    async def acomplete(
+        self,
+        system_prompt: str,
+        user_message: str,
+        max_tokens: int = 1024,
+        model: str | None = None,
+        json_mode: bool = False,
+    ) -> LLMResponse:
+        """
+        Typed asynchronous completion method for evaluators, judges, and tools.
+        """
+        from backend.config import get_settings
+        cfg = get_settings()
+        target_model = model or getattr(cfg, "openai_embedding_model", "gpt-4o-mini")
+        if target_model.startswith("text-embedding"):
+            target_model = "gpt-4o-mini"
+        return await self.call_openai(
+            model=target_model,
+            messages=[{"role": "user", "content": user_message}],
+            system_prompt=system_prompt,
+            json_mode=json_mode,
+            max_tokens=max_tokens,
+        )
+
+    def complete(
+        self,
+        system_prompt: str,
+        user_message: str,
+        max_tokens: int = 1024,
+        model: str | None = None,
+        json_mode: bool = False,
+    ) -> LLMResponse:
+        """
+        Typed synchronous completion method for evaluator/judge.
+        Executes acomplete via event loop or thread runner safely.
+        """
+        import concurrent.futures
+        coro = self.acomplete(
+            system_prompt=system_prompt,
+            user_message=user_message,
+            max_tokens=max_tokens,
+            model=model,
+            json_mode=json_mode,
+        )
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                return pool.submit(asyncio.run, coro).result()
+        else:
+            return asyncio.run(coro)
 
 
 def _try_extract_json(text: str) -> dict | list:

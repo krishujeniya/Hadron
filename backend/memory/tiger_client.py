@@ -198,10 +198,20 @@ class TigerMemoryClient:
     # Maximum rows from each retrieval arm before RRF merge
     _RETRIEVAL_EXPANSION: int = 20
 
-    def __init__(self, pool: Any = None, in_memory: bool = False) -> None:
+    def __init__(
+        self,
+        pool: Any = None,
+        in_memory: bool = False,
+        expected_dim: int | None = None,
+    ) -> None:
         self._pool = pool
         self._in_memory = in_memory or pool is None or getattr(pool, "_is_mock", False)
         self._in_memory_chunks: list[CodeChunk] = []
+        if expected_dim is not None:
+            self.expected_dim = expected_dim
+        else:
+            cfg = get_settings()
+            self.expected_dim = getattr(cfg, "openai_embedding_dimensions", 256)
 
     # -------------------------------------------------------------------------
     # Pool factory
@@ -284,6 +294,14 @@ class TigerMemoryClient:
         if not chunks:
             return 0
 
+        # Validate vector dimensions before storage
+        for c in chunks:
+            if len(c.embedding) != self.expected_dim:
+                raise ValueError(
+                    f"CodeChunk embedding dimension mismatch for {c.path}:{c.chunk_index}: "
+                    f"expected {self.expected_dim}, got {len(c.embedding)}"
+                )
+
         if self._in_memory:
             existing_map = {
                 (c.repo, c.path, c.chunk_index): idx
@@ -359,6 +377,11 @@ class TigerMemoryClient:
         Returns:
             List of CodeChunk, ordered by combined relevance score (best first).
         """
+        if len(query_embedding) != self.expected_dim:
+            raise ValueError(
+                f"Query embedding dimension mismatch: expected {self.expected_dim}, got {len(query_embedding)}"
+            )
+
         if hybrid and query_text:
             return await self._hybrid_search(
                 query_embedding=query_embedding,

@@ -24,7 +24,7 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.schemas import (
@@ -33,6 +33,8 @@ from backend.api.schemas import (
     review_record_to_queue_item,
 )
 from backend.auth.dependencies import require_auth
+from backend.auth.principal import Principal
+from backend.security.rbac import require_permission, Permission, Role
 from backend.database.postgres import get_db
 from backend.database.repository import list_queue_items
 
@@ -69,37 +71,31 @@ async def get_queue_endpoint(
     limit: int = Query(
         default=50,
         ge=1,
-        le=200,
-        description="Max items to return.",
+        le=100,
+        description="Max items to return. Max 100.",
     ),
     offset: int = Query(
         default=0,
         ge=0,
         description="Number of items to skip (for pagination).",
     ),
-    _auth: None = Depends(require_auth),
+    principal: Principal = Depends(require_auth),
+    _role: Role = Depends(require_permission(Permission.READ_QUEUE)),
     session: AsyncSession = Depends(get_db),
 ) -> QueueResponse:
     """
     Get the current review queue.
-
-    Returns two categories of items:
-      1. Active reviews (status NOT IN completed, failed):
-         These are moving through the pipeline. Normal to see these.
-         If a review stays in the same status for >5 minutes, investigate.
-
-      2. HITL-pending reviews (status=completed, needs_human_review=true):
-         These completed but the agent had low confidence.
-         A human reviewer must inspect and approve/reject via Phase 19 actions.
-
-    Response shape:
-        {
-            "items": [...],    # list of QueueItem objects
-            "total": 3,        # total items in queue (not just this page)
-            "limit": 50,
-            "offset": 0
-        }
+    Scoped by authorized workspace account.
     """
+    authorized_account = principal.account or principal.tenant_id
+    if not principal.is_admin and authorized_account:
+        if account and account.lower() != authorized_account.lower():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied: cannot access queue for account '{account}'. Authorized workspace is '{authorized_account}'.",
+            )
+        account = authorized_account
+
     records, total = await list_queue_items(
         session,
         account=account,

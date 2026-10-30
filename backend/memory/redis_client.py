@@ -31,6 +31,7 @@
 # Callers get a clean error (MemoryStoreError) not a raw redis exception.
 
 import logging
+from typing import Any
 
 import redis.asyncio as aioredis
 
@@ -70,6 +71,12 @@ class RedisClient:
 
     def __init__(self) -> None:
         self._pool: aioredis.Redis | None = None
+        self._in_memory_fallback: dict[str, Any] = {}
+
+    @property
+    def is_connected(self) -> bool:
+        """Returns True if the Redis connection pool is active."""
+        return self._pool is not None
 
     async def connect(self) -> None:
         """
@@ -194,6 +201,48 @@ class RedisClient:
                 store="redis",
             ) from e
 
+    async def delete_idempotency_key(self, key: str) -> None:
+        """
+        Removes an idempotency key so a failed enqueue or aborted operation does not block redelivery.
+        """
+        pool = self._require_connected()
+        redis_key = f"idempotency:{key}"
+        try:
+            await pool.delete(redis_key)
+            logger.debug("idempotency_key_deleted | key=%s", redis_key)
+        except Exception as e:
+            logger.warning("Failed to delete idempotency key '%s': %s", redis_key, e)
+
+    async def record_receipt(self, delivery_id: str, workflow_id: str) -> None:
+        """
+        Persists a delivery receipt linking GitHub delivery ID to review workflow.
+        """
+        pool = self._require_connected()
+        redis_key = f"receipt:{delivery_id}"
+        try:
+            await pool.setex(redis_key, IDEMPOTENCY_TTL_SECONDS, workflow_id)
+            logger.debug("delivery_receipt_recorded | delivery=%s workflow=%s", delivery_id, workflow_id)
+        except Exception as e:
+            raise MemoryStoreError(
+                f"Failed to record delivery receipt '{redis_key}': {e}",
+                store="redis",
+            ) from e
+
+    async def check_receipt(self, delivery_id: str) -> str | None:
+        """
+        Checks whether a delivery ID was already accepted and returns the workflow_id.
+        """
+        pool = self._require_connected()
+        redis_key = f"receipt:{delivery_id}"
+        try:
+            val = await pool.get(redis_key)
+            return val.decode("utf-8") if isinstance(val, bytes) else val
+        except Exception as e:
+            raise MemoryStoreError(
+                f"Failed to check receipt for '{redis_key}': {e}",
+                store="redis",
+            ) from e
+
     # -------------------------------------------------------------------------
     # Workflow Status Cache
     #
@@ -238,6 +287,53 @@ class RedisClient:
                 workflow_id,
                 str(e),
             )
+            return None
+
+    # -------------------------------------------------------------------------
+    # Dead-Letter Queue (DLQ)
+    # -------------------------------------------------------------------------
+
+    async def record_dead_letter(
+        self,
+        workflow_id: str,
+        reason: str,
+        details: dict[str, Any],
+    ) -> None:
+        """
+        Records an actionable dead-letter record for unrecoverable or poison jobs.
+        """
+        import json as _json
+        from datetime import datetime, timezone
+        pool = self._require_connected()
+        redis_key = f"dlq:{workflow_id}"
+        record = {
+            "workflow_id": workflow_id,
+            "reason": reason,
+            "recorded_at": datetime.now(timezone.utc).isoformat(),
+            "details": details,
+        }
+        try:
+            await pool.setex(redis_key, 7 * 86400, _json.dumps(record))
+            await pool.sadd("dlq:index", workflow_id)
+            logger.error("dead_letter_recorded | workflow_id=%s reason=%s", workflow_id, reason)
+        except Exception as e:
+            logger.error("Failed to record dead letter for %s: %s", workflow_id, e)
+
+    async def get_dead_letter(self, workflow_id: str) -> dict[str, Any] | None:
+        """
+        Fetches dead-letter details for a failed job.
+        """
+        import json as _json
+        pool = self._require_connected()
+        redis_key = f"dlq:{workflow_id}"
+        try:
+            raw = await pool.get(redis_key)
+            if not raw:
+                return None
+            val = raw.decode("utf-8") if isinstance(raw, bytes) else raw
+            return _json.loads(val)
+        except Exception as e:
+            logger.warning("Failed to get dead letter for %s: %s", workflow_id, e)
             return None
 
     # -------------------------------------------------------------------------
@@ -345,9 +441,114 @@ class RedisClient:
         except Exception:
             return False
 
+    # -------------------------------------------------------------------------
+    # Admission, Concurrency, and Rate Limiting (Gate B - T17)
+    # -------------------------------------------------------------------------
+
+    async def get_queue_depth(self, queue_name: str = "arq:queue") -> int:
+        """
+        Returns the number of scheduled/queued jobs in the ARQ queue.
+        Uses zcard on the ARQ sorted set.
+        """
+        if self._pool is None:
+            return int(self._in_memory_fallback.get(f"qdepth:{queue_name}", 0))
+        try:
+            return await self._pool.zcard(queue_name)
+        except Exception as e:
+            logger.warning("get_queue_depth failed: %s", e)
+            return 0
+
+    async def increment_tenant_active(self, tenant: str, ttl: int = 600) -> int:
+        """
+        Increments active in-flight reviews for a tenant.
+        Sets a safety TTL to avoid leaking active count if worker crashes.
+        """
+        redis_key = f"tenant_active:{tenant}"
+        if self._pool is None:
+            val = self._in_memory_fallback.get(redis_key, 0) + 1
+            self._in_memory_fallback[redis_key] = val
+            return val
+        try:
+            val = await self._pool.incr(redis_key)
+            if val == 1:
+                await self._pool.expire(redis_key, ttl)
+            return val
+        except Exception as e:
+            logger.warning("increment_tenant_active failed for %s: %s", tenant, e)
+            return 1
+
+    async def decrement_tenant_active(self, tenant: str) -> int:
+        """
+        Decrements active in-flight reviews for a tenant.
+        Ensures counter does not drop below zero.
+        """
+        redis_key = f"tenant_active:{tenant}"
+        if self._pool is None:
+            val = max(0, self._in_memory_fallback.get(redis_key, 0) - 1)
+            self._in_memory_fallback[redis_key] = val
+            return val
+        try:
+            val = await self._pool.decr(redis_key)
+            if val < 0:
+                await self._pool.set(redis_key, 0)
+                return 0
+            return val
+        except Exception as e:
+            logger.warning("decrement_tenant_active failed for %s: %s", tenant, e)
+            return 0
+
+    async def get_tenant_active(self, tenant: str) -> int:
+        """Returns the current active review count for a tenant."""
+        redis_key = f"tenant_active:{tenant}"
+        if self._pool is None:
+            return int(self._in_memory_fallback.get(redis_key, 0))
+        try:
+            val = await self._pool.get(redis_key)
+            return int(val) if val else 0
+        except Exception as e:
+            logger.warning("get_tenant_active failed for %s: %s", tenant, e)
+            return 0
+
+    async def check_rate_limit(
+        self,
+        key: str,
+        max_requests: int,
+        window_seconds: int = 60,
+    ) -> tuple[bool, int, int]:
+        """
+        Fixed-window atomic rate limiter.
+        Returns: (is_allowed, retry_after_seconds, current_count)
+        """
+        import time
+        now = int(time.time())
+        window_idx = now // window_seconds
+        redis_key = f"ratelimit:{key}:{window_idx}"
+        retry_after = max(1, window_seconds - (now % window_seconds))
+
+        if self._pool is None:
+            cur = self._in_memory_fallback.get(redis_key, 0) + 1
+            self._in_memory_fallback[redis_key] = cur
+            allowed = cur <= max_requests
+            return allowed, retry_after, cur
+
+        try:
+            count = await self._pool.incr(redis_key)
+            if count == 1:
+                await self._pool.expire(redis_key, window_seconds * 2)
+            allowed = count <= max_requests
+            return allowed, retry_after, count
+        except Exception as e:
+            logger.warning("check_rate_limit error for %s: %s", key, e)
+            return True, 0, 1
+
 
 # Module-level singleton.
 # Initialized (connect()) in main.py lifespan startup.
 # All modules import this instance:
 #   from backend.memory.redis_client import redis_client
 redis_client = RedisClient()
+
+
+async def get_redis_client() -> RedisClient:
+    """Convenience getter returning the shared redis_client singleton."""
+    return redis_client

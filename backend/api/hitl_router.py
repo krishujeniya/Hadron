@@ -32,6 +32,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.auth.dependencies import get_current_principal
+from backend.auth.principal import Principal
 from backend.database.models import HITLReview
 from backend.database.postgres import get_db
 from backend.security.rbac import require_permission, Permission, Role
@@ -43,7 +45,12 @@ from backend.hitl.dispute import (
     InvalidVerdict,
     resolve_dispute,
 )
-from backend.hitl.queue import get_hitl_review, get_pending_queue, rebuild_redis_queue
+from backend.hitl.queue import (
+    count_pending_queue,
+    get_hitl_review,
+    get_pending_queue,
+    rebuild_redis_queue,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -141,13 +148,33 @@ async def list_hitl_queue(
     account: str | None = Query(default=None, description="Filter by GitHub account/owner."),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
+    principal: Principal = Depends(get_current_principal),
+    _role: Role = Depends(require_permission(Permission.READ_QUEUE)),
     session: AsyncSession = Depends(get_db),
 ) -> HITLQueueResponse:
     """
     Return all pending and in-review HITL items.
-
-    Ordered oldest-first (FIFO queue semantics).
+    Scoped by the caller's authorized workspace.
     """
+    authorized_account = principal.account or principal.tenant_id
+    if not principal.is_admin and authorized_account:
+        if account and account.lower() != authorized_account.lower():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied: cannot access HITL queue for account '{account}'. Authorized workspace is '{authorized_account}'.",
+            )
+        account = authorized_account
+        if repo and not repo.lower().startswith(f"{authorized_account.lower()}/"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied: repository '{repo}' is outside your authorized workspace '{authorized_account}'.",
+            )
+
+    total = await count_pending_queue(
+        session,
+        repo_full_name=repo,
+        account=account,
+    )
     items = await get_pending_queue(
         session,
         repo_full_name=repo,
@@ -157,7 +184,7 @@ async def list_hitl_queue(
     )
     return HITLQueueResponse(
         items=[HITLItemResponse.from_orm(item) for item in items],
-        total=len(items),
+        total=total,
         limit=limit,
         offset=offset,
     )
@@ -175,10 +202,13 @@ async def list_hitl_queue(
 )
 async def get_hitl_item(
     hitl_id: str,
+    principal: Principal = Depends(get_current_principal),
+    _role: Role = Depends(require_permission(Permission.READ_REVIEWS)),
     session: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     """
     Return full detail for a HITL item, including the findings snapshot.
+    Enforces workspace isolation.
     """
     row = await get_hitl_review(session, hitl_id)
     if row is None:
@@ -186,6 +216,15 @@ async def get_hitl_item(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"HITL review '{hitl_id}' not found.",
         )
+
+    authorized_account = principal.account or principal.tenant_id
+    if not principal.is_admin and authorized_account:
+        repo_owner = row.repo_full_name.split("/")[0] if "/" in row.repo_full_name else ""
+        if repo_owner.lower() != authorized_account.lower():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied: HITL review '{hitl_id}' belongs to another workspace.",
+            )
 
     import json as _json
     findings = []
@@ -220,6 +259,7 @@ async def get_hitl_item(
 async def submit_decision(
     hitl_id: str,
     body: HITLDecisionRequest,
+    principal: Principal = Depends(get_current_principal),
     role: Role = Depends(require_permission(Permission.SUBMIT_REVIEW)),
     session: AsyncSession = Depends(get_db),
 ) -> HITLDecisionResponse:
@@ -228,24 +268,36 @@ async def submit_decision(
 
     Transitions the item from 'pending'/'in_review' to the appropriate
     terminal status, records feedback, and attempts to post to GitHub.
+    Uses verified server-derived principal identity for reviewer_id.
     """
     # Import GitHub client here to avoid circular import at module load.
     # The GitHub client is a detail (delivery mechanism) from Clean-Architecture's
     # perspective — it belongs outside the Use Case layer.
-    #
-    # Real module path: backend.integrations.github_client (NOT backend.github.client).
-    # GitHubClient takes a Settings object and is an async context manager
-    # (httpx.AsyncClient connection pool lifecycle).
     from backend.integrations.github_client import GitHubClient
     from backend.config import get_settings
 
     settings = get_settings()
 
+    # Enforce workspace isolation
+    authorized_account = principal.account or principal.tenant_id
+    if not principal.is_admin and authorized_account:
+        row = await get_hitl_review(session, hitl_id)
+        if row is not None:
+            repo_owner = row.repo_full_name.split("/")[0] if "/" in row.repo_full_name else ""
+            if repo_owner.lower() != authorized_account.lower():
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Access denied: cannot resolve HITL review for another workspace.",
+                )
+
+    # Enforce server-derived reviewer identity (no caller spoofing)
+    verified_reviewer_id = principal.id or body.reviewer_id
+
     request = DisputeRequest(
         hitl_review_id=hitl_id,
         human_verdict=body.human_verdict,
         reason=body.reason,
-        reviewer_id=body.reviewer_id,
+        reviewer_id=verified_reviewer_id,
     )
 
     try:
@@ -309,8 +361,9 @@ async def rebuild_queue(
     """
     from backend.memory.redis_client import get_redis_client
 
-    redis_client = await get_redis_client()
-    pushed = await rebuild_redis_queue(session, redis_client)
+    rc = await get_redis_client()
+    pool = rc._pool if hasattr(rc, "_pool") and rc._pool is not None else rc
+    pushed = await rebuild_redis_queue(session, pool)
 
     return {
         "pushed_to_redis": pushed,

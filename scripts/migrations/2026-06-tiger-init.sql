@@ -274,21 +274,36 @@ CREATE INDEX IF NOT EXISTS hitl_fb_type_idx
 CREATE TABLE IF NOT EXISTS llm_call_log (
     id               TEXT        PRIMARY KEY,
     workflow_id      TEXT,
+    tenant_id        TEXT,
+    idempotency_key  TEXT,
     agent_type       TEXT        NOT NULL,
+    call_type        TEXT        NOT NULL DEFAULT 'llm',
     model            TEXT        NOT NULL,
     input_tokens     INT         NOT NULL DEFAULT 0,
     output_tokens    INT         NOT NULL DEFAULT 0,
     cost_usd         REAL        NOT NULL DEFAULT 0.0,
     latency_ms       REAL        NOT NULL DEFAULT 0.0,
     is_valid_json    INT         NOT NULL DEFAULT 1,
+    status           TEXT        NOT NULL DEFAULT 'settled',
     created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE llm_call_log ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+ALTER TABLE llm_call_log ADD COLUMN IF NOT EXISTS idempotency_key TEXT;
+ALTER TABLE llm_call_log ADD COLUMN IF NOT EXISTS call_type TEXT NOT NULL DEFAULT 'llm';
+ALTER TABLE llm_call_log ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'settled';
+
+CREATE UNIQUE INDEX IF NOT EXISTS ix_llm_call_log_idempotency
+    ON llm_call_log (idempotency_key) WHERE idempotency_key IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS llm_workflow_idx
     ON llm_call_log (workflow_id, created_at DESC);
 
 CREATE INDEX IF NOT EXISTS ix_llm_call_log_day_agent
     ON llm_call_log (created_at, agent_type);
+
+CREATE INDEX IF NOT EXISTS ix_llm_call_log_tenant_day
+    ON llm_call_log (tenant_id, created_at DESC);
 
 -- =============================================================================
 -- Verification queries (run manually after migration):

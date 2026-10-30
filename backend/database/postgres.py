@@ -94,6 +94,59 @@ class Base(DeclarativeBase):
 # never imported speculatively at startup before settings are configured.
 # ---------------------------------------------------------------------------
 
+class MigrationError(Exception):
+    """Raised when an essential database migration fails."""
+    pass
+
+
+def _build_ssl_context(dsn: str):
+    """
+    Builds a secure SSLContext verifying server certificates and hostname.
+    Loads system default CAs plus any custom CA bundle from POSTGRES_CA_CERT.
+    """
+    if not any(h in dsn for h in ("supabase.co", "pooler.supabase.com", "sslmode=require")):
+        return None
+
+    import ssl
+    ctx = ssl.create_default_context()
+    ca_file = os.getenv("POSTGRES_CA_CERT") or os.getenv("SSL_CERT_FILE")
+    if ca_file and pathlib.Path(ca_file).exists():
+        ctx.load_verify_locations(cafile=ca_file)
+
+    # Insecure bypass allowed ONLY when explicitly configured by operator
+    if os.getenv("POSTGRES_INSECURE_DISABLE_TLS_VERIFY", "").lower() in ("true", "1"):
+        logger.warning(
+            "INSECURE TLS: Server certificate verification explicitly disabled via "
+            "POSTGRES_INSECURE_DISABLE_TLS_VERIFY!"
+        )
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+    else:
+        ctx.check_hostname = True
+        ctx.verify_mode = ssl.CERT_REQUIRED
+
+    return ctx
+
+
+def parse_sql_script(sql: str) -> list[str]:
+    """
+    Parses a SQL script into individual executable statements.
+    Properly strips comments (-- and /* */) without dropping statements.
+    """
+    # Remove block comments /* ... */
+    cleaned = re.sub(r"/\*.*?\*/", "", sql, flags=re.DOTALL)
+    # Remove single line comments
+    lines = []
+    for line in cleaned.splitlines():
+        line_no_comment = re.sub(r"--.*$", "", line).strip()
+        if line_no_comment:
+            lines.append(line_no_comment)
+    cleaned_sql = "\n".join(lines)
+    # Split on semicolons
+    raw_statements = cleaned_sql.split(";")
+    return [s.strip() for s in raw_statements if s.strip()]
+
+
 def _build_engine():
     """
     Builds the async SQLAlchemy engine from current settings.
@@ -127,12 +180,9 @@ def _build_engine():
         )
 
     connect_args = {}
-    if any(h in db_url for h in ("supabase.co", "pooler.supabase.com", "sslmode=require")):
-        import ssl
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-        connect_args["ssl"] = ctx
+    ssl_ctx = _build_ssl_context(db_url)
+    if ssl_ctx is not None:
+        connect_args["ssl"] = ssl_ctx
 
     is_serverless = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
     pool_size = 1 if is_serverless else 5
@@ -411,17 +461,15 @@ async def init_tiger_schema() -> None:
     dsn = dsn.replace("postgresql+asyncpg://", "postgresql://").replace("postgres+asyncpg://", "postgresql://")
 
     # SSL context for Supabase / hosted cloud PostgreSQL
-    ssl_arg = None
-    if any(h in dsn for h in ("supabase.co", "pooler.supabase.com", "sslmode=require")):
-        import ssl
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-        ssl_arg = ctx
+    ssl_arg = _build_ssl_context(dsn)
 
     # Build the pool with pgvector codec registered on every new connection.
+    # We wrap in try/except so pool creation doesn't crash if pgvector isn't installed yet.
     async def _init_conn(conn):
-        await _register_vector(conn)
+        try:
+            await _register_vector(conn)
+        except Exception as exc:
+            logger.debug("pgvector codec registration deferred: %s", exc)
 
     is_serverless = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
     _tiger_pool = await _asyncpg.create_pool(
@@ -433,25 +481,29 @@ async def init_tiger_schema() -> None:
         init=_init_conn,
     )
 
-    # Run the idempotent migration SQL.
+    # Run the idempotent migration SQL using robust comment-aware parsing.
     migration_path = (
         pathlib.Path(__file__).resolve().parent.parent.parent
         / "scripts" / "migrations" / "2026-06-tiger-init.sql"
     )
     if migration_path.exists():
         sql = migration_path.read_text()
-        # Split on semicolons, skip comments and blank statements.
-        statements = [
-            s.strip() for s in re.split(r";\s*", sql)
-            if s.strip() and not s.strip().startswith("--")
-        ]
+        statements = parse_sql_script(sql)
         async with _tiger_pool.acquire() as conn:
             for stmt in statements:
                 try:
                     await conn.execute(stmt)
                 except Exception as exc:  # noqa: BLE001
-                    logger.warning("Tiger migration stmt warning (non-fatal): %s", exc)
-        logger.info("Tiger Cloud schema migration applied | path=%s", migration_path)
+                    is_optional = any(
+                        opt in stmt.upper()
+                        for opt in ("CREATE EXTENSION", "HYPERTABLE", "CONTINUOUS AGGREGATE", "ADD_JOB")
+                    )
+                    if is_optional:
+                        logger.warning("Tiger migration optional stmt warning (non-fatal): %s", exc)
+                    else:
+                        logger.error("Tiger migration critical DDL failed: %s | sql=%s", exc, stmt)
+                        raise MigrationError(f"Required DDL statement failed: {stmt} -> {exc}") from exc
+        logger.info("Tiger Cloud schema migration applied (%d statements) | path=%s", len(statements), migration_path)
     else:
         logger.warning("Tiger migration file not found at %s — skipping DDL", migration_path)
 

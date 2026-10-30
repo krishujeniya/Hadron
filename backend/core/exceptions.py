@@ -82,6 +82,40 @@ class DuplicateWebhookError(PRReviewAgentError):
         self.idempotency_key = idempotency_key
 
 
+class QueueOverloadedError(PRReviewAgentError):
+    """
+    Raised when the ARQ queue depth reaches maximum capacity.
+    Triggers HTTP 503 Service Unavailable with Retry-After header.
+    """
+    def __init__(self, message: str, queue_depth: int = 0, retry_after: int = 30):
+        super().__init__(message)
+        self.queue_depth = queue_depth
+        self.retry_after = retry_after
+
+
+class TenantConcurrencyLimitError(PRReviewAgentError):
+    """
+    Raised when a tenant or repository exceeds concurrent in-flight reviews.
+    Prevents a noisy tenant from starving other workspaces.
+    Triggers HTTP 429 Too Many Requests with Retry-After header.
+    """
+    def __init__(self, message: str, tenant_id: str, retry_after: int = 30):
+        super().__init__(message)
+        self.tenant_id = tenant_id
+        self.retry_after = retry_after
+
+
+class RateLimitExceededError(PRReviewAgentError):
+    """
+    Raised when request rate exceeds allowed quotas.
+    Triggers HTTP 429 Too Many Requests with Retry-After header.
+    """
+    def __init__(self, message: str, retry_after: int = 60, quota_category: str = "general"):
+        super().__init__(message)
+        self.retry_after = retry_after
+        self.quota_category = quota_category
+
+
 # -----------------------------------------------------------------------------
 # Orchestrator Exceptions
 # -----------------------------------------------------------------------------
@@ -109,6 +143,22 @@ class WorkflowNotFoundError(WorkflowError):
     Raised when a workflow_id is looked up but no corresponding record exists.
     Can occur if a job is dequeued after its checkpoint expired, or if the
     workflow_id was generated incorrectly.
+    """
+    pass
+
+
+class RetryableWorkflowError(WorkflowError):
+    """
+    Raised when a transient failure occurs during workflow execution (e.g. temporary
+    network partition, downstream API 503, database timeout) that should be retried.
+    """
+    pass
+
+
+class PermanentWorkflowError(WorkflowError):
+    """
+    Raised when a non-retryable fatal failure occurs (e.g. poison message, invalid repository
+    structure, unresolvable permission denial) which must route directly to DLQ.
     """
     pass
 

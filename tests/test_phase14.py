@@ -385,9 +385,9 @@ async def test_qdrant_search_uses_query_points():
     Before the Phase 14 fix: AsyncQdrantClient had no .search() and raised
     AttributeError. After the fix: .query_points() is called with .points accessor.
     """
-    from backend.memory.qdrant_client import search_similar_code
+    from backend.memory.qdrant_client import EMBEDDING_DIMENSIONS, search_similar_code
 
-    fake_vector = [0.1] * 1536
+    fake_vector = [0.1] * EMBEDDING_DIMENSIONS
 
     # Mock ScoredPoint return from .query_points()
     mock_point = MagicMock()
