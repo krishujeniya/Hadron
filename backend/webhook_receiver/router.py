@@ -170,6 +170,35 @@ async def receive_github_webhook(
 
     # None means "valid signature, but an event type we don't handle" — not an error.
     if event is None:
+        # Handle GitHub App offboarding / uninstall lifecycle (installation.deleted)
+        if x_github_event == "installation":
+            try:
+                import json
+                payload = json.loads(raw_body)
+                inst_action = payload.get("action")
+                if inst_action in ("deleted", "suspend"):
+                    account = payload.get("installation", {}).get("account", {}).get("login")
+                    if account:
+                        from backend.database.postgres import get_session_factory
+                        from backend.governance.deletion import delete_tenant_data
+                        factory = get_session_factory()
+                        async with factory() as db_session:
+                            try:
+                                await delete_tenant_data(
+                                    session=db_session,
+                                    tenant_id=account,
+                                    actor=f"github_app_{inst_action}",
+                                )
+                                logger.info("Automatic tenant data deletion executed on GitHub app %s | tenant=%s", inst_action, account)
+                            except Exception as del_exc:  # noqa: BLE001
+                                logger.warning("Automatic tenant deletion deferred: %s", del_exc)
+                    return JSONResponse(
+                        content={"status": "handled", "event": "installation", "action": inst_action},
+                        status_code=status.HTTP_200_OK,
+                    )
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Failed parsing installation event: %s", exc)
+
         logger.debug(
             "Ignoring webhook event type '%s' — not a pull_request event.",
             x_github_event,

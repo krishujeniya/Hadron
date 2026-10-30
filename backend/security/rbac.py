@@ -95,6 +95,8 @@ class Permission(StrEnum):
     MANAGE_API_KEYS = "manage_api_keys"
     OVERRIDE_VERDICT = "override_verdict"
     VIEW_COST_REPORT = "view_cost_report"
+    DATA_GOVERNANCE_MANAGE = "data_governance_manage"
+    DATA_GOVERNANCE_READ = "data_governance_read"
 
 
 # ---------------------------------------------------------------------------
@@ -117,6 +119,8 @@ _REVIEWER_PERMISSIONS: frozenset[Permission] = _VIEWER_PERMISSIONS | frozenset({
 _ADMIN_PERMISSIONS: frozenset[Permission] = _REVIEWER_PERMISSIONS | frozenset({
     Permission.MANAGE_API_KEYS,
     Permission.OVERRIDE_VERDICT,
+    Permission.DATA_GOVERNANCE_MANAGE,
+    Permission.DATA_GOVERNANCE_READ,
 })
 
 ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {

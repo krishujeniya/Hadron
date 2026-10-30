@@ -73,6 +73,7 @@ qdrant_data/
 
 # --- Logs ---
 *.log
+*.jsonl
 logs/
 .hermes/
 .agents/

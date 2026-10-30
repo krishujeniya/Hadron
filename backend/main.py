@@ -58,6 +58,7 @@ from backend.api.queue import router as queue_router
 from backend.api.hitl_router import hitl_router       # Phase 19: HITL queue + dispute
 from backend.api.economics_router import economics_router  # Phase 16: cost & budget
 from backend.api.auth_router import router as auth_router  # GitHub authentication & account selector
+from backend.api.governance_router import router as governance_router  # Data governance, retention, erasure, legal holds
 
 # Phase 12 circuit breaker registry — surfaced in /health
 from backend.reliability.circuit_breaker import list_breaker_summaries
@@ -180,6 +181,7 @@ app.include_router(queue_router)          # GET /api/v1/queue
 app.include_router(hitl_router)           # Phase 19: GET /api/v1/hitl/queue, POST /api/v1/hitl/{id}/decision
 app.include_router(economics_router)      # Phase 16: GET /api/v1/economics/{summary,budget,timeseries,workflow/...}
 app.include_router(auth_router)           # GitHub account auth & repository selector
+app.include_router(governance_router)     # Data governance, retention, export, and erasure
 
 
 # -------------------------------------------------------------------------

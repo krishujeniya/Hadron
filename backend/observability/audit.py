@@ -250,9 +250,32 @@ class AuditLogger:
         return self._path
 
 
+# ── Module singleton ──────────────────────────────────────────────────────────
+
+audit_log = AuditLogger()
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 
 def _now() -> str:
     """ISO-8601 UTC timestamp string."""
     return datetime.now(timezone.utc).isoformat()
+
+
+def record_audit_event(
+    action: str,
+    actor: str,
+    resource_id: str,
+    details: dict[str, Any] | None = None,
+    tenant_id: str | None = None,
+) -> None:
+    """Records an arbitrary operational audit event to the persistent JSONL audit trail."""
+    entry = {
+        "event_type": action,
+        "actor": actor,
+        "resource_id": resource_id,
+        "tenant_id": tenant_id,
+        "details": details or {},
+    }
+    audit_log._append(entry)
