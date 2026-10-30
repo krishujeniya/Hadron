@@ -40,6 +40,9 @@ def get_process_telemetry_status() -> dict[str, Any]:
     return dict(_TELEMETRY_STATUS)
 
 
+get_lifecycle_health = get_process_telemetry_status
+
+
 def init_telemetry(service_name: str, app_version: str = "0.1.0") -> None:
     """Initializes Sentry error tracking and OpenTelemetry tracing."""
     cfg = get_settings()

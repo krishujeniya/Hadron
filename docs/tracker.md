@@ -431,10 +431,20 @@ Rollback: git checkout backend/database/postgres.py backend/job_queue/arq_worker
 
 ### T21 — Make health checks reflect actual capability
 
-- [ ] **P1 · V/G · BE + SRE · Depends: T10, T14, T20**
+- [x] **P1 · V/G · BE + SRE · Depends: T10, T14, T20**
 - **Evidence:** Liveness and deep health exist; startup catches required-service errors and worker health is not equivalent to API health. The frontend health helper calls `/health/live`.
 - **Implement:** Keep cheap liveness separate from readiness and authenticated diagnostics. Readiness checks required schema version, DB/queue availability and configured worker capability; optional RAG degradation is explicit. Track worker heartbeat and oldest accepted job. Avoid exposing raw exceptions to unauthenticated probes or requiring retired Qdrant when Tiger is selected.
 - **Accept:** DB/Redis/worker/optional-vector outages produce the documented distinct states. An API answering HTTP is not displayed as an operating review pipeline. Probe latency is bounded; the load balancer removes unready replicas without unnecessary restart loops.
+
+```text
+Status: DONE
+Owner: BE + SRE (Antigravity)
+Commit: working-tree
+Verification: `pytest tests/test_health_checks_t21.py` passed (10/10); full pytest suite passed (298 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-10-30.
+Evidence: Separated cheap zero-dependency liveness (`/health/live`) from operational readiness (`/health/ready` and `/health`) and authenticated diagnostics (`/health/diagnostics`); implemented automated schema readiness inspection via `check_schema_readiness` in `backend/database/postgres.py`; added periodic worker heartbeat loop and unregistration via `WorkerHeartbeat` in `backend/job_queue/heartbeat.py` integrated into `WorkerSettings`; tracked queue depth, accepted jobs, and oldest job wait latency via Redis sorted sets in `backend/memory/redis_client.py`; sanitized probe responses to eliminate raw traceback and internal exception leaks; prevented unnecessary load balancer restart loops by treating optional Tiger Cloud vector memory outages as explicit soft degradation (HTTP 200 with `services.tiger: "degraded"`) while returning 503 for hard DB, schema, Redis, or worker outages; bound all upstream probe timeouts (<=2.0s); protected `/health/diagnostics` with `require_auth` to expose deep telemetry, lifecycle status, worker metadata, and circuit breakers; upgraded frontend health dashboard (`frontend/src/app/health/page.tsx`) to display true pipeline capability, active worker fleet count, queue depth, oldest job latency, and subsystem health rather than naive liveness.
+Residual risks: none.
+Rollback: git checkout backend/main.py backend/config/settings.py backend/database/postgres.py backend/job_queue/ backend/memory/redis_client.py backend/lifecycle.py frontend/src/app/health/page.tsx frontend/src/lib/ tests/test_health_checks_t21.py tests/test_auth_and_rbac_t02_t03.py
+```
 
 ### T22 — Make deployment topology and images reproducible
 

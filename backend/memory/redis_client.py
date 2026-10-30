@@ -541,6 +541,159 @@ class RedisClient:
             logger.warning("check_rate_limit error for %s: %s", key, e)
             return True, 0, 1
 
+    # -------------------------------------------------------------------------
+    # Worker Heartbeat & Queue Capability Tracking (Gate B - T21)
+    # -------------------------------------------------------------------------
+
+    async def record_worker_heartbeat(
+        self,
+        worker_id: str,
+        metadata: dict[str, Any] | None = None,
+        ttl: int = 45,
+    ) -> None:
+        """
+        Records an active heartbeat for a worker process.
+        """
+        import json as _json
+        import time as _time
+        now = _time.time()
+        payload = {
+            "worker_id": worker_id,
+            "timestamp": now,
+            "metadata": metadata or {},
+        }
+        redis_key = f"worker:heartbeat:{worker_id}"
+
+        if self._pool is None:
+            self._in_memory_fallback[redis_key] = payload
+            active_set = self._in_memory_fallback.setdefault("worker:active_workers", set())
+            active_set.add(worker_id)
+            return
+
+        try:
+            await self._pool.setex(redis_key, ttl, _json.dumps(payload))
+            await self._pool.sadd("worker:active_workers", worker_id)
+        except Exception as exc:
+            logger.warning("record_worker_heartbeat failed for %s: %s", worker_id, exc)
+
+    async def remove_worker_heartbeat(self, worker_id: str) -> None:
+        """
+        Removes a worker heartbeat on graceful shutdown.
+        """
+        redis_key = f"worker:heartbeat:{worker_id}"
+        if self._pool is None:
+            self._in_memory_fallback.pop(redis_key, None)
+            active_set = self._in_memory_fallback.get("worker:active_workers", set())
+            active_set.discard(worker_id)
+            return
+
+        try:
+            await self._pool.delete(redis_key)
+            await self._pool.srem("worker:active_workers", worker_id)
+        except Exception as exc:
+            logger.warning("remove_worker_heartbeat failed for %s: %s", worker_id, exc)
+
+    async def get_active_workers(self, max_age_seconds: int = 60) -> list[dict[str, Any]]:
+        """
+        Returns all active workers with heartbeats younger than max_age_seconds.
+        """
+        import json as _json
+        import time as _time
+        now = _time.time()
+        active: list[dict[str, Any]] = []
+
+        if self._pool is None:
+            active_ids = list(self._in_memory_fallback.get("worker:active_workers", set()))
+            for wid in active_ids:
+                data = self._in_memory_fallback.get(f"worker:heartbeat:{wid}")
+                if isinstance(data, dict):
+                    ts = float(data.get("timestamp", 0))
+                    if now - ts <= max_age_seconds:
+                        active.append(data)
+                    else:
+                        self._in_memory_fallback.get("worker:active_workers", set()).discard(wid)
+                else:
+                    self._in_memory_fallback.get("worker:active_workers", set()).discard(wid)
+            return active
+
+        try:
+            raw_ids = await self._pool.smembers("worker:active_workers")
+            for raw_id in raw_ids:
+                wid = raw_id.decode("utf-8") if isinstance(raw_id, bytes) else str(raw_id)
+                raw_data = await self._pool.get(f"worker:heartbeat:{wid}")
+                if not raw_data:
+                    await self._pool.srem("worker:active_workers", wid)
+                    continue
+                try:
+                    data = _json.loads(raw_data)
+                    ts = float(data.get("timestamp", 0))
+                    if now - ts <= max_age_seconds:
+                        active.append(data)
+                    else:
+                        await self._pool.srem("worker:active_workers", wid)
+                except Exception:
+                    await self._pool.srem("worker:active_workers", wid)
+            return active
+        except Exception as exc:
+            logger.warning("get_active_workers failed: %s", exc)
+            return []
+
+    async def record_job_enqueued(self, workflow_id: str) -> None:
+        """
+        Tracks an accepted job in the sorted queue tracker.
+        Score is unix epoch timestamp.
+        """
+        import time as _time
+        now = _time.time()
+        if self._pool is None:
+            accepted = self._in_memory_fallback.setdefault("queue:accepted_jobs", {})
+            accepted[workflow_id] = now
+            return
+
+        try:
+            await self._pool.zadd("queue:accepted_jobs", {workflow_id: now})
+        except Exception as exc:
+            logger.warning("record_job_enqueued failed for %s: %s", workflow_id, exc)
+
+    async def record_job_dequeued(self, workflow_id: str) -> None:
+        """
+        Removes a job from the accepted queue tracker once picked up by a worker.
+        """
+        if self._pool is None:
+            accepted = self._in_memory_fallback.get("queue:accepted_jobs", {})
+            accepted.pop(workflow_id, None)
+            return
+
+        try:
+            await self._pool.zrem("queue:accepted_jobs", workflow_id)
+        except Exception as exc:
+            logger.warning("record_job_dequeued failed for %s: %s", workflow_id, exc)
+
+    async def get_oldest_accepted_job_age(self) -> tuple[str | None, float | None]:
+        """
+        Returns (workflow_id, age_in_seconds) of the oldest job currently waiting in queue.
+        Returns (None, None) if queue is empty.
+        """
+        import time as _time
+        now = _time.time()
+        if self._pool is None:
+            accepted = self._in_memory_fallback.get("queue:accepted_jobs", {})
+            if not accepted:
+                return None, None
+            oldest_id, oldest_ts = min(accepted.items(), key=lambda x: x[1])
+            return oldest_id, max(0.0, round(now - oldest_ts, 3))
+
+        try:
+            entries = await self._pool.zrange("queue:accepted_jobs", 0, 0, withscores=True)
+            if not entries:
+                return None, None
+            item, score = entries[0]
+            job_id = item.decode("utf-8") if isinstance(item, bytes) else str(item)
+            return job_id, max(0.0, round(now - float(score), 3))
+        except Exception as exc:
+            logger.warning("get_oldest_accepted_job_age failed: %s", exc)
+            return None, None
+
 
 # Module-level singleton.
 # Initialized (connect()) in main.py lifespan startup.

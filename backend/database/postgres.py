@@ -550,3 +550,38 @@ async def close_db() -> None:
             _engine = None
 
 
+async def check_schema_readiness(timeout_seconds: float = 2.0) -> tuple[bool, str]:
+    """
+    Verifies that essential database schema tables exist.
+    Uses async SQLAlchemy inspection with bounded timeout.
+    Returns (is_ready, details_string).
+    """
+    import asyncio
+    from sqlalchemy import inspect
+
+    try:
+        engine = get_engine()
+
+        def _get_tables(sync_conn):
+            return inspect(sync_conn).get_table_names()
+
+        async def _inspect():
+            async with engine.connect() as conn:
+                return await conn.run_sync(_get_tables)
+
+        table_names = await asyncio.wait_for(_inspect(), timeout=timeout_seconds)
+        existing = set(table_names)
+        required = {"pr_review_records", "finding_records"}
+        missing = required - existing
+        if missing:
+            logger.warning("Database schema incomplete | missing=%s", missing)
+            return False, f"unmigrated (missing {', '.join(sorted(missing))})"
+        return True, "ok"
+    except asyncio.TimeoutError:
+        logger.warning("Database schema check timed out after %.1fs", timeout_seconds)
+        return False, "timeout"
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Database schema check failed: %s", exc)
+        return False, "unmigrated"
+
+

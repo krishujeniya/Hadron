@@ -126,6 +126,7 @@ async def run_pr_review(
         retry_count,
     )
 
+    await redis_client.record_job_dequeued(workflow_id)
     await redis_client.set_workflow_status(workflow_id, "in_progress")
 
     repo_name = input_data.get("repo_full_name", "")
@@ -338,6 +339,7 @@ async def enqueue_review_job(
         )
         # Step 3: Persist idempotency and delivery receipt only on confirmed enqueue
         await redis_client.set_idempotency_key(workflow_id)
+        await redis_client.record_job_enqueued(workflow_id)
         if delivery_id:
             try:
                 await redis_client.record_receipt(delivery_id, workflow_id)
@@ -353,6 +355,7 @@ async def enqueue_review_job(
         # Enqueue failed: ensure idempotency key does not block future redeliveries
         try:
             await redis_client.delete_idempotency_key(workflow_id)
+            await redis_client.record_job_dequeued(workflow_id)
         except Exception:
             pass
         raise
@@ -435,12 +438,16 @@ class WorkerSettings:
     async def on_startup(ctx: dict) -> None:
         """Initialize all worker process resources: DB, Tiger Cloud, Redis, and Telemetry."""
         from backend.lifecycle import startup_process
+        from backend.job_queue.heartbeat import start_worker_heartbeat
         await startup_process(service_name="hadron-worker")
+        await start_worker_heartbeat()
         logger.info("ARQ worker full resource lifecycle online.")
 
     @staticmethod
     async def on_shutdown(ctx: dict) -> None:
         """Gracefully flush telemetry and disconnect DB, Tiger Cloud, and Redis."""
+        from backend.job_queue.heartbeat import stop_worker_heartbeat
         from backend.lifecycle import shutdown_process
+        await stop_worker_heartbeat()
         await shutdown_process(service_name="hadron-worker")
         logger.info("ARQ worker full resource lifecycle cleanly shut down.")

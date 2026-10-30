@@ -219,6 +219,9 @@ class Settings(BaseSettings):
     rate_limit_webhook_per_minute: int = 60         # Per-repository webhook rate limit
     rate_limit_auth_per_minute: int = 30            # Per-IP public auth rate limit
     trusted_proxies: str = "127.0.0.1,::1"          # Comma-separated trusted proxy IPs
+    require_worker_for_readiness: bool = False      # Require active worker heartbeat for 200 readiness
+    worker_heartbeat_ttl_seconds: int = 45          # Worker heartbeat TTL in seconds
+    probe_timeout_seconds: float = 2.0              # Max timeout per dependency health probe
 
     # -------------------------------------------------------------------------
     # API Authentication

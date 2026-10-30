@@ -9,6 +9,8 @@ import type {
   HITLDecisionResponse,
   HITLDetail,
   HITLItem,
+  HealthLiveResponse,
+  HealthStatusResponse,
   Paginated,
   ReviewDetail,
   ReviewSummary,
@@ -58,7 +60,9 @@ export const fetcher = <T>(path: string) => req<T>(path);
 export const encodeReviewId = (id: string) => encodeURIComponent(id);
 
 export const api = {
-  health: () => req<{ status: string; version?: string }>("/health/live"),
+  healthLive: () => req<HealthLiveResponse>("/health/live"),
+  healthReady: () => req<HealthStatusResponse>("/health/ready"),
+  health: () => req<HealthStatusResponse>("/health/ready"),
 
   listReviews: (limit = 50, offset = 0) =>
     req<Paginated<ReviewSummary>>(

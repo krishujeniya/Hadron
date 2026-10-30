@@ -172,3 +172,35 @@ export interface RepositoryItem {
   updated_at?: string | null;
 }
 
+// ── Health & Operational Status (T21) ───────────────────────────
+export interface HealthLiveResponse {
+  status: "ok" | string;
+  version: string;
+  process?: string;
+}
+
+export interface HealthStatusResponse {
+  status: "ok" | "degraded" | "unhealthy" | string;
+  version: string;
+  env: string;
+  pipeline_ready: boolean;
+  services: {
+    postgres: string;
+    schema?: string;
+    redis: string;
+    worker?: string;
+    tiger?: string;
+    qdrant?: string;
+  };
+  queue?: {
+    depth: number;
+    active_workers: number;
+    oldest_accepted_job_age_seconds: number | null;
+  };
+  circuit_breakers?: Array<{
+    name: string;
+    state: string;
+    failure_count: number;
+  }>;
+}
+
