@@ -24,7 +24,7 @@ We layer three independent controls, each with a single responsibility:
 
 ### 1. Hard daily cap — `BudgetGuard`
 
-`backend/economics/budget_guard.py` is invoked at the top of every
+`backend/economics/budget.py` (`BudgetGuard`) is invoked at the top of every
 `BaseAgent.run()`. It reads `daily_budget_usd` from settings (default
 $50), reads the day's running total from Redis, and raises
 `BudgetExceededError` before the LLM call. **Hard block, no override.**

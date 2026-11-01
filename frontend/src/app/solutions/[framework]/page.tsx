@@ -260,22 +260,22 @@ export default async function SolutionDetailPage({
   }
 
   return (
-    <div className="max-w-5xl mx-auto py-8 space-y-12">
+    <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6 space-y-12">
       {/* Breadcrumb / Top Tag */}
       <div className="flex items-center gap-2 text-xs text-muted font-mono">
         <Link href="/" className="hover:text-foreground">Home</Link>
         <span>/</span>
         <span className="text-muted/60">Solutions</span>
         <span>/</span>
-        <span className="text-white font-medium">{solution.slug}</span>
+        <span className="text-foreground font-medium">{solution.slug}</span>
       </div>
 
       {/* Hero Header */}
       <div className="space-y-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 text-white border border-white/20 font-mono">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-panel text-foreground border border-border font-mono">
           <span>⚡ {solution.badge}</span>
         </div>
-        <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">
+        <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-foreground font-mono">
           {solution.title}
         </h1>
         <p className="text-lg md:text-xl text-muted max-w-3xl leading-relaxed">
@@ -284,13 +284,13 @@ export default async function SolutionDetailPage({
         <div className="pt-2 flex flex-wrap items-center gap-4">
           <Link
             href="/"
-            className="px-6 py-3 rounded-xl bg-gradient-to-b from-white to-zinc-200 hover:from-zinc-100 hover:to-zinc-300 text-black font-semibold text-sm transition shadow-lg shadow-white/5"
+            className="px-6 py-3 rounded-xl bg-primary-action hover:bg-primary-action/90 text-white font-semibold text-sm transition shadow-sm"
           >
             Deploy Hadron on GitHub Free →
           </Link>
           <Link
             href="/reviews"
-            className="px-6 py-3 rounded-xl bg-panel hover:bg-surface border border-white/10 text-foreground font-semibold text-sm transition"
+            className="px-6 py-3 rounded-xl bg-panel hover:bg-surface border border-border text-foreground font-semibold text-sm transition"
           >
             Explore Live Reviews
           </Link>
@@ -299,16 +299,16 @@ export default async function SolutionDetailPage({
 
       {/* Architecture Highlights */}
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold tracking-tight text-foreground border-b border-white/10 pb-3">
+        <h2 className="text-2xl font-bold tracking-tight text-foreground border-b border-separator pb-3 font-mono">
           Specialist Agent Capabilities
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {solution.features.map((feat, idx) => (
             <div
               key={idx}
-              className="p-5 rounded-xl border border-white/10 bg-gradient-to-b from-zinc-900/50 to-black hover:border-white/30 transition-colors space-y-2"
+              className="p-5 rounded-xl border border-border bg-surface hover:border-muted/50 transition-colors space-y-2 shadow-sm"
             >
-              <div className="text-[11px] font-mono text-white uppercase tracking-wider font-semibold">
+              <div className="text-[11px] font-mono text-accent uppercase tracking-wider font-semibold">
                 {feat.agent}
               </div>
               <h3 className="text-base font-semibold text-foreground">
@@ -324,20 +324,20 @@ export default async function SolutionDetailPage({
 
       {/* Real-World Diff Finding Example */}
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold tracking-tight text-foreground border-b border-border pb-3">
+        <h2 className="text-2xl font-bold tracking-tight text-foreground border-b border-separator pb-3 font-mono">
           Automated Finding Detection Preview
         </h2>
-        <div className="rounded-xl border border-border bg-panel overflow-hidden">
-          <div className="px-4 py-2 bg-surface/60 border-b border-border flex items-center justify-between text-xs font-mono">
+        <div className="rounded-xl border border-border bg-surface overflow-hidden shadow-sm">
+          <div className="px-4 py-2 bg-panel border-b border-border flex items-center justify-between text-xs font-mono">
             <span className="text-muted">{solution.exampleDiff.filename}</span>
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-err/20 text-err border border-err/30">
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-err/10 text-err border border-err/30">
               {solution.exampleDiff.severity}
             </span>
           </div>
-          <div className="p-4 font-mono text-xs overflow-x-auto bg-[#07090D] text-muted">
+          <div className="p-4 font-mono text-xs overflow-x-auto bg-panel text-foreground">
             <pre className="whitespace-pre-wrap">{solution.exampleDiff.code}</pre>
           </div>
-          <div className="p-4 bg-err/10 border-t border-border space-y-1">
+          <div className="p-4 bg-err/5 border-t border-border space-y-1">
             <div className="text-xs font-bold text-err">
               ⚠️ {solution.exampleDiff.finding}
             </div>
@@ -350,12 +350,12 @@ export default async function SolutionDetailPage({
 
       {/* FAQ Section */}
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold tracking-tight text-foreground border-b border-border pb-3">
+        <h2 className="text-2xl font-bold tracking-tight text-foreground border-b border-separator pb-3 font-mono">
           Frequently Asked Questions
         </h2>
         <div className="space-y-3">
           {solution.faqs.map((faq, idx) => (
-            <div key={idx} className="p-4 rounded-xl border border-border bg-panel space-y-1.5">
+            <div key={idx} className="p-4 rounded-xl border border-border bg-surface space-y-1.5 shadow-sm">
               <h3 className="text-sm font-semibold text-foreground">
                 {faq.question}
               </h3>
@@ -368,8 +368,8 @@ export default async function SolutionDetailPage({
       </div>
 
       {/* CTA Box */}
-      <div className="rounded-2xl border border-white/15 bg-gradient-to-b from-zinc-900 via-zinc-950 to-black p-8 text-center space-y-4 shadow-xl">
-        <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">
+      <div className="rounded-2xl border border-border bg-surface p-8 text-center space-y-4 shadow-sm">
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground font-mono">
           Accelerate Your Code Reviews With Hadron Today
         </h2>
         <p className="text-sm text-muted max-w-xl mx-auto">
@@ -377,7 +377,7 @@ export default async function SolutionDetailPage({
         </p>
         <Link
           href="/"
-          className="inline-block px-8 py-3.5 rounded-xl bg-gradient-to-b from-white to-zinc-200 hover:from-zinc-100 hover:to-zinc-300 text-black font-semibold text-sm transition shadow-lg shadow-white/10"
+          className="inline-block px-8 py-3.5 rounded-xl bg-primary-action hover:bg-primary-action/90 text-white font-semibold text-sm transition shadow-sm"
         >
           Get Started with GitHub OAuth →
         </Link>

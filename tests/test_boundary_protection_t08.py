@@ -13,7 +13,7 @@ from backend.agents.contracts import AgentTask
 from backend.models.enums import AgentType
 from backend.memory.embedder import embed_batch, embed_text
 from backend.security.injection_guard import InjectionSeverity, check_pr_for_injection
-from backend.tools.capability_scope import CapabilityViolationError, raise_if_not_allowed
+from backend.tools.capability_scope import raise_if_not_allowed
 
 
 class DummyAgent(BaseAgent):
@@ -58,10 +58,10 @@ class TestT08ContextBoundaryProtection:
             pr_title=f"Fix: add credentials for {canary_secret_2}",
             pr_description=f"Internal secret: {canary_secret_3}",
             repo_name="acme/service",
-            retrieved_context=f"Prior context with password = 'hunter2-test-secret'",
+            retrieved_context="Prior context with password = 'hunter2-test-secret'",
         )
 
-        output = await agent.analyze(task=task)
+        _ = await agent.analyze(task=task)
 
         # Confirm the LLM received the message, but NONE of the canary secrets
         assert len(dispatched_messages) > 0
@@ -86,6 +86,7 @@ class TestT08ContextBoundaryProtection:
 
             mock_client = AsyncMock()
             mock_res = MagicMock()
+            mock_res.usage = MagicMock(total_tokens=50)
             mock_embedding_obj = MagicMock()
             mock_embedding_obj.embedding = [0.1] * 256
             mock_res.data = [mock_embedding_obj]

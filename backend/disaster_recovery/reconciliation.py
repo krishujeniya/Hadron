@@ -98,9 +98,6 @@ async def verify_isolated_restore(
     restored_reviews_res = await restored_session.execute(select(PRReviewRecord))
     restored_reviews = restored_reviews_res.scalars().all()
 
-    src_findings_res = await source_session.execute(select(FindingRecord))
-    src_findings = src_findings_res.scalars().all()
-
     restored_findings_res = await restored_session.execute(select(FindingRecord))
     restored_findings = restored_findings_res.scalars().all()
 

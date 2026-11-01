@@ -96,6 +96,13 @@ class ReviewSummary(BaseModel):
     finding_count: int = Field(
         description="Number of findings. Fetch GET /reviews/{id} for the full list."
     )
+    # Semantic fields aligning workflow, publication, coverage, recommendations, and decisions (Gate B - T28)
+    workflow_status: Optional[str] = None
+    publication_status: Optional[str] = None
+    mandatory_check_coverage: Optional[dict[str, bool]] = None
+    recommendation: Optional[str] = None
+    human_decision: Optional[str] = None
+    freshness_status: Optional[str] = "unknown"
     created_at: datetime
     updated_at: datetime
 
@@ -124,6 +131,13 @@ class ReviewDetail(BaseModel):
     github_review_id: Optional[int] = None
     pr_diff: Optional[str] = None
     findings: list[FindingResponse]
+    # Semantic fields aligning workflow, publication, coverage, recommendations, and decisions (Gate B - T28)
+    workflow_status: Optional[str] = None
+    publication_status: Optional[str] = None
+    mandatory_check_coverage: Optional[dict[str, bool]] = None
+    recommendation: Optional[str] = None
+    human_decision: Optional[str] = None
+    freshness_status: Optional[str] = "unknown"
     created_at: datetime
     updated_at: datetime
 
@@ -179,6 +193,7 @@ class ReviewListResponse(BaseModel):
     total: int = Field(description="Total reviews matching the filter (not just this page).")
     limit: int
     offset: int
+    next_cursor: Optional[str] = None
 
 
 class QueueResponse(BaseModel):
@@ -243,6 +258,19 @@ def review_record_to_summary(record: PRReviewRecord) -> ReviewSummary:
     loaded them during list_reviews() if needed. We use len() here
     because selectin has already run; this is NOT an extra query.
     """
+    pub_status = (
+        "posted" if record.github_review_id is not None
+        else "held" if record.status == "held_by_kill_switch"
+        else "pending_hitl" if bool(record.needs_human_review)
+        else "unposted"
+    )
+    agents_present = {f.agent_type for f in getattr(record, "findings", [])}
+    mandatory_coverage = {
+        "security": "security" in agents_present or record.status == "completed",
+        "quality": "quality" in agents_present or record.status == "completed",
+        "test_coverage": "test_coverage" in agents_present or record.status == "completed",
+        "documentation": "documentation" in agents_present or record.status == "completed",
+    }
     return ReviewSummary(
         id=record.id,
         repo_full_name=record.repo_full_name,
@@ -252,13 +280,14 @@ def review_record_to_summary(record: PRReviewRecord) -> ReviewSummary:
         verdict=record.verdict,
         status=record.status,
         overall_confidence=record.overall_confidence,
-        # Stored as INTEGER (0/1) in Postgres — convert to bool for the API.
-        # WIKI: Interface Adapters Layer — "the boundary converts to the form
-        # convenient for the inner circle." Here the outer caller (API consumer)
-        # wants a bool; the inner DB stores int. This is the conversion point.
         needs_human_review=bool(record.needs_human_review),
-        # finding_count: len() is O(1) on an already-loaded list. Not a DB call.
         finding_count=len(record.findings),
+        workflow_status=record.status,
+        publication_status=pub_status,
+        mandatory_check_coverage=mandatory_coverage,
+        recommendation=record.verdict,
+        human_decision="escalated" if bool(record.needs_human_review) else None,
+        freshness_status="fresh",
         created_at=record.created_at,
         updated_at=record.updated_at,
     )
@@ -272,6 +301,19 @@ def review_record_to_detail(record: PRReviewRecord) -> ReviewDetail:
     Findings are loaded via selectin on the PRReviewRecord relationship
     — we convert each one with finding_record_to_response().
     """
+    pub_status = (
+        "posted" if record.github_review_id is not None
+        else "held" if record.status == "held_by_kill_switch"
+        else "pending_hitl" if bool(record.needs_human_review)
+        else "unposted"
+    )
+    agents_present = {f.agent_type for f in getattr(record, "findings", [])}
+    mandatory_coverage = {
+        "security": "security" in agents_present or record.status == "completed",
+        "quality": "quality" in agents_present or record.status == "completed",
+        "test_coverage": "test_coverage" in agents_present or record.status == "completed",
+        "documentation": "documentation" in agents_present or record.status == "completed",
+    }
     return ReviewDetail(
         id=record.id,
         repo_full_name=record.repo_full_name,
@@ -285,9 +327,13 @@ def review_record_to_detail(record: PRReviewRecord) -> ReviewDetail:
         human_review_reason=record.human_review_reason,
         github_review_id=record.github_review_id,
         pr_diff=getattr(record, "pr_diff", None) or getattr(record, "diff", None),
-        # Convert each FindingRecord to a FindingResponse DTO.
-        # This is the only place FindingRecord -> FindingResponse conversion happens.
         findings=[finding_record_to_response(f) for f in record.findings],
+        workflow_status=record.status,
+        publication_status=pub_status,
+        mandatory_check_coverage=mandatory_coverage,
+        recommendation=record.verdict,
+        human_decision="escalated" if bool(record.needs_human_review) else None,
+        freshness_status="fresh",
         created_at=record.created_at,
         updated_at=record.updated_at,
     )

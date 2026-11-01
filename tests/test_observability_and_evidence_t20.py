@@ -16,14 +16,12 @@ Covers:
 import asyncio
 import json
 import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from backend.lifecycle import (
-    flush_telemetry,
     get_process_telemetry_status,
-    init_telemetry,
     shutdown_process,
     startup_process,
 )
@@ -31,11 +29,9 @@ from backend.observability.audit import AuditLogger
 from backend.observability.events import (
     AgentEvent,
     dispatch_agent_event,
-    emit_agent_event,
     flush_agent_events,
 )
 from backend.observability.logging import (
-    StructuredLogger,
     get_logger,
     redact_sensitive_data,
 )

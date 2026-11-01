@@ -328,8 +328,11 @@ async def list_reviews(
     repo_full_name: str | None = None,
     account: str | None = None,
     status: str | None = None,
+    q: str | None = None,
+    sort: str = "newest",
     limit: int = 50,
     offset: int = 0,
+    cursor: str | None = None,
 ) -> tuple[list[PRReviewRecord], int]:
     """
     Returns a paginated list of PRReviewRecords with an accurate total count.
@@ -377,6 +380,30 @@ async def list_reviews(
         conditions.append(PRReviewRecord.repo_full_name.like(f"{account}/%"))
     if status is not None:
         conditions.append(PRReviewRecord.status == status)
+    if q and q.strip():
+        search_term = f"%{q.strip()}%"
+        from sqlalchemy import or_
+        conditions.append(
+            or_(
+                PRReviewRecord.pr_title.ilike(search_term),
+                PRReviewRecord.head_commit_sha.ilike(search_term),
+                PRReviewRecord.repo_full_name.ilike(search_term),
+            )
+        )
+
+    if cursor:
+        try:
+            ts_str, c_id = cursor.split("|", 1)
+            cursor_dt = datetime.fromisoformat(ts_str)
+            from sqlalchemy import and_, or_
+            conditions.append(
+                or_(
+                    PRReviewRecord.created_at < cursor_dt,
+                    and_(PRReviewRecord.created_at == cursor_dt, PRReviewRecord.id < c_id)
+                )
+            )
+        except Exception as e:
+            logger.warning("list_reviews | invalid_cursor | cursor=%s error=%s", cursor, e)
 
     # Count query — same filters, no LIMIT/OFFSET
     count_result = await session.execute(
@@ -384,11 +411,25 @@ async def list_reviews(
     )
     total = count_result.scalar_one()
 
-    # Data query — filtered, ordered, paginated
+    # Determine order clause
+    if sort == "oldest":
+        order_by_clause = (PRReviewRecord.created_at.asc(), PRReviewRecord.id.asc())
+    elif sort == "findings":
+        from backend.database.models import FindingRecord
+        findings_count_subq = (
+            select(func.count(FindingRecord.id))
+            .where(FindingRecord.review_id == PRReviewRecord.id)
+            .scalar_subquery()
+        )
+        order_by_clause = (findings_count_subq.desc(), PRReviewRecord.created_at.desc(), PRReviewRecord.id.desc())
+    else:  # "newest"
+        order_by_clause = (PRReviewRecord.created_at.desc(), PRReviewRecord.id.desc())
+
+    # Data query — filtered, ordered, paginated (with stable tie-breaker)
     data_result = await session.execute(
         select(PRReviewRecord)
         .where(*conditions)
-        .order_by(PRReviewRecord.created_at.desc())
+        .order_by(*order_by_clause)
         .limit(limit)
         .offset(offset)
     )

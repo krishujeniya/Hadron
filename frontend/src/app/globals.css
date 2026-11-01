@@ -3,29 +3,35 @@
 @tailwind utilities;
 
 :root {
-  --bg: 0 0 0;                /* #000000 true deep pitch black */
-  --panel: 10 10 10;           /* #0a0a0a obsidian dark panel */
-  --surface: 20 20 20;         /* #141414 dark graphite surface */
-  --border: 38 38 38;          /* #262626 subtle graphite border */
-  --muted: 161 161 170;        /* #a1a1aa zinc-400 silver muted text */
-  --accent: 255 255 255;       /* #ffffff pure luminous white */
-  --foreground: 250 250 250;   /* #fafafa clean white */
-  --ok: 244 244 245;           /* #f4f4f5 zinc-100 */
-  --warn: 212 212 216;         /* #d4d4d8 zinc-300 */
-  --err: 228 228 231;          /* #e4e4e7 zinc-200 */
+  /* Default Dark Theme Contract (Tracker Section 8) */
+  --bg: 11 18 32;                /* #0B1220 Canvas */
+  --surface: 17 24 39;           /* #111827 Surface */
+  --panel: 30 41 59;             /* #1E293B Raised surface */
+  --foreground: 248 250 252;     /* #F8FAFC Primary text */
+  --muted: 203 213 225;          /* #CBD5E1 Secondary text */
+  --accent: 147 197 253;         /* #93C5FD Link/accent text */
+  --primary-action: 29 78 216;   /* #1D4ED8 Primary action background */
+  --separator: 51 65 85;         /* #334155 Decorative separator */
+  --border: 148 163 184;         /* #94A3B8 Control boundary */
+  --ok: 134 239 172;             /* #86EFAC Success text */
+  --warn: 253 230 138;           /* #FDE68A Warning text */
+  --err: 252 165 165;            /* #FCA5A5 Error text */
 }
 
 html.light {
-  --bg: 255 255 255;           /* #ffffff pure white */
-  --panel: 250 250 250;        /* #fafafa crisp light panel */
-  --surface: 244 244 245;      /* #f4f4f5 zinc-100 surface */
-  --border: 228 228 231;       /* #e4e4e7 zinc-200 border */
-  --muted: 113 113 122;        /* #71717a zinc-500 */
-  --accent: 0 0 0;             /* #000000 deep obsidian black */
-  --foreground: 9 9 11;        /* #09090b zinc-950 */
-  --ok: 24 24 27;              /* #18181b */
-  --warn: 63 63 70;            /* #3f3f46 */
-  --err: 9 9 11;               /* #09090b */
+  /* Light Theme Contract (Tracker Section 8) */
+  --bg: 248 250 252;             /* #F8FAFC Canvas */
+  --surface: 255 255 255;        /* #FFFFFF Surface */
+  --panel: 241 245 249;          /* #F1F5F9 Raised surface */
+  --foreground: 15 23 42;        /* #0F172A Primary text */
+  --muted: 71 85 105;            /* #475569 Secondary text */
+  --accent: 29 78 216;           /* #1D4ED8 Link/accent text */
+  --primary-action: 29 78 216;   /* #1D4ED8 Primary action background */
+  --separator: 203 213 225;      /* #CBD5E1 Decorative separator */
+  --border: 100 116 139;         /* #64748B Control boundary */
+  --ok: 22 101 52;               /* #166534 Success text */
+  --warn: 146 64 14;             /* #92400E Warning text */
+  --err: 185 28 28;              /* #B91C1C Error text */
 }
 
 html, body {
@@ -39,24 +45,46 @@ html.light, html.light body {
 }
 
 body {
-  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-  background-image: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.03) 0%, transparent 60%);
-  background-attachment: fixed;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  min-height: 100vh;
 }
 
-html.light body {
-  background-image: radial-gradient(circle at 50% 0%, rgba(0, 0, 0, 0.02) 0%, transparent 60%);
+a {
+  color: inherit;
 }
 
-a { color: inherit; }
+/* Accessible visible focus outline adapting to theme */
+:focus-visible {
+  outline: 2px solid rgb(var(--accent));
+  outline-offset: 2px;
+}
 
 ::selection {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(147, 197, 253, 0.3);
   color: #ffffff;
 }
 
 html.light ::selection {
-  background: rgba(0, 0, 0, 0.15);
-  color: #000000;
+  background: rgba(29, 78, 216, 0.2);
+  color: #0f172a;
 }
 
+/* Touch, safe area, and content extremes resilience (T40) */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+  }
+}
+
+/* Ensure code regions and tables do not break parent flex/grid bounds */
+pre, code {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Prevent horizontal page-level overflow traps on small mobile viewports */
+main {
+  min-width: 0;
+  overflow-wrap: break-word;
+}

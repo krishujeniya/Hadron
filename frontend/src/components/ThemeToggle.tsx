@@ -1,64 +1,59 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useTheme, type Theme } from "@/lib/themeContext";
 
 export function ThemeToggle({ className = "" }: { className?: string }) {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
-  const [mounted, setMounted] = useState(false);
+  const { theme, resolvedTheme, setTheme } = useTheme();
 
-  useEffect(() => {
-    setMounted(true);
-    const stored = localStorage.getItem("hadron_theme") as "dark" | "light" | null;
-    if (stored) {
-      setTheme(stored);
-      if (stored === "light") {
-        document.documentElement.classList.add("light");
-      } else {
-        document.documentElement.classList.remove("light");
-      }
-    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
+  const cycleTheme = () => {
+    if (theme === "dark") {
       setTheme("light");
-      document.documentElement.classList.add("light");
-    }
-  }, []);
-
-  const toggleTheme = () => {
-    const nextTheme = theme === "dark" ? "light" : "dark";
-    setTheme(nextTheme);
-    localStorage.setItem("hadron_theme", nextTheme);
-    if (nextTheme === "light") {
-      document.documentElement.classList.add("light");
+    } else if (theme === "light") {
+      setTheme("system");
     } else {
-      document.documentElement.classList.remove("light");
+      setTheme("dark");
     }
   };
 
-  if (!mounted) {
-    return (
-      <button
-        aria-label="Toggle theme"
-        className={`w-7 h-7 rounded-lg border border-border bg-panel text-muted flex items-center justify-center opacity-60 ${className}`}
-        disabled
-      >
-        <span className="w-3.5 h-3.5 block" />
-      </button>
-    );
-  }
+  const label =
+    theme === "system"
+      ? `Theme: System (${resolvedTheme} active). Click to switch to dark.`
+      : theme === "dark"
+      ? "Theme: Dark. Click to switch to light."
+      : "Theme: Light. Click to switch to system.";
 
   return (
     <button
-      onClick={toggleTheme}
-      aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-      title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+      type="button"
+      onClick={cycleTheme}
+      aria-label={label}
+      title={label}
       className={`w-7 h-7 rounded-lg border border-border bg-panel hover:bg-surface text-muted hover:text-foreground flex items-center justify-center transition-colors focus:outline-none focus:ring-1 focus:ring-accent ${className}`}
     >
-      {theme === "dark" ? (
+      {theme === "system" ? (
+        // Monitor / System Icon
+        <svg
+          className="w-3.5 h-3.5 text-accent"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+          />
+        </svg>
+      ) : theme === "dark" ? (
         // Sun Icon for Dark Mode (click to switch to light)
         <svg
           className="w-3.5 h-3.5 text-warn"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
+          aria-hidden="true"
         >
           <path
             strokeLinecap="round"
@@ -68,12 +63,13 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
           />
         </svg>
       ) : (
-        // Moon Icon for Light Mode (click to switch to dark)
+        // Moon Icon for Light Mode (click to switch to system/dark)
         <svg
           className="w-3.5 h-3.5 text-accent"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
+          aria-hidden="true"
         >
           <path
             strokeLinecap="round"

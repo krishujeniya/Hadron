@@ -5,7 +5,7 @@ Acceptance tests for T10:
 Persist workflow state and make retries real.
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 import pytest
 from arq.worker import Retry
 from langgraph.graph import StateGraph, START, END

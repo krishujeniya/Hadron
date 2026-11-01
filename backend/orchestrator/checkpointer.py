@@ -8,7 +8,6 @@ graceful restarts, and distributed execution using Redis storage with
 in-memory fallback for testing.
 """
 
-from collections import defaultdict
 import logging
 import pickle
 from typing import Any, Sequence

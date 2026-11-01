@@ -13,7 +13,7 @@ import pytest
 from starlette.testclient import TestClient
 
 from backend.config.settings import Settings, get_settings
-from backend.core.exceptions import DuplicateWebhookError, MemoryStoreError
+from backend.core.exceptions import MemoryStoreError
 from backend.job_queue.arq_worker import enqueue_review_job
 from backend.main import app
 from backend.memory.redis_client import redis_client

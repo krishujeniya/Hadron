@@ -5,12 +5,12 @@ Acceptance tests for T11:
 Separate review computation from reliable GitHub publication.
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 import pytest
 
 from backend.integrations.github_client import GitHubAPIError, GitHubNotFoundError, GitHubRateLimitError, PostReviewResponse
 from backend.integrations.github_models import ReviewEvent
-from backend.models.enums import ReviewStatus, ReviewVerdict
+from backend.models.enums import ReviewVerdict
 from backend.orchestrator.nodes import (
     _findings_to_review_comments,
     _parse_diff_hunk_lines,
@@ -111,7 +111,7 @@ class TestT11ReliablePublication:
 
         mock_client = AsyncMock()
         mock_client.list_pr_reviews.return_value = []
-        
+
         # First call fails on comments (e.g. 422), second call succeeds without comments
         mock_resp = PostReviewResponse(id=888, state=ReviewEvent.APPROVE, html_url="https://github.com/rev/888")
         mock_client.post_pr_review.side_effect = [

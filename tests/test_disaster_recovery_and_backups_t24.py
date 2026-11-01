@@ -35,7 +35,6 @@ from backend.disaster_recovery.reconciliation import (
 )
 from backend.disaster_recovery.restore import restore_backup
 from backend.disaster_recovery.tombstones import record_tombstone
-from backend.governance.deletion import delete_tenant_data
 from backend.governance.models import LegalHoldRecord
 from backend.memory.redis_client import redis_client
 
@@ -368,7 +367,7 @@ async def test_cli_dr_drill_execution(src_db_session: AsyncSession):
         snap_path = Path(tmp_dir) / "test_snapshot.json"
 
         # Create snapshot to disk
-        backup = await create_backup(session=src_db_session, target_path=snap_path)
+        _ = await create_backup(session=src_db_session, target_path=snap_path)
         assert snap_path.exists()
 
         # Run CLI restore drill

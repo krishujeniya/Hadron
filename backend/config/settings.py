@@ -278,6 +278,38 @@ class Settings(BaseSettings):
     )
 
     # -------------------------------------------------------------------------
+    # Operational Controls, Rollout Feature Flags & Kill Switches (Gate B - T26)
+    # -------------------------------------------------------------------------
+    kill_switch_publication: bool = Field(
+        default=False,
+        description="Emergency kill switch: disable posting reviews to GitHub while continuing local processing.",
+    )
+    kill_switch_new_intake: bool = Field(
+        default=False,
+        description="Emergency kill switch: reject new webhook intakes with HTTP 503 to drain queue.",
+    )
+    kill_switch_provider_spend: bool = Field(
+        default=False,
+        description="Emergency kill switch: immediately halt all paid LLM provider calls.",
+    )
+    enable_rag_context: bool = Field(
+        default=True,
+        description="Feature flag: enable RAG code chunk retrieval in reviews.",
+    )
+    enable_canary_models: bool = Field(
+        default=False,
+        description="Feature flag: route canary traffic to experimental reasoning models.",
+    )
+    canary_model: str = Field(
+        default="o1-mini",
+        description="Canary model to use when enable_canary_models is True.",
+    )
+    cors_origins: str = Field(
+        default="",
+        description="Allowed CORS origins (comma-separated). Must be explicitly set in production.",
+    )
+
+    # -------------------------------------------------------------------------
     # Derived properties
     # Not read from env vars — computed from other settings.
     # -------------------------------------------------------------------------

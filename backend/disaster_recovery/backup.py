@@ -104,7 +104,7 @@ async def create_backup(
     # llm_call_log
     llm_res = await session.execute(select(LLMCallLog))
     llm_logs = llm_res.scalars().all()
-    tables_data["llm_call_log"] = [_row_to_dict(l) for l in llm_logs]
+    tables_data["llm_call_log"] = [_row_to_dict(log_entry) for log_entry in llm_logs]
 
     record_counts = {table: len(rows) for table, rows in tables_data.items()}
 

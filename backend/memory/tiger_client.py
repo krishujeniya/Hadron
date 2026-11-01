@@ -102,6 +102,13 @@ class CodeChunk:
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     score: float = 0.0
+    # Additional versioning metadata for Gate B - T29:
+    blob_sha: str | None = None
+    commit_sha: str | None = None
+    line_start: int | None = None
+    line_end: int | None = None
+    embedding_version: str = "text-embedding-3-large-256"
+    source_branch: str = "default"
 
     def get(self, key: str, default: Any = None) -> Any:
         """Dictionary compatibility helper for callers expecting dicts."""
@@ -117,6 +124,18 @@ class CodeChunk:
             return self.repo
         if key == "chunk_index":
             return self.chunk_index
+        if key == "blob_sha":
+            return self.blob_sha
+        if key == "commit_sha":
+            return self.commit_sha
+        if key == "line_start":
+            return self.line_start
+        if key == "line_end":
+            return self.line_end
+        if key == "embedding_version":
+            return self.embedding_version
+        if key == "source_branch":
+            return self.source_branch
         if key == "pr_number":
             return default if default is not None else "?"
         if hasattr(self, key):
@@ -135,6 +154,12 @@ class CodeChunk:
             "chunk_index": self.chunk_index,
             "symbol": self.symbol,
             "token_count": self.token_count,
+            "blob_sha": self.blob_sha,
+            "commit_sha": self.commit_sha,
+            "line_start": self.line_start,
+            "line_end": self.line_end,
+            "embedding_version": self.embedding_version,
+            "source_branch": self.source_branch,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "score": self.score,
         }
@@ -636,6 +661,36 @@ class TigerMemoryClient:
 
         deleted = int(result.split()[-1]) if result else 0
         logger.info("delete_stale_chunks | repo=%s path=%s deleted=%d", repo, path, deleted)
+        return deleted
+
+    async def delete_surplus_chunks(
+        self,
+        repo: str,
+        path: str,
+        min_index: int,
+    ) -> int:
+        """
+        Delete any chunks with chunk_index >= min_index for a file.
+        Used when a file shrinks in size to cleanly purge obsolete old chunk tails.
+        """
+        if self._in_memory:
+            initial = len(self._in_memory_chunks)
+            self._in_memory_chunks = [
+                c for c in self._in_memory_chunks
+                if not (c.repo == repo and c.path == path and c.chunk_index >= min_index)
+            ]
+            deleted = initial - len(self._in_memory_chunks)
+            if deleted:
+                logger.info("delete_surplus_chunks (in_memory) | repo=%s path=%s min_index=%d deleted=%d", repo, path, min_index, deleted)
+            return deleted
+
+        sql = "DELETE FROM code_chunks WHERE repo = $1 AND path = $2 AND chunk_index >= $3"
+        async with self._pool.acquire() as conn:
+            result = await conn.execute(sql, repo, path, min_index)
+
+        deleted = int(result.split()[-1]) if result else 0
+        if deleted:
+            logger.info("delete_surplus_chunks | repo=%s path=%s min_index=%d deleted=%d", repo, path, min_index, deleted)
         return deleted
 
     # -------------------------------------------------------------------------

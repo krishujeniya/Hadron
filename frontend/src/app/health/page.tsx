@@ -56,14 +56,19 @@ export default function HealthPage() {
                   <span className="h-3 w-3 rounded-full bg-err inline-block animate-pulse" />
                   API OFFLINE — Server Unreachable
                 </span>
+              ) : readyError ? (
+                <span className="text-err flex items-center gap-2">
+                  <span className="h-3 w-3 rounded-full bg-err inline-block animate-pulse" />
+                  TELEMETRY UNREACHABLE — Status Probe Failed
+                </span>
               ) : isPipelineReady ? (
                 <span className="text-ok flex items-center gap-2">
                   <span className="h-3 w-3 rounded-full bg-ok inline-block" />
                   OPERATIONAL — Autonomous Review Pipeline Active
                 </span>
               ) : (
-                <span className="text-amber-500 flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full bg-amber-500 inline-block animate-pulse" />
+                <span className="text-warn flex items-center gap-2">
+                  <span className="h-3 w-3 rounded-full bg-warn inline-block animate-pulse" />
                   PIPELINE DEGRADED — API Online, Execution Capability Offline
                 </span>
               )}
@@ -71,6 +76,8 @@ export default function HealthPage() {
             <p className="text-xs text-muted mt-1.5">
               {!isLive
                 ? "HTTP liveness probe failed. Review requests cannot be accepted."
+                : readyError
+                ? "Subsystem readiness probe could not be completed. Pipeline health cannot be verified."
                 : isPipelineReady
                 ? "All critical dependencies (Postgres, Schema, Redis, and Worker fleet) are operational."
                 : "Answering HTTP requests does not constitute an operating review pipeline. Review workers or queue must be online."}

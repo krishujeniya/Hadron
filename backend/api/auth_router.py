@@ -12,10 +12,10 @@ from __future__ import annotations
 import logging
 import secrets
 import urllib.parse
-from typing import Any, Optional
+from typing import Any
 
 import httpx
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from pydantic import BaseModel, Field
 from sqlalchemy import distinct, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -79,6 +79,9 @@ class RepositoryItem(BaseModel):
     stargazers_count: int = 0
     private: bool = False
     updated_at: str | None = None
+    status: str = "discovered"  # "discovered" | "connected" | "indexing" | "active" | "degraded" | "disconnected"
+    review_count: int = 0
+    last_review_at: str | None = None
 
 
 def _validate_redirect_uri(redirect_uri: str | None) -> str | None:
@@ -429,7 +432,29 @@ async def list_account_repos(
         authorized_account is not None and account.lower() == authorized_account.lower()
     )
 
+    # Fetch review statistics from local database to establish evidence-backed repository status
+    stats_map: dict[str, dict[str, Any]] = {}
     if is_authorized_workspace:
+        try:
+            from sqlalchemy import func
+            stats_query = (
+                select(
+                    PRReviewRecord.repo_full_name,
+                    func.count(PRReviewRecord.id).label("total_reviews"),
+                    func.max(PRReviewRecord.created_at).label("last_review_at"),
+                )
+                .where(PRReviewRecord.repo_full_name.like(f"{account}/%"))
+                .group_by(PRReviewRecord.repo_full_name)
+            )
+            stats_rows = (await session.execute(stats_query)).all()
+            for r_name, t_revs, l_rev_at in stats_rows:
+                stats_map[r_name.lower()] = {
+                    "count": t_revs,
+                    "last_review_at": l_rev_at.isoformat() if l_rev_at else None,
+                }
+        except Exception as exc:
+            logger.debug("list_account_repos | stats query: %s", exc)
+
         try:
             db_result = await session.execute(
                 select(distinct(PRReviewRecord.repo_full_name)).where(
@@ -456,5 +481,17 @@ async def list_account_repos(
                     )
         except Exception as exc:
             logger.debug("list_account_repos | local DB check: %s", exc)
+
+    # Apply evidence-backed status to all repositories
+    for repo_item in repos:
+        st = stats_map.get(repo_item.full_name.lower())
+        if st and st["count"] > 0:
+            repo_item.status = "active"
+            repo_item.review_count = st["count"]
+            repo_item.last_review_at = st["last_review_at"]
+        elif auth_header:
+            repo_item.status = "connected"
+        else:
+            repo_item.status = "discovered"
 
     return repos

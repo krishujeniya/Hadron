@@ -11,7 +11,7 @@ Regression test suite for T06:
 import sys
 import os
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if REPO_ROOT not in sys.path:
@@ -25,7 +25,7 @@ os.environ.setdefault("ANTHROPIC_API_KEY", "sk-ant-test")
 from backend.agents.contracts import AgentFailureKind, AgentTask, AgentVerdict
 from backend.agents.security_agent import SecurityAgent
 from backend.models.enums import ReviewVerdict
-from backend.orchestrator.nodes import aggregate_results, fan_out_agents
+from backend.orchestrator.nodes import aggregate_results
 from backend.tools.llm_client import LLMResponse
 
 

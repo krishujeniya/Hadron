@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 import logging
 from typing import Any, Optional
 import uuid
@@ -136,7 +136,11 @@ class CostLedger:
             # Check cached value
             async with self._lock:
                 if day_key in self._cached_daily_spend:
-                    cached = self._cached_daily_spend[day_key] + self._emergency_spend_usd
+                    try:
+                        raw_cached = float(self._cached_daily_spend[day_key])
+                    except (TypeError, ValueError):
+                        raw_cached = 0.0
+                    cached = raw_cached + float(self._emergency_spend_usd)
                     logger.info("cost_ledger_using_cached_spend | key=%s spend=%.4f", day_key, cached)
                     return round(cached, 6), True
 
@@ -164,12 +168,15 @@ class CostLedger:
 
         req_amount = max(0.0001, float(amount_usd))
         t_id = tenant_id or "default"
-        day_key = self._today_key(t_id)
 
         # 1. Query current settled spend outside the lock to prevent deadlock and avoid holding lock during I/O
         is_emergency = False
         try:
-            settled_spend, is_degraded = await self.get_daily_spend(tenant_id=t_id)
+            raw_spend, _ = await self.get_daily_spend(tenant_id=t_id)
+            try:
+                settled_spend = float(raw_spend)
+            except (TypeError, ValueError):
+                settled_spend = 0.0
         except CostLedgerUnavailableError as err:
             if self._settings.budget_fail_closed:
                 raise BudgetExceededError(
@@ -181,7 +188,6 @@ class CostLedger:
                     reason="cost_ledger_unavailable",
                 ) from err
             is_emergency = True
-            is_degraded = True
 
         async with self._lock:
             await self._prune_expired_locked()
@@ -292,7 +298,11 @@ class CostLedger:
 
             # Update cached daily spend
             day_key = self._today_key(reservation.tenant_id)
-            self._cached_daily_spend[day_key] = self._cached_daily_spend.get(day_key, 0.0) + actual_cost_usd
+            try:
+                safe_actual = float(actual_cost_usd)
+            except (TypeError, ValueError):
+                safe_actual = 0.0
+            self._cached_daily_spend[day_key] = self._cached_daily_spend.get(day_key, 0.0) + safe_actual
 
         # Durable, idempotent ledger write to Postgres
         idem_key = idempotency_key or f"res:{reservation.reservation_id}"
@@ -345,9 +355,13 @@ class CostLedger:
         from backend.economics.cost_repository import record_llm_call
 
         t_id = tenant_id or "default"
+        try:
+            safe_cost = float(cost_usd)
+        except (TypeError, ValueError):
+            safe_cost = 0.0
         async with self._lock:
             day_key = self._today_key(t_id)
-            self._cached_daily_spend[day_key] = self._cached_daily_spend.get(day_key, 0.0) + cost_usd
+            self._cached_daily_spend[day_key] = self._cached_daily_spend.get(day_key, 0.0) + safe_cost
 
         await record_llm_call(
             workflow_id=workflow_id,

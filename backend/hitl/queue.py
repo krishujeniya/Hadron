@@ -200,7 +200,7 @@ async def get_pending_queue(
     stmt = (
         select(HITLReview)
         .where(HITLReview.status.in_(["pending", "in_review"]))
-        .order_by(HITLReview.created_at.asc())   # oldest first = FIFO queue semantics
+        .order_by(HITLReview.created_at.asc(), HITLReview.id.asc())   # oldest first + stable tie-breaker
         .limit(limit)
         .offset(offset)
     )

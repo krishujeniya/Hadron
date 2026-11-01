@@ -164,13 +164,11 @@ async def mark_files_embedded(
                         file-as-unit strategy).
     """
     # Primary key: "{repo_full_name}:{file_path}"
-    # VARCHAR(128) check: repo is ~30 chars, path is ~80 chars, ":" is 1 = ~111 total.
-    # (demo-day-readiness Bug #1: VARCHAR(36) too small for non-UUID PKs.)
+    # VARCHAR(512) check: aligns with RepoFileIndexRecord.id (String(512) in models.py)
+    # Supporting deep monorepo directory paths.
     record_id = f"{repo_full_name}:{file_path}"
 
-    # Defensive assertion — catch PK overflow in dev before it silently truncates
-    # in Postgres.
-    assert len(record_id) <= 128, (
+    assert len(record_id) <= 512, (
         f"RepoFileIndex PK too long ({len(record_id)} chars): {record_id[:80]}..."
     )
 
@@ -194,3 +192,46 @@ async def mark_files_embedded(
         "mark_files_embedded | done | repo=%s path=%s sha=%s chunks=%d",
         repo_full_name, file_path, file_sha[:8], chunk_count,
     )
+
+
+async def remove_deleted_files(
+    session: AsyncSession,
+    repo_full_name: str,
+    active_file_paths: set[str],
+) -> list[str]:
+    """
+    Identify and remove files that were deleted from the repository.
+    Removes tracking records from repo_file_index and returns the list of deleted paths.
+
+    Args:
+        session:           Active async SQLAlchemy session.
+        repo_full_name:    e.g. "octocat/hello-world"
+        active_file_paths: Set of current file paths in the repo.
+
+    Returns:
+        List of file paths that were indexed previously but are now absent.
+    """
+    stmt = select(RepoFileIndexRecord.file_path).where(
+        RepoFileIndexRecord.repo_full_name == repo_full_name
+    )
+    result = await session.execute(stmt)
+    raw_rows = result.all()
+    if hasattr(raw_rows, "__await__"):
+        raw_rows = await raw_rows
+    indexed_paths = {row[0] for row in raw_rows}
+    deleted_paths = list(indexed_paths - active_file_paths)
+
+    if deleted_paths:
+        from sqlalchemy import delete
+        del_stmt = delete(RepoFileIndexRecord).where(
+            RepoFileIndexRecord.repo_full_name == repo_full_name,
+            RepoFileIndexRecord.file_path.in_(deleted_paths),
+        )
+        await session.execute(del_stmt)
+        await session.commit()
+        logger.info(
+            "remove_deleted_files | repo=%s deleted_count=%d",
+            repo_full_name, len(deleted_paths),
+        )
+
+    return deleted_paths

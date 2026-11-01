@@ -109,6 +109,14 @@ async def list_reviews_endpoint(
         ),
         examples=["completed"],
     ),
+    q: str | None = Query(
+        default=None,
+        description="Search across PR titles, commit SHAs, and repo names.",
+    ),
+    sort: str = Query(
+        default="newest",
+        description="Sort order: newest, oldest, findings.",
+    ),
     # Pagination (bounded to max 100 per Gate B - T17)
     limit: int = Query(
         default=50,
@@ -120,6 +128,10 @@ async def list_reviews_endpoint(
         default=0,
         ge=0,
         description="Number of reviews to skip (for pagination).",
+    ),
+    cursor: str | None = Query(
+        default=None,
+        description="Keyset pagination cursor (<created_at>|<id>).",
     ),
     # Dependencies
     principal: Principal = Depends(require_auth),      # enforces API key / session
@@ -149,13 +161,21 @@ async def list_reviews_endpoint(
         repo_full_name=repo,
         account=account,
         status=status_filter,
+        q=q,
+        sort=sort,
         limit=limit,
         offset=offset,
+        cursor=cursor,
     )
 
     # Convert ORM objects to DTOs at the adapter boundary.
     # WIKI: Interface Adapters Layer — "convert to the form convenient for the caller."
     summaries: list[ReviewSummary] = [review_record_to_summary(r) for r in records]
+    next_cursor = (
+        f"{records[-1].created_at.isoformat()}|{records[-1].id}"
+        if len(records) == limit and records
+        else None
+    )
 
     logger.info(
         "GET /api/v1/reviews | repo=%s status=%s limit=%d offset=%d -> %d/%d",
@@ -167,6 +187,7 @@ async def list_reviews_endpoint(
         total=total,
         limit=limit,
         offset=offset,
+        next_cursor=next_cursor,
     )
 
 

@@ -2,12 +2,16 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { SWRProvider } from "@/lib/swr";
 import { GitHubProvider } from "@/lib/githubContext";
+import { ThemeProvider } from "@/lib/themeContext";
 import { Shell } from "@/components/Shell";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://hadron.dev"),
   title: "Hadron | AI PR Review Engine",
   description: "Hadron — Autonomous Multi-Agent Pull Request Review Engine",
+  alternates: {
+    canonical: "/",
+  },
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
@@ -20,6 +24,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Hadron | AI PR Review Engine",
     description: "Autonomous multi-agent pull request reviews powered by LangGraph & Tiger Cloud",
+    url: "https://hadron.dev",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Hadron PR Review Engine" }],
   },
   twitter: {
@@ -74,25 +79,49 @@ const schemaOrgData = {
   ],
 };
 
+const themeInitScript = `
+(function() {
+  try {
+    var stored = localStorage.getItem('hadron_theme');
+    var isDark = stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches) || (stored === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    var root = document.documentElement;
+    if (isDark) {
+      root.classList.add('dark');
+      root.classList.remove('light');
+      root.style.colorScheme = 'dark';
+    } else {
+      root.classList.add('light');
+      root.classList.remove('dark');
+      root.style.colorScheme = 'light';
+    }
+  } catch (e) {
+    document.documentElement.classList.add('dark');
+  }
+})();
+`;
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaOrgData) }}
         />
       </head>
       <body>
-        <GitHubProvider>
-          <SWRProvider>
-            <Shell>{children}</Shell>
-          </SWRProvider>
-        </GitHubProvider>
+        <ThemeProvider>
+          <GitHubProvider>
+            <SWRProvider>
+              <Shell>{children}</Shell>
+            </SWRProvider>
+          </GitHubProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

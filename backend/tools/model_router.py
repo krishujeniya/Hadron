@@ -51,10 +51,13 @@
 #     - A/B test models in production (Phase 9)
 #   The env var takes precedence over the hardcoded default.
 
+import logging
 import os
 from dataclasses import dataclass
 
 from backend.models.enums import AgentType
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -144,6 +147,12 @@ def get_routing_table() -> dict[AgentType, ModelConfig]:
     qual_model = os.environ.get("QUALITY_MODEL", default_model)
     test_model = os.environ.get("TEST_MODEL", default_model)
     docs_model = os.environ.get("DOCS_MODEL", default_model)
+
+    # Gate B / T26: Feature-flag new models (canary traffic)
+    if cfg is not None and getattr(cfg, "enable_canary_models", None) is True:
+        canary = getattr(cfg, "canary_model", "o1-mini")
+        qual_model = canary
+        logger.info("model_router | canary_routing_active | quality_model=%s", canary)
 
     response_tokens = 4096 if is_nvidia or "gpt-oss" in qual_model else 2048
 

@@ -287,7 +287,7 @@ async def submit_decision(
             if repo_owner.lower() != authorized_account.lower():
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"Access denied: cannot resolve HITL review for another workspace.",
+                    detail="Access denied: cannot resolve HITL review for another workspace.",
                 )
 
     # Enforce server-derived reviewer identity (no caller spoofing)
@@ -366,6 +366,7 @@ async def rebuild_queue(
     pushed = await rebuild_redis_queue(session, pool)
 
     return {
+        "rebuilt": pushed,
         "pushed_to_redis": pushed,
         "message": (
             f"Rebuilt: pushed {pushed} pending items to Redis queue."

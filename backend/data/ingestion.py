@@ -46,7 +46,7 @@ from typing import Any
 import httpx
 
 from backend.config.settings import get_settings
-from backend.data.freshness import get_stale_files, mark_files_embedded
+from backend.data.freshness import get_stale_files, mark_files_embedded, remove_deleted_files
 from backend.database.postgres import get_session_factory
 from backend.memory.embedder import EmbeddingError, embed_text
 from backend.memory.tiger_client import CodeChunk, get_tiger_memory  # TIGER: was qdrant_client
@@ -55,9 +55,89 @@ from backend.reliability.circuit_breaker import GITHUB_BREAKER
 logger = logging.getLogger(__name__)
 
 
+class ChunkBlock:
+    """
+    Representation of a code chunk with line range and symbol attribution.
+    Supports 2-element tuple unpacking `(text, symbol) = block` for backward compatibility
+    while providing line_start, line_end, text, and symbol attributes.
+    """
+    def __init__(self, text: str, symbol: str | None, line_start: int, line_end: int):
+        self.text = text
+        self.symbol = symbol
+        self.line_start = line_start
+        self.line_end = line_end
+
+    def __iter__(self):
+        yield self.text
+        yield self.symbol
+
+    def __getitem__(self, idx: int) -> Any:
+        return (self.text, self.symbol, self.line_start, self.line_end)[idx]
+
+    def __len__(self) -> int:
+        return 4
+
+    def __repr__(self) -> str:
+        return f"ChunkBlock(symbol={self.symbol!r}, lines={self.line_start}..{self.line_end}, len={len(self.text)})"
+
+
+def split_lines_into_chunks(
+    lines: list[str],
+    symbol: str | None,
+    line_offset: int,
+    max_chunk_chars: int = 2500,
+    overlap_ratio: float = 0.15,
+) -> list[ChunkBlock]:
+    """
+    Split a list of lines into one or more ChunkBlock instances.
+    Guarantees every line and character is covered without silent truncation.
+    """
+    if not lines:
+        return []
+
+    full_text = "".join(lines).strip()
+    if len(full_text) <= max_chunk_chars:
+        return [ChunkBlock(full_text, symbol, line_offset + 1, line_offset + len(lines))]
+
+    chunks: list[ChunkBlock] = []
+    total_lines = len(lines)
+    avg_line_len = max(1, len(full_text) // total_lines)
+    target_lines = max(5, int(max_chunk_chars / avg_line_len))
+    overlap_lines = max(1, int(target_lines * overlap_ratio))
+    step = max(1, target_lines - overlap_lines)
+
+    curr_start = 0
+    while curr_start < total_lines:
+        curr_end = min(curr_start + target_lines, total_lines)
+        chunk_lines = lines[curr_start:curr_end]
+        chunk_str = "".join(chunk_lines).strip()
+        if len(chunk_str) > max_chunk_chars:
+            char_step = max(100, int(max_chunk_chars * (1.0 - overlap_ratio)))
+            for c_start in range(0, len(chunk_str), char_step):
+                c_end = min(c_start + max_chunk_chars, len(chunk_str))
+                sub_text = chunk_str[c_start:c_end].strip()
+                if sub_text:
+                    chunks.append(ChunkBlock(sub_text, symbol, line_offset + curr_start + 1, line_offset + curr_end))
+                if c_end >= len(chunk_str):
+                    break
+        else:
+            if chunk_str:
+                chunks.append(ChunkBlock(chunk_str, symbol, line_offset + curr_start + 1, line_offset + curr_end))
+
+        if curr_end >= total_lines:
+            break
+        curr_start += step
+
+    return chunks
+
+
 async def upsert_code_chunks(chunks: list[CodeChunk]) -> int:
     """Upsert code chunks into the vector store (Tiger Cloud / pgvectorscale)."""
-    tiger = get_tiger_memory()
+    try:
+        tiger = get_tiger_memory()
+    except RuntimeError:
+        from backend.memory.tiger_client import TigerMemoryClient
+        tiger = TigerMemoryClient(in_memory=True)
     return await tiger.upsert_chunks(chunks)
 
 
@@ -66,21 +146,21 @@ def chunk_code_by_ast(
     file_path: str,
     max_chunk_chars: int = 2500,
     overlap_ratio: float = 0.15,
-) -> list[tuple[str, str | None]]:
+) -> list[ChunkBlock]:
     """
-    Chunks source code using AST/semantic boundary detection with sliding overlap.
-
-    Returns a list of tuples: (chunk_text, symbol_name | None).
+    Chunks source code using AST/semantic boundary detection with complete line coverage.
+    Guarantees that no preambles, definition bodies, or tails are silently dropped.
     """
     if not content or not content.strip():
         return []
 
-    if len(content) <= max_chunk_chars:
-        return [(content, None)]
-
     lines = content.splitlines(keepends=True)
     total_lines = len(lines)
-    chunks: list[tuple[str, str | None]] = []
+
+    if len(content) <= max_chunk_chars:
+        return [ChunkBlock(content.strip(), None, 1, total_lines)]
+
+    chunks: list[ChunkBlock] = []
 
     # 1. Python AST parsing
     if file_path.endswith(".py"):
@@ -94,28 +174,47 @@ def chunk_code_by_ast(
                     definitions.append((start, end, node.name))
 
             if definitions:
-                # Capture preamble
+                # Capture entire preamble without truncation
                 first_def_line = definitions[0][0]
                 if first_def_line > 1:
-                    preamble = "".join(lines[:first_def_line - 1]).strip()
-                    if preamble:
-                        chunks.append((preamble[:max_chunk_chars], "module:preamble"))
+                    preamble_lines = lines[:first_def_line - 1]
+                    chunks.extend(
+                        split_lines_into_chunks(
+                            preamble_lines,
+                            "module:preamble",
+                            line_offset=0,
+                            max_chunk_chars=max_chunk_chars,
+                            overlap_ratio=overlap_ratio,
+                        )
+                    )
 
-                # Process each definition
+                # Process each definition completely
                 for start, end, symbol in definitions:
-                    def_text = "".join(lines[start - 1:end]).strip()
-                    if len(def_text) <= max_chunk_chars:
-                        chunks.append((def_text, symbol))
-                    else:
-                        # Split large definition with sliding overlap
-                        sub_lines = lines[start - 1:end]
-                        step = max(1, int(len(sub_lines) * (1.0 - overlap_ratio)))
-                        for i in range(0, len(sub_lines), step):
-                            sub_chunk = "".join(sub_lines[i:i + int(len(sub_lines) * (1.0 + overlap_ratio))]).strip()
-                            if sub_chunk:
-                                chunks.append((sub_chunk[:max_chunk_chars], symbol))
-                            if i + step >= len(sub_lines):
-                                break
+                    def_lines = lines[start - 1:end]
+                    chunks.extend(
+                        split_lines_into_chunks(
+                            def_lines,
+                            symbol,
+                            line_offset=start - 1,
+                            max_chunk_chars=max_chunk_chars,
+                            overlap_ratio=overlap_ratio,
+                        )
+                    )
+
+                # Capture any post-definition module tail completely
+                last_def_end = definitions[-1][1]
+                if last_def_end < total_lines:
+                    tail_lines = lines[last_def_end:]
+                    chunks.extend(
+                        split_lines_into_chunks(
+                            tail_lines,
+                            "module:tail",
+                            line_offset=last_def_end,
+                            max_chunk_chars=max_chunk_chars,
+                            overlap_ratio=overlap_ratio,
+                        )
+                    )
+
                 if chunks:
                     return chunks
         except Exception:
@@ -143,33 +242,41 @@ def chunk_code_by_ast(
         prev_sym: str | None = "module:preamble"
         for b_idx, sym in boundary_indices:
             if b_idx > prev_idx:
-                chunk_str = "".join(lines[prev_idx:b_idx]).strip()
-                if chunk_str:
-                    chunks.append((chunk_str[:max_chunk_chars], prev_sym))
+                block_lines = lines[prev_idx:b_idx]
+                chunks.extend(
+                    split_lines_into_chunks(
+                        block_lines,
+                        prev_sym,
+                        line_offset=prev_idx,
+                        max_chunk_chars=max_chunk_chars,
+                        overlap_ratio=overlap_ratio,
+                    )
+                )
             prev_idx = b_idx
             prev_sym = sym
         # Final tail chunk
         if prev_idx < total_lines:
-            tail_str = "".join(lines[prev_idx:]).strip()
-            if tail_str:
-                chunks.append((tail_str[:max_chunk_chars], prev_sym))
+            tail_lines = lines[prev_idx:]
+            chunks.extend(
+                split_lines_into_chunks(
+                    tail_lines,
+                    prev_sym,
+                    line_offset=prev_idx,
+                    max_chunk_chars=max_chunk_chars,
+                    overlap_ratio=overlap_ratio,
+                )
+            )
         if chunks:
             return chunks
 
-    # 3. Fallback: line-based sliding window with 15% overlap
-    lines_per_chunk = max(10, int(max_chunk_chars / 60))
-    overlap_lines = max(2, int(lines_per_chunk * overlap_ratio))
-    step = max(1, lines_per_chunk - overlap_lines)
-
-    for i in range(0, total_lines, step):
-        chunk_lines = lines[i:i + lines_per_chunk]
-        chunk_text = "".join(chunk_lines).strip()
-        if chunk_text:
-            chunks.append((chunk_text, None))
-        if i + lines_per_chunk >= total_lines:
-            break
-
-    return chunks or [(content[:max_chunk_chars], None)]
+    # 3. Fallback: complete line-based sliding window with overlap
+    return split_lines_into_chunks(
+        lines,
+        None,
+        line_offset=0,
+        max_chunk_chars=max_chunk_chars,
+        overlap_ratio=overlap_ratio,
+    )
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -403,14 +510,17 @@ async def fetch_file_content(
         # Remove newlines GitHub inserts into base64 output
         content_bytes = base64.b64decode(content_b64.replace("\n", ""))
 
-        # Attempt UTF-8 decode — skip binary files
+        # Attempt UTF-8 decode; if invalid, fallback to UTF-16; skip non-text binary
         try:
             return content_bytes.decode("utf-8")
         except UnicodeDecodeError:
-            logger.debug(
-                "fetch_file_content | binary_skip | path=%s", file_path
-            )
-            return None
+            try:
+                return content_bytes.decode("utf-16")
+            except UnicodeDecodeError:
+                logger.info(
+                    "fetch_file_content | unsupported_encoding_or_binary | path=%s", file_path
+                )
+                return None
 
     except httpx.HTTPStatusError as e:
         logger.warning(
@@ -505,26 +615,35 @@ async def ingest_repository(repo_full_name: str) -> dict[str, int]:
             )
             return summary
 
-        # Stage 3: freshness check
+        # Stage 3: freshness check & removed files cleanup (Gate B - T29)
         # Build {file_path: blob_sha} for all code files
         file_sha_map = {f["path"]: f["sha"] for f in code_files}
 
-        # Get async session factory (NOT async with get_db() — Bug #2 in skill)
-        # get_db() is an async generator (yield), not a context manager.
-        # We must use the async_sessionmaker directly.
+        # Get async session factory
         session_factory = get_session_factory()
+        try:
+            tiger = get_tiger_memory()
+        except RuntimeError:
+            from backend.memory.tiger_client import TigerMemoryClient
+            tiger = TigerMemoryClient(in_memory=True)
 
         async with session_factory() as session:
+            # Clean up files deleted from the repository
+            deleted_files = await remove_deleted_files(session, repo_full_name, set(file_sha_map.keys()))
+            for del_path in deleted_files:
+                await tiger.delete_stale_chunks(repo_full_name, path=del_path)
+
             stale_files = await get_stale_files(session, repo_full_name, file_sha_map)
 
+        summary["deleted_files"] = len(deleted_files)
         summary["stale_files"] = len(stale_files)
         summary["skipped_fresh"] = len(code_files) - len(stale_files)
 
         logger.info(
             "ingest_repository | freshness_check | repo=%s "
-            "total=%d stale=%d fresh=%d",
+            "total=%d stale=%d fresh=%d deleted=%d",
             repo_full_name, len(code_files),
-            len(stale_files), summary["skipped_fresh"],
+            len(stale_files), summary["skipped_fresh"], len(deleted_files),
         )
 
         if not stale_files:
@@ -558,8 +677,14 @@ async def ingest_repository(repo_full_name: str) -> dict[str, int]:
             if len(chunks_data) > MAX_CHUNKS_PER_FILE:
                 chunks_data = chunks_data[:MAX_CHUNKS_PER_FILE]
             file_chunks: list[CodeChunk] = []
+            partial_failure = False
 
-            for idx, (chunk_text, symbol) in enumerate(chunks_data):
+            for idx, item in enumerate(chunks_data):
+                chunk_text = getattr(item, "text", item[0])
+                symbol = getattr(item, "symbol", item[1])
+                line_start = getattr(item, "line_start", item[2] if len(item) > 2 else 1)
+                line_end = getattr(item, "line_end", item[3] if len(item) > 3 else len(content.splitlines()))
+
                 try:
                     vector = await embed_text(chunk_text)
                     file_chunks.append(
@@ -571,27 +696,37 @@ async def ingest_repository(repo_full_name: str) -> dict[str, int]:
                             chunk_index=idx,
                             symbol=symbol,
                             token_count=len(chunk_text.split()),
+                            blob_sha=file_sha,
+                            line_start=line_start,
+                            line_end=line_end,
+                            embedding_version="text-embedding-3-large-256",
+                            source_branch="default",
                         )
                     )
-                except EmbeddingError as e:
+                except (EmbeddingError, Exception) as e:
                     logger.warning(
                         "ingest_repository | embed_error | repo=%s path=%s chunk=%d error=%s",
                         repo_full_name, file_path, idx, e,
                     )
-                except Exception as e:
-                    logger.warning(
-                        "ingest_repository | unexpected_embed_error | repo=%s path=%s chunk=%d error=%s",
-                        repo_full_name, file_path, idx, e,
-                    )
+                    partial_failure = True
+                    break
 
-            if not file_chunks:
+            # Invariant: Partial embedding failure must never mark a file fresh!
+            if partial_failure or not file_chunks or len(file_chunks) < len(chunks_data):
                 summary["errors"] += 1
+                logger.warning(
+                    "ingest_repository | partial_embedding_failure | repo=%s path=%s chunks_succeeded=%d/%d (skipping freshness mark)",
+                    repo_full_name, file_path, len(file_chunks), len(chunks_data),
+                )
                 continue
 
             # Stage 4c: upsert all chunks into Tiger Cloud (code_chunks table, DiskANN index)
             await upsert_code_chunks(file_chunks)
 
-            # Stage 4d: record freshness with true chunk count
+            # Purge surplus chunks if file shrank (removes old tail chunks)
+            await tiger.delete_surplus_chunks(repo_full_name, file_path, min_index=len(file_chunks))
+
+            # Stage 4d: record freshness only after all chunk writes succeed
             async with session_factory() as session:
                 await mark_files_embedded(
                     session=session,

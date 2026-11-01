@@ -81,7 +81,7 @@ What it is
 Half-built
     - `backend/economics/routing_advisor.py::recommend_model()` already
       logs recommendations on every agent call.
-    - `backend/economics/budget_guard.py` enforces the $50/day hard cap
+    - `backend/economics/budget.py` (`BudgetGuard`) enforces the $50/day hard cap
       at `base_agent` entry.
     - HITL `human_verdict` is persisted alongside `agent_verdict` —
       the labelled training signal is already there, untouched.

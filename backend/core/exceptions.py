@@ -187,6 +187,14 @@ class AgentOutputValidationError(AgentError):
     pass
 
 
+class ProviderSpendHaltedError(AgentError):
+    """
+    Raised when LLM provider spend is blocked by an operational kill switch.
+    """
+    def __init__(self, message: str = "Provider spend halted by operational kill switch", agent_name: str | None = "llm_client"):
+        super().__init__(message, agent_name=agent_name)
+
+
 # -----------------------------------------------------------------------------
 # GitHub API Exceptions
 # -----------------------------------------------------------------------------

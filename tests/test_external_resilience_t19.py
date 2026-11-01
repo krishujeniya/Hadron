@@ -17,23 +17,19 @@ Covers:
 """
 
 import asyncio
-import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
 
-from backend.core.exceptions import AgentError
 from backend.integrations.github_client import (
     AmbiguousWriteError,
-    GitHubAPIError,
     GitHubClient,
     GitHubRateLimitError,
 )
 from backend.observability.workflow_context import (
     get_workflow_context,
     scoped_workflow_context,
-    set_workflow_context,
 )
 from backend.reliability.circuit_breaker import (
     BreakerConfig,
@@ -41,9 +37,8 @@ from backend.reliability.circuit_breaker import (
     CircuitBreaker,
     CircuitOpenError,
 )
-from backend.reliability.retry import RetryConfig, async_retry_with_backoff
 from backend.reliability.timeout import DeadlineBudget, DeadlineExceededError
-from backend.tools.llm_client import LLMClient, LLMResponse, get_provider_semaphore
+from backend.tools.llm_client import LLMClient, get_provider_semaphore
 
 
 @pytest.mark.asyncio

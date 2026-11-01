@@ -48,16 +48,16 @@ export function PlainEnglishAssistant({ recentReviews, accountName }: PlainEngli
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-zinc-950 via-zinc-900 to-black p-6 shadow-xl space-y-5">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-white/10 pb-4">
+    <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm space-y-5">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-separator pb-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-white/10 text-white border border-white/20">
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-panel text-muted border border-border">
             <span>📊</span> Operational Guidance
           </div>
-          <h3 className="text-lg font-bold text-white mt-1.5">
+          <h3 className="text-lg font-bold text-foreground mt-1.5 font-mono">
             Workspace PR Review Summary
           </h3>
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-muted">
             Factual overview derived from recent review results in {accountName ? `@${accountName}` : "your workspace"}.
           </p>
         </div>
@@ -73,8 +73,8 @@ export function PlainEnglishAssistant({ recentReviews, accountName }: PlainEngli
           }}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all text-left flex items-center gap-2 border ${
             activeTab === "summary" && !customResponse
-              ? "bg-white text-black border-white font-semibold shadow-md shadow-white/10"
-              : "bg-white/[0.03] text-zinc-300 border-white/10 hover:border-white/30 hover:bg-white/[0.06]"
+              ? "bg-accent/15 text-accent border-accent/40 font-semibold shadow-xs"
+              : "bg-panel text-muted border-border hover:border-muted/50 hover:text-foreground"
           }`}
         >
           <span>📋 Overview</span>
@@ -87,8 +87,8 @@ export function PlainEnglishAssistant({ recentReviews, accountName }: PlainEngli
           }}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all text-left flex items-center gap-2 border ${
             activeTab === "security" && !customResponse
-              ? "bg-white text-black border-white font-semibold shadow-md shadow-white/10"
-              : "bg-white/[0.03] text-zinc-300 border-white/10 hover:border-white/30 hover:bg-white/[0.06]"
+              ? "bg-accent/15 text-accent border-accent/40 font-semibold shadow-xs"
+              : "bg-panel text-muted border-border hover:border-muted/50 hover:text-foreground"
           }`}
         >
           <span>🛡️ Security Status</span>
@@ -101,95 +101,62 @@ export function PlainEnglishAssistant({ recentReviews, accountName }: PlainEngli
           }}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all text-left flex items-center gap-2 border ${
             activeTab === "escalations" && !customResponse
-              ? "bg-white text-black border-white font-semibold shadow-md shadow-white/10"
-              : "bg-white/[0.03] text-zinc-300 border-white/10 hover:border-white/30 hover:bg-white/[0.06]"
+              ? "bg-accent/15 text-accent border-accent/40 font-semibold shadow-xs"
+              : "bg-panel text-muted border-border hover:border-muted/50 hover:text-foreground"
           }`}
         >
-          <span>⚠️ Escalation Queue</span>
+          <span>⚡ Approvals Queue ({hitlCount})</span>
         </button>
       </div>
 
-      {/* Guidance Answer Card */}
-      <div className="rounded-xl border border-white/10 bg-black/80 p-4 space-y-2 relative overflow-hidden">
-        <div className="flex items-center justify-between text-xs font-mono text-zinc-400 border-b border-white/10 pb-2">
-          <span className="font-semibold text-white">
-            {customResponse
-              ? "Workspace Query Result"
-              : activeTab === "summary"
-              ? "PR Review Overview"
-              : activeTab === "security"
-              ? "Security Screening Status"
-              : "Human-in-the-Loop Escalations"}
-          </span>
-          <span className="text-[10px] text-zinc-500 uppercase tracking-wider">
-            Measured Data
-          </span>
-        </div>
-
-        {isThinking ? (
-          <div className="py-4 flex items-center justify-center gap-2 text-xs text-zinc-400 font-mono">
-            <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-            Filtering workspace telemetry...
+      {/* Content Area */}
+      <div className="p-4 rounded-xl border border-border bg-panel text-xs text-foreground/90 leading-relaxed min-h-[90px] flex items-center">
+        {customResponse ? (
+          <div>
+            <div className="font-semibold text-accent mb-1 font-mono uppercase tracking-wider text-[10px]">
+              Query Result:
+            </div>
+            <p>{customResponse}</p>
           </div>
-        ) : customResponse ? (
-          <p className="text-sm text-zinc-200 leading-relaxed pt-1">{customResponse}</p>
-        ) : totalCount === 0 ? (
-          <p className="text-sm text-zinc-400 leading-relaxed pt-1">
-            No pull request reviews have been executed yet in this workspace. Trigger an automated review or submit a PR to inspect findings.
-          </p>
         ) : activeTab === "summary" ? (
-          <div className="text-sm text-zinc-200 leading-relaxed pt-1 space-y-2">
-            <p>
-              Across {totalCount} reviewed pull request(s): {approvedCount} approved, {changesCount} requested changes, and {hitlCount} required human intervention.
-            </p>
-            <p className="text-xs text-zinc-400">
-              Note: Automated multi-agent passes provide assistive screening and do not guarantee the absence of all defects. Final merge authorization remains with human maintainers.
-            </p>
+          <div>
+            <span className="font-semibold text-foreground">Activity Summary: </span>
+            {totalCount === 0
+              ? `No reviews run yet in this workspace. Pull requests opened on watched repositories will show automated findings here.`
+              : `${totalCount} pull request reviews recorded in this window. ${approvedCount} approved without blocking findings, ${changesCount} have requested changes, and ${hitlCount} require human review.`}
           </div>
         ) : activeTab === "security" ? (
-          <div className="text-sm text-zinc-200 leading-relaxed pt-1 space-y-2">
-            <p>
-              Security specialist agents evaluate credentials, dependency alerts, and diff integrity on every PR.
-            </p>
-            <p className="text-xs text-zinc-400">
-              {changesCount + hitlCount > 0
-                ? `${changesCount + hitlCount} PR(s) currently require maintainer review due to security or critical findings.`
-                : "No blocking security vulnerabilities are currently flagged on active approved PRs."}
-            </p>
+          <div>
+            <span className="font-semibold text-foreground">Security Posture: </span>
+            {totalCount === 0
+              ? `Awaiting pull requests to run automated security analysis.`
+              : `Security agent scans diffs for hardcoded credentials, injection vulnerabilities, and dangerous dependency changes.`}
           </div>
         ) : (
-          <div className="text-sm text-zinc-200 leading-relaxed pt-1 space-y-2">
-            <p>
-              {hitlCount > 0
-                ? `${hitlCount} pull request(s) are held in the Human-in-the-Loop queue for maintainer decision.`
-                : "Zero PRs currently require human dispute escalation."}
-            </p>
-            <p className="text-xs text-zinc-400">
-              Reviews escalate to HITL when confidence is below threshold, security checks fail, or agents disagree on critical findings.
-            </p>
+          <div>
+            <span className="font-semibold text-foreground">Human Approvals: </span>
+            {hitlCount === 0
+              ? `No reviews currently require human-in-the-loop sign-off. The queue is clear.`
+              : `${hitlCount} review(s) are awaiting human evaluation due to low agent confidence or critical severity thresholds.`}
           </div>
         )}
       </div>
 
-      {/* Query Filter Input */}
-      <form onSubmit={handleCustomSubmit} className="flex items-center gap-2">
-        <label htmlFor="workspace-query-input" className="sr-only">
-          Ask a question about current review status
-        </label>
+      {/* Interactive Query Input */}
+      <form onSubmit={handleCustomSubmit} className="flex gap-2">
         <input
-          id="workspace-query-input"
           type="text"
           value={customInput}
           onChange={(e) => setCustomInput(e.target.value)}
-          placeholder="Query workspace reviews: e.g. 'Are any PRs waiting for human review?'"
-          className="flex-1 bg-black/60 border border-white/10 rounded-xl px-4 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/40 transition-colors"
+          placeholder="Ask an operational question (e.g. 'Are any security issues blocking release?')..."
+          className="flex-1 bg-panel border border-border rounded-xl px-3.5 py-2 text-xs text-foreground placeholder:text-muted/60 focus:outline-none focus:border-accent"
         />
         <button
           type="submit"
-          disabled={!customInput.trim() || isThinking}
-          className="px-4 py-2 rounded-xl bg-gradient-to-b from-white to-zinc-200 text-black text-xs font-semibold hover:from-zinc-100 hover:to-zinc-300 transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+          disabled={isThinking || !customInput.trim()}
+          className="px-4 py-2 bg-primary-action text-white hover:bg-primary-action/90 font-medium text-xs rounded-xl transition disabled:opacity-50 shrink-0 shadow-sm"
         >
-          Check
+          {isThinking ? "Analyzing..." : "Ask Assistant"}
         </button>
       </form>
     </div>

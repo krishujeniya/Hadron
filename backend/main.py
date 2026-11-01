@@ -35,19 +35,23 @@ import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
+import uuid
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.datastructures import Headers, MutableHeaders
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from backend.auth.dependencies import require_auth
 from backend.auth.principal import Principal
 from backend.config.settings import Settings, get_settings
-from backend.database.postgres import init_db
+from backend.core.exceptions import ConfigurationError
 from backend.memory.context_retriever import retrieve_context_for_diff  # noqa: F401 (used in routes)
-from backend.database.postgres import init_tiger_schema  # TIGER: replaces ensure_collection
+from backend.database.postgres import init_db, init_tiger_schema  # noqa: F401 - init_db needed for test patching
 ensure_collection = init_tiger_schema  # Backward compatibility alias for phase 13 tests
 from backend.memory.redis_client import redis_client
 from backend.webhook_receiver.router import router as webhook_router
@@ -138,32 +142,166 @@ app = FastAPI(
 # Without CORS headers, the frontend dashboard (different port/domain)
 # gets blocked by the browser's same-origin policy.
 #
-# Development: allow all origins (convenient, not for production).
-# Production:  restrict to the actual dashboard domain.
+# Development: allow local frontend origins (supports credentials).
+# Production:  restrict to explicit authorized dashboard origins.
 # -------------------------------------------------------------------------
 if settings.is_development:
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000", "http://testserver", "*"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["X-Request-ID"],
     )
 else:
     raw_origins = getattr(settings, "cors_origins", "") or os.environ.get("CORS_ORIGINS", "")
     origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
+    if not origins and settings.app_env == "production":
+        raise ConfigurationError(
+            "CORS_ORIGINS must be explicitly configured in production. "
+            "Silent fallback to localhost is prohibited."
+        )
     if not origins:
-        origins = ["https://hadron.dev", "http://localhost:3000"]
+        origins = ["https://hadron.dev"]
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "X-API-Key", "X-Role"],
+        allow_headers=["Authorization", "Content-Type", "X-API-Key", "X-CSRF-Token", "X-Request-ID"],
+        expose_headers=["X-Request-ID"],
     )
+
+
+# Security and Caching Headers Middleware (Gate B - T27)
+class SecurityHeadersMiddleware:
+    """Pure ASGI middleware enforcing security, correlation ID, and cache-control headers."""
+
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        headers = Headers(scope=scope)
+        request_id = headers.get("x-request-id") or f"req-{uuid.uuid4().hex[:12]}"
+        path = scope.get("path", "")
+
+        async def send_with_security_headers(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                res_headers = MutableHeaders(scope=message)
+                res_headers["X-Content-Type-Options"] = "nosniff"
+                res_headers["X-Frame-Options"] = "DENY"
+                res_headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+                res_headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+                res_headers["X-Request-ID"] = request_id
+
+                cookie_str = headers.get("cookie", "")
+                if path.startswith("/api/") or "hadron_session" in cookie_str:
+                    res_headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+                    res_headers["Pragma"] = "no-cache"
+
+            await send(message)
+
+        await self.app(scope, receive, send_with_security_headers)
+
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Admission control: header limits, streaming body bounds, decompression safety
 app.add_middleware(AdmissionControlMiddleware)
+
+
+# -------------------------------------------------------------------------
+# Global Sanitized Error Contracts (Gate B - T27)
+# -------------------------------------------------------------------------
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    request_id = request.headers.get("x-request-id") or "req-unknown"
+    status_code = exc.status_code
+    code_map = {
+        400: "BAD_REQUEST",
+        401: "UNAUTHORIZED",
+        403: "FORBIDDEN",
+        404: "NOT_FOUND",
+        409: "CONFLICT",
+        413: "PAYLOAD_TOO_LARGE",
+        422: "VALIDATION_ERROR",
+        429: "TOO_MANY_REQUESTS",
+        431: "REQUEST_HEADER_FIELDS_TOO_LARGE",
+        500: "INTERNAL_SERVER_ERROR",
+        502: "BAD_GATEWAY",
+        503: "SERVICE_UNAVAILABLE",
+    }
+    code = code_map.get(status_code, f"HTTP_{status_code}")
+    detail_msg = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
+    headers = getattr(exc, "headers", None) or {}
+    headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+    headers["X-Request-ID"] = request_id
+
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "detail": exc.detail,
+            "error": {
+                "code": code,
+                "message": detail_msg,
+                "status_code": status_code,
+                "request_id": request_id,
+                "details": exc.detail if not isinstance(exc.detail, str) else None,
+            },
+        },
+        headers=headers,
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    request_id = request.headers.get("x-request-id") or "req-unknown"
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={
+            "detail": exc.errors(),
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Request validation failed",
+                "status_code": 422,
+                "request_id": request_id,
+                "details": exc.errors(),
+            },
+        },
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, private",
+            "X-Request-ID": request_id,
+        },
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    request_id = request.headers.get("x-request-id") or "req-unknown"
+    logger.exception("unhandled_server_exception | request_id=%s error=%s", request_id, exc)
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "detail": "An internal server error occurred.",
+            "error": {
+                "code": "INTERNAL_SERVER_ERROR",
+                "message": "An internal server error occurred.",
+                "status_code": 500,
+                "request_id": request_id,
+                "details": None,
+            },
+        },
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, private",
+            "X-Request-ID": request_id,
+        },
+    )
 
 
 # -------------------------------------------------------------------------

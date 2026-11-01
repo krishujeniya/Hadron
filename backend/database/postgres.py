@@ -184,6 +184,12 @@ def _build_engine():
     if ssl_ctx is not None:
         connect_args["ssl"] = ssl_ctx
 
+    if not db_url.startswith("sqlite"):
+        connect_args["server_settings"] = {
+            "statement_timeout": str(getattr(cfg, "db_statement_timeout_ms", 30000)),
+            "lock_timeout": str(getattr(cfg, "db_lock_timeout_ms", 10000)),
+        }
+
     is_serverless = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
     pool_size = 1 if is_serverless else 5
     max_overflow = 2 if is_serverless else 10
@@ -470,6 +476,10 @@ async def init_tiger_schema() -> None:
             await _register_vector(conn)
         except Exception as exc:
             logger.debug("pgvector codec registration deferred: %s", exc)
+        try:
+            await conn.execute("SET statement_timeout = '30000'; SET lock_timeout = '10000';")
+        except Exception as exc:
+            logger.debug("session timeout configuration skipped: %s", exc)
 
     is_serverless = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
     _tiger_pool = await _asyncpg.create_pool(

@@ -92,14 +92,27 @@ class WorkflowCostResponse(BaseModel):
 # ---------------------------------------------------------------------------
 @economics_router.get("/summary", response_model=SummaryResponse)
 async def summary(
-    _auth: None = Depends(require_auth),
+    account: str | None = Query(default=None),
+    principal: Principal = Depends(require_auth),
     _role: Role = Depends(require_permission(Permission.VIEW_COST_REPORT)),
 ) -> SummaryResponse:
     """
     Top-level cost snapshot for the dashboard's primary cost card.
     One round trip — backs the today / 7d / 30d numbers AND the breakdown pies.
+    Enforces tenant/workspace scoping unless caller has admin role.
     """
-    s = await get_summary()
+    authorized_account = principal.account or principal.tenant_id
+    if not principal.is_admin and authorized_account:
+        if account and account.lower() != authorized_account.lower():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied: cannot access usage for account '{account}'. Authorized workspace is '{authorized_account}'.",
+            )
+        tenant_id = authorized_account
+    else:
+        tenant_id = account or authorized_account
+
+    s = await get_summary(tenant_id=tenant_id)
     return SummaryResponse(
         today_usd=s.today_usd,
         last_7d_usd=s.last_7d_usd,
@@ -128,14 +141,26 @@ async def budget(
 @economics_router.get("/timeseries", response_model=list[DailyPointResponse])
 async def timeseries(
     days: int = Query(30, ge=1, le=365),
-    _auth: None = Depends(require_auth),
+    account: str | None = Query(default=None),
+    principal: Principal = Depends(require_auth),
     _role: Role = Depends(require_permission(Permission.VIEW_COST_REPORT)),
 ) -> list[DailyPointResponse]:
     """
     Per-UTC-day cost points for charting. Dense (zeros for missing days).
-    Default window: 30 days. Cap: 365.
+    Default window: 30 days. Cap: 365. Enforces tenant scoping.
     """
-    points = await get_daily_timeseries(days=days)
+    authorized_account = principal.account or principal.tenant_id
+    if not principal.is_admin and authorized_account:
+        if account and account.lower() != authorized_account.lower():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied: cannot access timeseries for account '{account}'. Authorized workspace is '{authorized_account}'.",
+            )
+        tenant_id = authorized_account
+    else:
+        tenant_id = account or authorized_account
+
+    points = await get_daily_timeseries(days=days, tenant_id=tenant_id)
     return [DailyPointResponse(date=p.date, cost_usd=p.cost_usd, call_count=p.call_count) for p in points]
 
 
@@ -161,7 +186,7 @@ async def workflow_cost(
         if repo_owner.lower() != authorized_account.lower():
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Access denied: cannot view economics for another workspace.",
+                detail="Access denied: cannot view economics for another workspace.",
             )
 
     rollup = await get_workflow_cost(workflow_id)
@@ -217,18 +242,33 @@ async def get_agent_health(
     return [dict(r) for r in rows]
 
 
-@economics_router.get("/pr-cost/{review_id}", summary="Per-PR cost from Tiger aggregate")
+@economics_router.get("/pr-cost/{review_id:path}", summary="Per-PR cost from Tiger aggregate")
 async def get_pr_cost(
     review_id: str,
-    _auth: None = Depends(require_auth),
+    principal: Principal = Depends(require_auth),
     _role: Role = Depends(require_permission(Permission.VIEW_COST_REPORT)),
 ) -> dict:
     """
     Returns total cost, tokens, agents used, and wall time for a specific PR review.
     Source: pr_cost_hourly continuous aggregate (TimescaleDB, refreshed every hour).
+    Supports composite review IDs (e.g. owner/repo#42, owner/repo:pr:sha, UUIDs).
     """
+    if not review_id or len(review_id) > 255:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="review_id must be 1..255 chars",
+        )
+
+    authorized_account = principal.account or principal.tenant_id
+    if not principal.is_admin and authorized_account:
+        repo_owner = review_id.split("/")[0] if "/" in review_id else ""
+        if repo_owner and repo_owner.lower() != authorized_account.lower():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: review belongs to another workspace.",
+            )
+
     from backend.database.postgres import get_tiger_pool
-    import uuid
     pool = get_tiger_pool()
     if pool is None:
         return {"review_id": review_id, "total_cost_usd": 0.0, "total_tokens": 0}
@@ -243,12 +283,8 @@ async def get_pr_cost(
         WHERE review_id = $1
         GROUP BY review_id
     """
-    try:
-        rid = uuid.UUID(review_id)
-    except ValueError:
-        return {"error": "invalid review_id format"}
     async with pool.acquire() as conn:
-        row = await conn.fetchrow(sql, rid)
+        row = await conn.fetchrow(sql, review_id)
     if row is None:
         return {"review_id": review_id, "total_cost_usd": 0.0, "total_tokens": 0, "note": "no data yet"}
     return dict(row)

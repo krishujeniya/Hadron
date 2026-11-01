@@ -41,6 +41,12 @@ export interface ReviewSummary {
   overall_confidence?: number | null;
   needs_human_review: boolean;
   finding_count: number;
+  workflow_status?: string | null;
+  publication_status?: "posted" | "held" | "pending_hitl" | "unposted" | string | null;
+  mandatory_check_coverage?: Record<string, boolean> | null;
+  recommendation?: Verdict | string | null;
+  human_decision?: string | null;
+  freshness_status?: "fresh" | "stale" | "unknown" | string | null;
   created_at: string;
   updated_at: string;
 }
@@ -59,8 +65,43 @@ export interface ReviewDetail {
   github_review_id?: number | null;
   pr_diff?: string | null;
   findings: Finding[];
+  workflow_status?: string | null;
+  publication_status?: "posted" | "held" | "pending_hitl" | "unposted" | string | null;
+  mandatory_check_coverage?: Record<string, boolean> | null;
+  recommendation?: Verdict | string | null;
+  human_decision?: string | null;
+  freshness_status?: "fresh" | "stale" | "unknown" | string | null;
   created_at: string;
   updated_at: string;
+}
+
+export function normalizeReviewStatus(status: unknown): ReviewStatus | "unknown" {
+  const valid: ReviewStatus[] = [
+    "queued",
+    "in_progress",
+    "agents_running",
+    "aggregating",
+    "posting",
+    "completed",
+    "escalated",
+    "failed",
+  ];
+  return typeof status === "string" && valid.includes(status as ReviewStatus)
+    ? (status as ReviewStatus)
+    : "unknown";
+}
+
+export function normalizeVerdict(verdict: unknown): Verdict | "unknown" {
+  const valid: Verdict[] = [
+    "approve",
+    "request_changes",
+    "dismiss",
+    "comment",
+    "needs_human_review",
+  ];
+  return typeof verdict === "string" && valid.includes(verdict as Verdict)
+    ? (verdict as Verdict)
+    : "unknown";
 }
 
 export interface HITLItem {
@@ -89,6 +130,7 @@ export interface Paginated<T> {
   total: number;
   limit: number;
   offset: number;
+  next_cursor?: string | null;
 }
 
 export type DecisionAction = "approve" | "request_changes" | "dismiss";
@@ -123,9 +165,12 @@ export interface EconomicsSummary {
 export interface BudgetStatus {
   daily_cap_usd: number;
   daily_spent_usd: number;
+  daily_reserved_usd?: number;
   daily_headroom_usd: number;
   daily_utilization: number;
   per_review_cap_usd: number;
+  hard_limit_enforced?: boolean;
+  ledger_status?: string;
   exceeded: boolean;
 }
 
@@ -159,6 +204,8 @@ export interface AccountProfile {
   token?: string;
 }
 
+export type RepositoryStatus = "active" | "connected" | "indexing" | "discovered" | "degraded" | "disconnected";
+
 export interface RepositoryItem {
   id: number | string;
   name: string;
@@ -170,6 +217,9 @@ export interface RepositoryItem {
   stargazers_count: number;
   private: boolean;
   updated_at?: string | null;
+  status?: RepositoryStatus;
+  review_count?: number;
+  last_review_at?: string | null;
 }
 
 // ── Health & Operational Status (T21) ───────────────────────────

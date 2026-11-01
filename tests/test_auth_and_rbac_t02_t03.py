@@ -11,7 +11,6 @@ Comprehensive regression test suite for T02 and T03:
 
 import sys
 import os
-import time
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 from fastapi.testclient import TestClient
@@ -30,9 +29,8 @@ from backend.config.settings import get_settings
 get_settings.cache_clear()
 
 import backend.main as _main_module
-from backend.auth.principal import Principal
 from backend.auth.session_store import session_store
-from backend.security.rbac import Role, Permission, DEFAULT_RBAC_POLICY
+from backend.security.rbac import Role
 
 
 @pytest.fixture

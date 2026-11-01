@@ -12,10 +12,8 @@
 #    - Authenticated Webhooks: per-repository rate limiting (does not throttle shared GitHub IPs).
 #    - Public endpoints: per-trusted-IP rate limiting.
 
-import gzip
 import logging
 import zlib
-from typing import Callable
 
 from fastapi import HTTPException, Request, status
 from fastapi.responses import JSONResponse
@@ -23,7 +21,6 @@ from starlette.datastructures import Headers
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from backend.config.settings import get_settings
-from backend.core.exceptions import RateLimitExceededError
 from backend.memory.redis_client import redis_client
 
 logger = logging.getLogger(__name__)

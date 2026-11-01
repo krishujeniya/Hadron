@@ -25,12 +25,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "daily" as const,
       priority: 1.0,
     },
-    {
-      url: `${baseUrl}/health`,
-      lastModified: now,
-      changeFrequency: "hourly" as const,
-      priority: 0.5,
-    },
     ...solutionUrls,
   ];
 }

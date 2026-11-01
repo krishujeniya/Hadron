@@ -38,6 +38,7 @@
 #     raise EmbeddingError to explicitly disable retrieval rather than polluting vector space.
 #   - Synthetic test vectors are confined strictly to test environments via set_test_embedder.
 
+import asyncio
 import logging
 import math
 from dataclasses import dataclass
@@ -178,6 +179,11 @@ async def embed_text(text: str) -> list[float]:
 
     cfg = get_settings()
 
+    # Gate B / T26: Halt paid spend when kill switch is active
+    if getattr(cfg, "kill_switch_provider_spend", None) is True:
+        logger.warning("embed_text | blocked_by_kill_switch_provider_spend")
+        raise EmbeddingError("Embedding provider calls blocked: kill_switch_provider_spend is active")
+
     # Reject non-OpenAI keys (e.g. nvapi-) masquerading as OpenAI embedding provider.
     # A cryptographic hash is not a semantic embedding; disable retrieval cleanly.
     if cfg.openai_api_key.startswith("nvapi-"):
@@ -203,8 +209,10 @@ async def embed_text(text: str) -> list[float]:
             from backend.economics import record_cost_entry
             from backend.observability.workflow_context import get_workflow_context
             ctx = get_workflow_context()
-            tok_count = getattr(response.usage, "total_tokens", len(text) // 4)
-            emb_cost = round((tok_count / 1000.0) * 0.00013, 8)
+            usage_obj = getattr(response, "usage", None)
+            total_toks = getattr(usage_obj, "total_tokens", None) if usage_obj is not None else None
+            tok_count = int(total_toks) if isinstance(total_toks, (int, float)) and not isinstance(total_toks, bool) else (len(text) // 4)
+            emb_cost = round((float(tok_count) / 1000.0) * 0.00013, 8)
             asyncio.create_task(
                 record_cost_entry(
                     workflow_id=getattr(ctx, "workflow_id", None),
@@ -309,6 +317,11 @@ async def embed_batch(texts: list[str]) -> list[list[float]]:
 
     cfg = get_settings()
 
+    # Gate B / T26: Halt paid spend when kill switch is active
+    if getattr(cfg, "kill_switch_provider_spend", None) is True:
+        logger.warning("embed_batch | blocked_by_kill_switch_provider_spend")
+        raise EmbeddingError("Embedding provider calls blocked: kill_switch_provider_spend is active")
+
     # Reject non-OpenAI keys (e.g. nvapi-) masquerading as OpenAI embedding provider
     if cfg.openai_api_key.startswith("nvapi-"):
         raise EmbeddingError(
@@ -333,8 +346,11 @@ async def embed_batch(texts: list[str]) -> list[list[float]]:
             from backend.economics import record_cost_entry
             from backend.observability.workflow_context import get_workflow_context
             ctx = get_workflow_context()
-            tok_count = getattr(response.usage, "total_tokens", sum(len(t) for t in batch_texts) // 4)
-            emb_cost = round((tok_count / 1000.0) * 0.00013, 8)
+            usage_obj = getattr(response, "usage", None)
+            total_toks = getattr(usage_obj, "total_tokens", None) if usage_obj is not None else None
+            fallback_toks = sum(len(t) for t in batch_texts) // 4
+            tok_count = int(total_toks) if isinstance(total_toks, (int, float)) and not isinstance(total_toks, bool) else fallback_toks
+            emb_cost = round((float(tok_count) / 1000.0) * 0.00013, 8)
             asyncio.create_task(
                 record_cost_entry(
                     workflow_id=getattr(ctx, "workflow_id", None),

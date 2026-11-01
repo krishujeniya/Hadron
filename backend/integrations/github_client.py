@@ -58,7 +58,7 @@
 import asyncio
 import logging
 import random
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 

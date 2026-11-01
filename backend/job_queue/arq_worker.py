@@ -284,6 +284,20 @@ async def enqueue_review_job(
     """
     cfg = get_settings()
 
+    # T26: kill_switch_new_intake — drain queue by rejecting new webhook intakes.
+    # In-flight accepted jobs continue; no new work is accepted until the switch is off.
+    if getattr(cfg, "kill_switch_new_intake", None) is True:
+        logger.warning(
+            "enqueue_rejected_kill_switch | workflow_id=%s kill_switch_new_intake=True",
+            workflow_id,
+        )
+        raise QueueOverloadedError(
+            "New review intake is disabled by kill switch. "
+            "Existing work continues. Retry once intake is re-enabled.",
+            queue_depth=0,
+            retry_after=60,
+        )
+
     # Step 1: Check idempotency BEFORE enqueueing
     already_exists = await redis_client.check_idempotency_key(workflow_id)
     if already_exists:
@@ -351,7 +365,7 @@ async def enqueue_review_job(
             job.job_id if job else "unknown",
             delivery_id,
         )
-    except Exception as e:
+    except Exception:
         # Enqueue failed: ensure idempotency key does not block future redeliveries
         try:
             await redis_client.delete_idempotency_key(workflow_id)

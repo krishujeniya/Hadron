@@ -25,6 +25,7 @@ from backend.core.exceptions import (
     MemoryStoreError,
     PRReviewAgentError,
     PromptNotFoundError,
+    ProviderSpendHaltedError,
     QueueOverloadedError,
     RateLimitExceededError,
     TenantConcurrencyLimitError,
@@ -57,6 +58,7 @@ __all__ = [
     "MemoryStoreError",
     "ConfigurationError",
     "PromptNotFoundError",
+    "ProviderSpendHaltedError",
     # Orchestration interface
     "WorkflowEngine",
     "WorkflowResult",

@@ -45,7 +45,7 @@ import logging
 import random
 import time
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 import anthropic
 import openai
@@ -293,6 +293,15 @@ class LLMClient:
         from backend.reliability.circuit_breaker import AGENT_BREAKERS, get_breaker, DEFAULT_LLM_BREAKER_CONFIG
 
         cfg = get_settings()
+
+        # Operational Kill Switch (Gate B - T26): immediately halt paid LLM spend
+        if getattr(cfg, "kill_switch_provider_spend", None) is True:
+            from backend.core.exceptions import ProviderSpendHaltedError
+            logger.warning("call_openai | blocked_by_kill_switch_provider_spend | model=%s", model)
+            raise ProviderSpendHaltedError(
+                "OpenAI LLM provider call blocked: kill_switch_provider_spend is active",
+                agent_name="llm_openai",
+            )
         key = api_key or getattr(cfg, "nvidia_api_key", None) or cfg.openai_api_key
 
         # Resolve base_url and target_model for NVIDIA NIM or custom OpenAI-compatible endpoints
@@ -473,6 +482,15 @@ class LLMClient:
 
         from backend.config import get_settings
         cfg = get_settings()
+
+        # Operational Kill Switch (Gate B - T26): immediately halt paid LLM spend
+        if getattr(cfg, "kill_switch_provider_spend", None) is True:
+            from backend.core.exceptions import ProviderSpendHaltedError
+            logger.warning("call_anthropic | blocked_by_kill_switch_provider_spend | model=%s", model)
+            raise ProviderSpendHaltedError(
+                "Anthropic LLM provider call blocked: kill_switch_provider_spend is active",
+                agent_name="llm_anthropic",
+            )
         key = api_key or cfg.anthropic_api_key
 
         client = anthropic.AsyncAnthropic(api_key=key)
@@ -638,6 +656,15 @@ class LLMClient:
         """
         from backend.config import get_settings
         cfg = get_settings()
+
+        # Operational Kill Switch (Gate B - T26): immediately halt paid LLM spend
+        if getattr(cfg, "kill_switch_provider_spend", None) is True:
+            from backend.core.exceptions import ProviderSpendHaltedError
+            logger.warning("call_anthropic | blocked_by_kill_switch_provider_spend | model=%s", model)
+            raise ProviderSpendHaltedError(
+                "Anthropic LLM provider call blocked: kill_switch_provider_spend is active",
+                agent_name="llm_anthropic",
+            )
         target_model = model or getattr(cfg, "openai_embedding_model", "gpt-4o-mini")
         if target_model.startswith("text-embedding"):
             target_model = "gpt-4o-mini"

@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from backend.tools.llm_client import LLMClient
+    pass
 
 from backend.evaluation.golden_dataset import GoldenPR
 

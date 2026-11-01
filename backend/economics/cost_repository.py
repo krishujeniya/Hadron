@@ -173,11 +173,16 @@ class WorkflowCost:
     by_model: dict[str, float]   # model -> cost_usd
 
 
-async def get_workflow_cost(workflow_id: str) -> WorkflowCost:
+async def get_workflow_cost(
+    workflow_id: str,
+    tenant_id: Optional[str] = None,
+) -> WorkflowCost:
     """Cost rollup for one workflow, broken down by agent and model."""
     try:
         async with _new_session() as session:
             stmt = select(LLMCallLog).where(LLMCallLog.workflow_id == workflow_id)
+            if tenant_id and tenant_id != "default":
+                stmt = stmt.where(LLMCallLog.tenant_id == tenant_id)
             rows = (await session.execute(stmt)).scalars().all()
     except Exception as exc:
         logger.warning("workflow_cost_query_failed | wf=%s error=%s", workflow_id, exc)
@@ -219,11 +224,12 @@ class EconomicsSummary:
     total_output_tokens_30d: int
 
 
-async def get_summary() -> EconomicsSummary:
+async def get_summary(tenant_id: Optional[str] = None) -> EconomicsSummary:
     """
     Top-level spend snapshot: today, 7d, 30d totals + 30d breakdowns.
 
     The dashboard's primary cost card consumes this single endpoint.
+    Scoped by tenant_id when provided.
     """
     today_start = _utc_today_start()
     d7_start = today_start - timedelta(days=6)   # inclusive of today = 7 days
@@ -234,6 +240,8 @@ async def get_summary() -> EconomicsSummary:
             # 30d window — pull all rows once and bucket in Python.
             # At expected volumes (≤ 10k calls/30d) this is faster than 5 round-trips.
             stmt = select(LLMCallLog).where(LLMCallLog.created_at >= d30_start)
+            if tenant_id and tenant_id != "default":
+                stmt = stmt.where(LLMCallLog.tenant_id == tenant_id)
             rows = (await session.execute(stmt)).scalars().all()
     except Exception as exc:
         logger.warning("economics_summary_query_failed | error=%s", exc)
@@ -276,10 +284,13 @@ class DailyPoint:
     call_count: int
 
 
-async def get_daily_timeseries(days: int = 30) -> list[DailyPoint]:
+async def get_daily_timeseries(
+    days: int = 30,
+    tenant_id: Optional[str] = None,
+) -> list[DailyPoint]:
     """
     Per-UTC-day totals for the last `days` days. Fills zeros for missing days
-    so the FE chart axis is dense.
+    so the FE chart axis is dense. Scoped by tenant_id when provided.
     """
     days = max(1, min(days, 365))
     today_start = _utc_today_start()
@@ -288,6 +299,8 @@ async def get_daily_timeseries(days: int = 30) -> list[DailyPoint]:
     try:
         async with _new_session() as session:
             stmt = select(LLMCallLog).where(LLMCallLog.created_at >= window_start)
+            if tenant_id and tenant_id != "default":
+                stmt = stmt.where(LLMCallLog.tenant_id == tenant_id)
             rows = (await session.execute(stmt)).scalars().all()
     except Exception as exc:
         logger.warning("daily_timeseries_query_failed | error=%s", exc)
@@ -361,9 +374,8 @@ async def get_pr_cost(
         WHERE review_id = $1
         GROUP BY review_id
     """
-    import uuid
     async with pool.acquire() as conn:
-        row = await conn.fetchrow(sql, uuid.UUID(review_id))
+        row = await conn.fetchrow(sql, review_id)
     return dict(row) if row else None
 
 

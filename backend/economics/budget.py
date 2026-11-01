@@ -13,7 +13,6 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
 import logging
 from typing import AsyncIterator, Optional
 

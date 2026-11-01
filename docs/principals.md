@@ -1,5 +1,12 @@
-# Hadron Design Psychology & Architectural Principles (`principals.md`)
-> **The 100 Foundational Laws of Human Perception, FAANG System Heuristics, Digital Vastu Spatial Harmony, and Anti-Fear Product Architecture.**
+# Hadron Design Principles (`principals.md`)
+
+> [!IMPORTANT]
+> **Reconciliation Notice (Gate D / T47):** This historical exploration document has been reconciled with Hadron's concrete, evidence-led product principles. Unverified claims regarding hormonal manipulation (cortisol/dopamine loops), esoteric spatial balance ("Digital Vastu"), or fabricated "100% safe" reassurance dials are strictly superseded by the **Concrete Product and Visual Specification** in `docs/tracker.md` (Section 8). 
+> 
+> In production:
+> 1. Automated checks provide honest recommendations (`APPROVE RECOMMENDED`, `CHANGES RECOMMENDED`, `HUMAN REVIEW REQUIRED`), never unilateral guarantees that code is free of bugs or vulnerabilities.
+> 2. Zero-fear does not mean suppressing risks or manufacturing certainty; it means providing checkable source diff coordinates, verifiable evidence, and transparent error handling.
+> 3. Consequential human decisions require deliberate evidence inspection (Buçinca et al. cognitive forcing) rather than friction-free 1-click bypasses.
 
 ---
 

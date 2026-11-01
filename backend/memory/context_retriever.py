@@ -284,7 +284,11 @@ def _format_context(results: list[dict]) -> str:
         if not chunk_text.strip():
             continue
 
-        lines.append(f"\n[File: {file_path} | from PR #{pr_number} | similarity: {score:.2f}]")
+        # Label provenance explicitly so default branch code cannot impersonate PR head (Gate B - T29)
+        if pr_number != "?" and str(pr_number).isdigit():
+            lines.append(f"\n[File: {file_path} | from prior PR #{pr_number} | similarity: {score:.2f}]")
+        else:
+            lines.append(f"\n[File: {file_path} | Source: repository default branch (not PR head) | similarity: {score:.2f}]")
         lines.append(chunk_text)
         lines.append("---")
 

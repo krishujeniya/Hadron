@@ -1,6 +1,7 @@
 "use client";
 
 import useSWR from "swr";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { FindingsByAgent } from "@/components/AgentFindingCard";
 import { HITLDecisionForm } from "@/components/HITLDecisionForm";
@@ -23,91 +24,91 @@ export default function HITLDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* Universal Breadcrumb Spatial Traversal (Principle 49) */}
-      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs font-mono text-zinc-500">
-        <a href="/" className="hover:text-white transition-colors">Dashboard</a>
+      {/* Breadcrumb */}
+      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs font-mono text-muted">
+        <Link href="/" className="hover:text-foreground transition-colors">Overview</Link>
         <span>/</span>
-        <a href="/hitl" className="hover:text-white transition-colors">Approvals</a>
+        <Link href="/hitl" className="hover:text-foreground transition-colors">Human Review</Link>
         <span>/</span>
-        <span className="text-zinc-300 font-semibold">{data.repo_full_name} #{data.pr_number}</span>
+        <span className="text-foreground font-semibold">{data.repo_full_name} #{data.pr_number}</span>
       </nav>
 
-      {/* Psychological Safety Callout (Principles 35 & 77) */}
-      <div className="p-3.5 rounded-xl border border-white/10 bg-white/[0.02] flex items-center gap-3 text-xs text-zinc-300">
-        <span className="text-base shrink-0">🛡️</span>
+      {/* Governance & Consequential Decision Callout */}
+      <div className="p-3.5 rounded-xl border border-border bg-panel flex items-center gap-3 text-xs text-foreground">
+        <span className="text-base shrink-0" aria-hidden="true">🛡️</span>
         <div>
-          <span className="font-semibold text-white">Reversible Decision-Making: </span>
-          Decisions recorded here post directly to GitHub as an official review. You can override or update this recommendation at any time.
+          <span className="font-semibold text-foreground">Consequential Decision Gate: </span>
+          Decisions recorded here are binding human determinations permanently attributed to your authenticated identity. Once submitted, decisions cannot be edited or overridden. Submitting does not merge the pull request.
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <div className="text-xs text-muted font-mono truncate">{data.review_id}</div>
-            <h1 className="text-xl font-semibold mt-1">
-              {data.repo_full_name} #{data.pr_number}
-            </h1>
-            <p className="text-sm text-muted mt-1">{data.escalation_reason}</p>
-            <a
-              href={prUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-sm text-accent underline mt-2 inline-block"
-            >
-              Open PR on GitHub →
-            </a>
-          </div>
-          <div className="flex flex-col items-end gap-1 shrink-0">
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-muted">agent</span>
-              <VerdictChip verdict={data.agent_verdict} />
+          <div className="flex items-start justify-between gap-4 border-b border-separator pb-4">
+            <div className="min-w-0">
+              <div className="text-xs text-muted font-mono truncate">{data.review_id}</div>
+              <h1 className="text-xl font-bold text-foreground mt-1 font-mono">
+                {data.repo_full_name} #{data.pr_number}
+              </h1>
+              <p className="text-sm text-muted mt-1">{data.escalation_reason}</p>
+              <a
+                href={prUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sm text-accent underline mt-2 inline-block font-mono"
+              >
+                Open PR on GitHub →
+              </a>
             </div>
-            {data.human_verdict && (
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-muted">human</span>
-                <VerdictChip verdict={data.human_verdict} />
+            <div className="flex flex-col items-end gap-1.5 shrink-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted font-mono">agent:</span>
+                <VerdictChip verdict={data.agent_verdict} />
               </div>
-            )}
+              {data.human_verdict && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-muted font-mono">human:</span>
+                  <VerdictChip verdict={data.human_verdict} />
+                </div>
+              )}
+            </div>
           </div>
+
+          <FindingsByAgent findings={data.findings ?? []} />
+
+          {isResolved && data.human_reason && (
+            <div className="border border-border rounded-xl bg-surface p-4 shadow-sm">
+              <div className="text-xs uppercase tracking-wide text-muted font-mono mb-2">
+                Human reason {data.reviewer_id ? `· by ${data.reviewer_id}` : ""}
+              </div>
+              <p className="text-sm whitespace-pre-wrap text-foreground">{data.human_reason}</p>
+            </div>
+          )}
         </div>
 
-        <FindingsByAgent findings={data.findings ?? []} />
-
-        {isResolved && data.human_reason && (
-          <div className="border border-border rounded-lg bg-panel p-4">
-            <div className="text-xs uppercase tracking-wide text-muted mb-2">
-              Human reason {data.reviewer_id ? `· by ${data.reviewer_id}` : ""}
-            </div>
-            <p className="text-sm whitespace-pre-wrap">{data.human_reason}</p>
-          </div>
-        )}
-      </div>
-
-      <div className="lg:col-span-1">
-        {isResolved ? (
-          <div className="border border-border rounded-lg bg-panel p-4 text-sm">
-            <div className="text-xs uppercase tracking-wide text-muted mb-2">
-              Status
-            </div>
-            <div className="font-mono">{data.status}</div>
-            {data.resolved_at && (
-              <div className="text-xs text-muted mt-1">
-                resolved {new Date(data.resolved_at).toLocaleString()}
+        <div className="lg:col-span-1">
+          {isResolved ? (
+            <div className="border border-border rounded-xl bg-surface p-4 text-sm shadow-sm">
+              <div className="text-xs uppercase tracking-wide text-muted font-mono mb-2">
+                Resolution Status
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="sticky top-6">
-            <h2 className="text-sm uppercase tracking-wide text-muted mb-3">
-              Make a decision
-            </h2>
-            <HITLDecisionForm hitlId={data.id} />
-          </div>
-        )}
+              <div className="font-mono text-foreground font-semibold">{data.status}</div>
+              {data.resolved_at && (
+                <div className="text-xs text-muted mt-1 font-mono">
+                  resolved {new Date(data.resolved_at).toLocaleString()}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="sticky top-6">
+              <h2 className="text-sm uppercase tracking-wide text-muted font-mono font-semibold mb-3">
+                Make a determination
+              </h2>
+              <HITLDecisionForm hitlId={data.id} />
+            </div>
+          )}
+        </div>
       </div>
-    </div>
     </div>
   );
 }

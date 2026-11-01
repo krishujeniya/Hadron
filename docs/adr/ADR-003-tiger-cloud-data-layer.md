@@ -1,10 +1,10 @@
-# ADR-003: Tiger Cloud as the Unified Data Layer
+# ADR-006: Tiger Cloud as the Unified Data Layer (formerly ADR-003B)
 
 **Status:** Accepted  
 **Date:** 2026-06-03  
 **Author:** Krish Ujeniya  
-**Supersedes:** None (new decision)  
-**Related:** ADR-001 (LangGraph orchestrator), ADR-002 (modular monolith)
+**Supersedes:** Disambiguated from ADR-003 (Frontend Data Strategy — Polling over SSE); assigned unique ADR-006 index.  
+**Related:** ADR-001 (LangGraph orchestrator), ADR-002 (modular monolith), ADR-003 (frontend data strategy)
 
 ---
 
