@@ -175,14 +175,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
         Skip to main content
       </a>
 
-      {/* Mobile Top Bar */}
-      <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-border bg-panel sticky top-0 z-30">
+      {/* Mobile Top Bar with Ergonomic 44px Touch Targets */}
+      <div className="md:hidden flex items-center justify-between px-3 py-2 border-b border-border bg-panel sticky top-0 z-30">
         <HadronLogo size="sm" animated={false} />
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => setPaletteOpen(true)}
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-muted hover:text-foreground bg-surface text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl border border-border text-muted hover:text-foreground bg-surface text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-95 transition-transform"
             aria-label="Open command palette"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -190,12 +190,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
           </button>
-          <ThemeToggle />
+          <div className="min-w-[44px] min-h-[44px] flex items-center justify-center">
+            <ThemeToggle />
+          </div>
           <button
             ref={mobileTriggerRef}
             type="button"
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-muted hover:text-foreground bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl border border-border text-muted hover:text-foreground bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-95 transition-transform"
             aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
             aria-expanded={mobileOpen}
             aria-controls="mobile-nav-drawer"
@@ -399,9 +401,42 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <main id="main-content" tabIndex={-1} className="flex-1 px-4 py-4 md:px-8 md:py-6 overflow-x-hidden min-w-0 focus:outline-none">
+      <main id="main-content" tabIndex={-1} className="flex-1 px-4 py-4 md:px-8 md:py-6 pb-20 md:pb-6 overflow-x-hidden min-w-0 focus:outline-none">
         {children}
       </main>
+
+      {/* Mobile Ergonomic Bottom Navigation Dock */}
+      <nav
+        aria-label="Mobile Bottom Navigation"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-panel/95 backdrop-blur-md border-t border-border px-2 py-1.5 flex items-center justify-around safe-area-pb shadow-lg"
+      >
+        {PRIMARY_NAV.map((item) => {
+          const active =
+            item.href === "/"
+              ? pathname === "/"
+              : pathname === item.href || pathname?.startsWith(`${item.href}/`);
+          return (
+            <Link
+              key={`mob-${item.href}`}
+              href={item.href}
+              className={clsx(
+                "flex flex-col items-center justify-center min-w-[54px] min-h-[44px] py-1 px-2 rounded-xl text-[10px] font-mono transition-colors active:scale-95",
+                active
+                  ? "text-accent font-semibold"
+                  : "text-muted hover:text-foreground"
+              )}
+            >
+              <div className="relative">
+                <NavIcon id={item.iconId} />
+                {item.badge && !active && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-warn" />
+                )}
+              </div>
+              <span className="mt-1 leading-none truncate max-w-[64px]">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
 
       {/* Global Command Palette */}
       <CommandPalette isOpen={paletteOpen} onClose={() => setPaletteOpen(false)} />

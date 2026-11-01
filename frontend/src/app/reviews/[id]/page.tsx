@@ -203,12 +203,12 @@ export default function ReviewDetailPage() {
               href={`https://github.com/${review.repo_full_name}/pull/${review.pr_number}`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex min-h-9 items-center rounded-lg border border-border bg-surface px-3 text-xs font-medium text-foreground hover:bg-raised transition-colors"
+              className="inline-flex min-h-[44px] items-center rounded-xl border border-border bg-surface px-3.5 text-xs font-medium text-foreground hover:bg-raised transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               GitHub PR <span aria-hidden="true" className="ml-1">↗</span>
             </a>
-            <Button variant="outline" size="sm" onClick={() => void copyMarkdown()}>
-              Copy as Markdown
+            <Button variant="outline" size="sm" onClick={() => void copyMarkdown()} className="min-h-[44px]">
+              Copy as markdown
             </Button>
           </div>
         </div>
@@ -223,16 +223,16 @@ export default function ReviewDetailPage() {
       {/* Executive Summary */}
       <ExecutiveReviewSummary data={review} />
 
-      {/* View Switcher Bar */}
+      {/* View Switcher Bar with 44px Touch Targets */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
-        <div role="tablist" aria-label="Review content views" className="flex gap-2">
+        <div role="tablist" aria-label="Review content views" className="flex flex-wrap gap-2">
           <button
             role="tab"
             aria-selected={activeView === "findings"}
             onClick={() => setActiveView("findings")}
-            className={`min-h-9 rounded-lg px-3.5 text-xs font-medium transition-colors ${
+            className={`min-h-[44px] rounded-xl px-4 text-xs font-medium transition-colors ${
               activeView === "findings"
-                ? "bg-primary-action text-foreground font-semibold"
+                ? "bg-primary-action text-white font-semibold shadow-xs"
                 : "text-muted hover:text-foreground hover:bg-surface border border-border"
             }`}
           >
@@ -242,9 +242,9 @@ export default function ReviewDetailPage() {
             role="tab"
             aria-selected={activeView === "diff"}
             onClick={() => setActiveView("diff")}
-            className={`min-h-9 rounded-lg px-3.5 text-xs font-medium transition-colors ${
+            className={`min-h-[44px] rounded-xl px-4 text-xs font-medium transition-colors ${
               activeView === "diff"
-                ? "bg-primary-action text-foreground font-semibold"
+                ? "bg-primary-action text-white font-semibold shadow-xs"
                 : "text-muted hover:text-foreground hover:bg-surface border border-border"
             }`}
           >

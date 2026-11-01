@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hadron — Precision in Motion (Bang Motion Deliverable)</title>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --surface: #111827;
+      --panel: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #93c5fd;
+      --accent-lit: #60a5fa;
+      --ok: #86efac;
+      --warn: #fde68a;
+      --err: #fca5a5;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* 16:9 Viewport Container */
+    #viewport {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #050811;
+    }
+
+    #stage {
+      position: relative;
+      width: 1280px;
+      height: 720px;
+      background: radial-gradient(circle at 50% 30%, #172554 0%, #0b1220 70%, #030712 100%);
+      overflow: hidden;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9);
+      perspective: 1000px;
+    }
+
+    /* Ambient Depth Grid */
+    #grid {
+      position: absolute;
+      inset: -20%;
+      background-image: 
+        linear-gradient(to right, rgba(147, 197, 253, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(147, 197, 253, 0.05) 1px, transparent 1px);
+      background-size: 32px 32px;
+      transform: rotateX(45deg);
+      transform-origin: center bottom;
+      pointer-events: none;
+    }
+
+    /* Camera World Rig */
+    #world {
+      position: absolute;
+      inset: 0;
+      transform-style: preserve-3d;
+      will-change: transform;
+    }
+
+    /* Telemetry HUD Top Bar */
+    .hud-bar {
+      position: absolute;
+      top: 32px;
+      left: 48px;
+      right: 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      color: var(--muted);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      padding-bottom: 16px;
+      z-index: 10;
+    }
+
+    .brand-mark {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      color: var(--text);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 10px;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      font-size: 11px;
+    }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--ok);
+      box-shadow: 0 0 8px var(--ok);
+    }
+
+    /* Kinetic Statement Header */
+    .headline-stage {
+      position: absolute;
+      top: 130px;
+      left: 64px;
+      right: 64px;
+      height: 100px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+    }
+
+    .kinetic-text {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 44px;
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      opacity: 0;
+      position: absolute;
+      will-change: transform, opacity, filter;
+    }
+
+    .kinetic-text .highlight {
+      position: relative;
+      display: inline-block;
+      color: var(--accent);
+      padding: 0 6px;
+    }
+
+    .kinetic-text .highlight::after {
+      content: "";
+      position: absolute;
+      inset: 2px 0;
+      background: rgba(147, 197, 253, 0.15);
+      border: 1px solid rgba(147, 197, 253, 0.4);
+      border-radius: 6px;
+      z-index: -1;
+    }
+
+    /* Central Multi-Agent Visualizer Stage */
+    .pipeline-stage {
+      position: absolute;
+      top: 260px;
+      left: 64px;
+      right: 64px;
+      height: 340px;
+      display: grid;
+      grid-template-columns: 240px 1fr 240px;
+      gap: 24px;
+      align-items: center;
+    }
+
+    /* PR Diff Ingest Node */
+    .diff-node {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      font-family: ui-monospace, monospace;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      transform: translateZ(20px);
+    }
+    .diff-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .diff-line {
+      font-size: 11px;
+      padding: 3px 6px;
+      border-radius: 4px;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .diff-add { background: rgba(134, 239, 172, 0.15); color: var(--ok); }
+    .diff-del { background: rgba(252, 165, 165, 0.15); color: var(--err); }
+
+    /* 4 Specialist Agents Cluster */
+    .agent-cluster {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .agent-card {
+      background: rgba(17, 24, 39, 0.9);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      font-family: ui-monospace, monospace;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+      transform-style: preserve-3d;
+      will-change: transform, border-color;
+    }
+
+    .agent-card.active {
+      border-color: var(--accent);
+      background: rgba(30, 41, 59, 0.95);
+    }
+
+    .agent-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--accent);
+      opacity: 0.8;
+    }
+
+    .agent-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .agent-desc {
+      font-size: 11px;
+      color: var(--muted);
+      margin: 6px 0 12px;
+      line-height: 1.3;
+    }
+
+    .agent-stat {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--accent);
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+      padding-top: 8px;
+    }
+
+    /* Verdict & Publication Terminal */
+    .verdict-terminal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      font-family: ui-monospace, monospace;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      transform: translateZ(20px);
+    }
+
+    .verdict-chip {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      background: rgba(134, 239, 172, 0.15);
+      color: var(--ok);
+      border: 1px solid var(--ok);
+      margin-top: 12px;
+    }
+
+    /* Connecting Laser Beam SVG */
+    #connector-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    /* Scrub Panel (?debug=1) */
+    #debug-panel {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(11, 18, 32, 0.95);
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      padding: 8px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-family: ui-monospace, monospace;
+      font-size: 12px;
+      z-index: 100;
+    }
+    #scrubber {
+      width: 240px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    button.btn-ctrl {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    button.btn-ctrl:hover {
+      background: var(--panel);
+    }
+  </style>
+</head>
+<body>
+  <div id="viewport">
+    <div id="stage">
+      <!-- Background Ambient Grid -->
+      <div id="grid"></div>
+
+      <!-- Connecting Laser Beams -->
+      <svg id="connector-svg" viewBox="0 0 1280 720">
+        <defs>
+          <linearGradient id="beamGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#93c5fd" stop-opacity="0.2" />
+            <stop offset="50%" stop-color="#93c5fd" stop-opacity="0.9" />
+            <stop offset="100%" stop-color="#86efac" stop-opacity="0.8" />
+          </linearGradient>
+        </defs>
+        <path id="flow-line-1" d="M 304 430 C 370 430, 370 330, 440 330" fill="none" stroke="url(#beamGrad)" stroke-width="2" stroke-dasharray="6 6" />
+        <path id="flow-line-2" d="M 304 430 C 370 430, 370 510, 440 510" fill="none" stroke="url(#beamGrad)" stroke-width="2" stroke-dasharray="6 6" />
+        <path id="flow-line-3" d="M 840 330 C 910 330, 910 430, 976 430" fill="none" stroke="url(#beamGrad)" stroke-width="2" stroke-dasharray="6 6" />
+        <path id="flow-line-4" d="M 840 510 C 910 510, 910 430, 976 430" fill="none" stroke="url(#beamGrad)" stroke-width="2" stroke-dasharray="6 6" />
+      </svg>
+
+      <!-- Camera 3D World Rig -->
+      <div id="world">
+        <!-- Telemetry Header -->
+        <header class="hud-bar">
+          <div class="brand-mark">
+            <svg width="24" height="24" viewBox="0 0 128 128" fill="none">
+              <circle cx="64" cy="64" r="56" stroke="#93c5fd" stroke-width="8" stroke-dasharray="16 8" />
+              <circle cx="64" cy="64" r="24" fill="#ffffff" />
+            </svg>
+            HADRON TELEMETRY
+          </div>
+          <div class="status-pill">
+            <span class="status-dot"></span>
+            ORCHESTRATOR ACTIVE · 4 SPECIALISTS ENGAGED
+          </div>
+          <div>SHA: 340249F · PR #1</div>
+        </header>
+
+        <!-- Kinetic Headline Sequences (Bang Motion Anti-PPT Rules) -->
+        <div class="headline-stage">
+          <h1 class="kinetic-text" id="k-shot-1">
+            Four specialist agents <span class="highlight">inspect every diff</span> in parallel.
+          </h1>
+          <h1 class="kinetic-text" id="k-shot-2">
+            Deterministic signals replace <span class="highlight">manual PR bottlenecks</span>.
+          </h1>
+          <h1 class="kinetic-text" id="k-shot-3">
+            Verifiable findings prove <span class="highlight">zero unreviewed code</span> reaches main.
+          </h1>
+        </div>
+
+        <!-- Multi-Agent Architectural Pipeline -->
+        <div class="pipeline-stage">
+          <!-- Step 1: Diff Ingest -->
+          <div class="diff-node" id="node-diff">
+            <div class="diff-title">01 / Diff Ingest</div>
+            <div class="diff-line diff-del">- session.query(User).filter(...)</div>
+            <div class="diff-line diff-add">+ await repo.get_user(session, id)</div>
+            <div class="diff-line diff-add">+ ctx.load_verify_locations(ca)</div>
+            <div style="font-size: 10px; color: var(--muted); margin-top: 10px;">
+              AST Chunks: 4 · Symbols: 18
+            </div>
+          </div>
+
+          <!-- Step 2: 4 Specialist Agents Cluster -->
+          <div class="agent-cluster">
+            <div class="agent-card" id="agent-sec">
+              <div class="agent-header">
+                <span>SECURITY AGENT</span>
+                <span style="color: var(--ok)">SCAN</span>
+              </div>
+              <div class="agent-desc">Tainted sinks, SQL injection, leaked secrets</div>
+              <div class="agent-stat">
+                <span>Checks: 142</span>
+                <span>0 Leaks</span>
+              </div>
+            </div>
+
+            <div class="agent-card" id="agent-qual">
+              <div class="agent-header">
+                <span>QUALITY AGENT</span>
+                <span style="color: var(--ok)">PASS</span>
+              </div>
+              <div class="agent-desc">Cyclomatic complexity, dead code, style</div>
+              <div class="agent-stat">
+                <span>Checks: 384</span>
+                <span>Grade: A+</span>
+              </div>
+            </div>
+
+            <div class="agent-card" id="agent-arch">
+              <div class="agent-header">
+                <span>ARCHITECTURE</span>
+                <span style="color: var(--ok)">PASS</span>
+              </div>
+              <div class="agent-desc">Layer boundaries, orthogonal contracts</div>
+              <div class="agent-stat">
+                <span>Checks: 89</span>
+                <span>0 Cycles</span>
+              </div>
+            </div>
+
+            <div class="agent-card" id="agent-test">
+              <div class="agent-header">
+                <span>TEST AGENT</span>
+                <span style="color: var(--ok)">PASS</span>
+              </div>
+              <div class="agent-desc">Assertion density, edge regression tests</div>
+              <div class="agent-stat">
+                <span>Checks: 64</span>
+                <span>98% Cov</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Synthesis & Verdict -->
+          <div class="verdict-terminal" id="node-verdict">
+            <div class="diff-title">03 / Synthesis</div>
+            <div style="font-size: 12px; color: var(--muted);">Confidence: 96%</div>
+            <div class="verdict-chip">APPROVE RECOMMENDED</div>
+            <div style="font-size: 10px; color: var(--muted); margin-top: 12px;">
+              Published to GitHub in 3.2s
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Debug Scrubber Panel (always available or via ?debug=1) -->
+      <div id="debug-panel">
+        <button class="btn-ctrl" id="btn-play">Pause</button>
+        <button class="btn-ctrl" id="btn-restart">Restart</button>
+        <input type="range" id="scrubber" min="0" max="1" step="0.001" value="0" />
+        <span id="time-display" style="min-width: 48px;">0.0s</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Bang Motion Orchestration
+    const tl = gsap.timeline({ repeat: -1, repeatDelay: 1.0 });
+
+    // Camera Breathing Rig (Bang Motion Law: Never static, continuous subtle drift)
+    gsap.to("#world", {
+      rotationY: 2.5,
+      rotationX: -1.5,
+      z: 15,
+      duration: 6,
+      repeat: -1,
+      yoyo: true,
+      ease: "sine.inOut"
+    });
+
+    // Beam Line Dashes Flowing
+    gsap.to("#connector-svg path", {
+      strokeDashoffset: -120,
+      duration: 4,
+      repeat: -1,
+      ease: "none"
+    });
+
+    // Shot 1: Diff Ingestion & Kinetic Intro
+    tl.fromTo("#node-diff", { opacity: 0, x: -40, scale: 0.9 }, { opacity: 1, x: 0, scale: 1, duration: 0.8, ease: "power4.out" }, 0.2)
+      .fromTo("#k-shot-1", { opacity: 0, y: 24, filter: "blur(8px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.7, ease: "power4.out" }, 0.4)
+      .to("#k-shot-1", { opacity: 0, y: -20, filter: "blur(6px)", duration: 0.4, ease: "power2.in" }, 2.8);
+
+    // Shot 2: Fan-Out to 4 Specialist Agents
+    tl.fromTo(".agent-card", 
+        { opacity: 0, scale: 0.88, y: 30 }, 
+        { opacity: 1, scale: 1, y: 0, duration: 0.6, stagger: 0.12, ease: "back.out(1.5)" }, 
+        2.9
+      )
+      .fromTo("#k-shot-2", { opacity: 0, y: 24, filter: "blur(8px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.7, ease: "power4.out" }, 3.1)
+      .to(".agent-card", { borderColor: "#93c5fd", duration: 0.4, stagger: 0.1, yoyo: true, repeat: 1 }, 3.8)
+      .to("#k-shot-2", { opacity: 0, y: -20, filter: "blur(6px)", duration: 0.4, ease: "power2.in" }, 5.5);
+
+    // Shot 3: Synthesis & Publication
+    tl.fromTo("#node-verdict", { opacity: 0, x: 40, scale: 0.9 }, { opacity: 1, x: 0, scale: 1, duration: 0.8, ease: "power4.out" }, 5.6)
+      .fromTo("#k-shot-3", { opacity: 0, y: 24, filter: "blur(8px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.7, ease: "power4.out" }, 5.8)
+      .fromTo(".verdict-chip", { scale: 0.8, boxShadow: "0 0 0px var(--ok)" }, { scale: 1, boxShadow: "0 0 24px rgba(134, 239, 172, 0.4)", duration: 0.5, ease: "back.out(2)" }, 6.4)
+      .to("#k-shot-3", { opacity: 0, y: -20, filter: "blur(6px)", duration: 0.4, ease: "power2.in" }, 8.4);
+
+    // Interactive Scrubber & Controls
+    const scrubber = document.getElementById("scrubber");
+    const timeDisplay = document.getElementById("time-display");
+    const btnPlay = document.getElementById("btn-play");
+    const btnRestart = document.getElementById("btn-restart");
+
+    tl.eventCallback("onUpdate", () => {
+      scrubber.value = tl.progress();
+      timeDisplay.textContent = tl.time().toFixed(1) + "s";
+    });
+
+    scrubber.addEventListener("input", (e) => {
+      tl.pause();
+      tl.progress(parseFloat(e.target.value));
+      btnPlay.textContent = "Play";
+    });
+
+    btnPlay.addEventListener("click", () => {
+      if (tl.paused()) {
+        tl.play();
+        btnPlay.textContent = "Pause";
+      } else {
+        tl.pause();
+        btnPlay.textContent = "Play";
+      }
+    });
+
+    btnRestart.addEventListener("click", () => {
+      tl.restart();
+      btnPlay.textContent = "Pause";
+    });
+
+    // Keyboard Shortcuts: Space (Play/Pause), R (Restart)
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        btnPlay.click();
+      } else if (e.key === "r" || e.key === "R") {
+        e.preventDefault();
+        btnRestart.click();
+      }
+    });
+
+    // Auto-scale stage to fit any screen size
+    function resize() {
+      const stage = document.getElementById("stage");
+      const scale = Math.min(window.innerWidth / 1280, window.innerHeight / 720, 1);
+      stage.style.transform = `scale(${scale})`;
+    }
+    window.addEventListener("resize", resize);
+    resize();
+
+    // Respect Reduced Motion
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      tl.pause(7.0);
+      btnPlay.textContent = "Play";
+    }
+  </script>
+</body>
+</html>

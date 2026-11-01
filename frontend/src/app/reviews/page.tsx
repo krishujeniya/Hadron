@@ -126,7 +126,7 @@ function ReviewsContent() {
                 placeholder="Title, commit SHA, repo…"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                className="w-full min-h-[44px] rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               />
               {searchInput && (
                 <button
@@ -136,7 +136,7 @@ function ReviewsContent() {
                     updateParam("q", null);
                   }}
                   aria-label="Clear search query"
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-foreground text-xs p-0.5 rounded"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 min-w-[40px] min-h-[40px] flex items-center justify-center text-muted hover:text-foreground text-xs rounded"
                 >
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -157,7 +157,7 @@ function ReviewsContent() {
               name="status"
               value={status}
               onChange={(e) => updateParam("status", e.target.value || null)}
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="w-full min-h-[44px] rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               <option value="">All statuses</option>
               <option value="queued">Queued</option>
@@ -181,7 +181,7 @@ function ReviewsContent() {
               name="sort"
               value={sort}
               onChange={(e) => updateParam("sort", e.target.value || null)}
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="w-full min-h-[44px] rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               <option value="newest">Newest first</option>
               <option value="oldest">Oldest first</option>
@@ -426,7 +426,7 @@ function ReviewsContent() {
                   </time>
                   <Link
                     href={`/reviews/${encodeURIComponent(review.id)}`}
-                    className="font-medium text-accent hover:underline underline-offset-4"
+                    className="min-h-[44px] inline-flex items-center font-medium text-accent hover:underline underline-offset-4"
                   >
                     Inspect review →
                   </Link>
@@ -452,12 +452,12 @@ function ReviewsContent() {
             {page > 1 ? (
               <Link
                 href={pageUrl(page - 1)}
-                className="inline-flex min-h-9 items-center rounded-lg border border-border bg-surface px-3 text-xs font-medium text-foreground hover:bg-raised transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-border bg-surface px-3.5 text-xs font-medium text-foreground hover:bg-raised transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
                 Previous
               </Link>
             ) : (
-              <span className="inline-flex min-h-9 items-center rounded-lg border border-border/50 bg-surface/50 px-3 text-xs font-medium text-muted/50 cursor-not-allowed">
+              <span className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-border/50 bg-surface/50 px-3.5 text-xs font-medium text-muted/50 cursor-not-allowed">
                 Previous
               </span>
             )}
@@ -465,12 +465,12 @@ function ReviewsContent() {
             {page < totalPages ? (
               <Link
                 href={pageUrl(page + 1)}
-                className="inline-flex min-h-9 items-center rounded-lg border border-border bg-surface px-3 text-xs font-medium text-foreground hover:bg-raised transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-border bg-surface px-3.5 text-xs font-medium text-foreground hover:bg-raised transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
                 Next
               </Link>
             ) : (
-              <span className="inline-flex min-h-9 items-center rounded-lg border border-border/50 bg-surface/50 px-3 text-xs font-medium text-muted/50 cursor-not-allowed">
+              <span className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-border/50 bg-surface/50 px-3.5 text-xs font-medium text-muted/50 cursor-not-allowed">
                 Next
               </span>
             )}
