@@ -22,12 +22,14 @@ import { VerdictChip } from "@/components/VerdictChip";
 import { ExecutiveReviewSummary } from "@/components/ExecutiveReviewSummary";
 import { Empty } from "@/components/Empty";
 import { Button } from "@/components/ui/Button";
+import { useGitHubAccount } from "@/lib/githubContext";
 import { api } from "@/lib/api";
 import type { ReviewDetail } from "@/lib/types";
 
 export default function ReviewDetailPage() {
   const params = useParams<{ id: string }>();
   const id = decodeURIComponent(params.id);
+  const { openAccountModal } = useGitHubAccount();
   const [copyStatus, setCopyStatus] = useState("");
   const [activeView, setActiveView] = useState<"findings" | "diff">("findings");
 
@@ -41,11 +43,33 @@ export default function ReviewDetailPage() {
   );
 
   if (error) {
+    const isAuthError = error.status === 401 || error.status === 403;
+    const isDbError = error.status === 503;
+
     return (
-      <div role="alert" className="rounded-xl border border-border bg-panel p-6 space-y-3">
-        <h1 className="text-xl font-semibold text-foreground">Review could not be loaded</h1>
-        <p className="text-sm text-muted">Check your connection or return to the review list.</p>
-        <div className="flex gap-4">
+      <div role="alert" className="rounded-xl border border-err/30 bg-err/10 p-6 space-y-4">
+        <div>
+          <h1 className="text-xl font-semibold text-foreground">
+            {isAuthError
+              ? "Authentication Required"
+              : isDbError
+              ? "Database Temporarily Unavailable"
+              : "Review could not be loaded"}
+          </h1>
+          <p className="mt-1 text-sm text-muted">
+            {isAuthError
+              ? "Your session has expired or requires authentication to inspect this review. Sign in or reconnect your account."
+              : isDbError
+              ? "The review database is temporarily reconnecting. Please try again in a few moments."
+              : error.message || "Check your connection or return to the review list."}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          {isAuthError ? (
+            <Button size="sm" onClick={() => openAccountModal()}>
+              Sign in or Reconnect
+            </Button>
+          ) : null}
           <Button variant="outline" size="sm" onClick={() => void mutate()}>
             Try again
           </Button>

@@ -45,6 +45,7 @@
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.exc import DBAPIError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.schemas import (
@@ -156,17 +157,24 @@ async def list_reviews_endpoint(
                 detail=f"Access denied: repository '{repo}' is outside your authorized workspace '{authorized_account}'.",
             )
 
-    records, total = await list_reviews(
-        session,
-        repo_full_name=repo,
-        account=account,
-        status=status_filter,
-        q=q,
-        sort=sort,
-        limit=limit,
-        offset=offset,
-        cursor=cursor,
-    )
+    try:
+        records, total = await list_reviews(
+            session,
+            repo_full_name=repo,
+            account=account,
+            status=status_filter,
+            q=q,
+            sort=sort,
+            limit=limit,
+            offset=offset,
+            cursor=cursor,
+        )
+    except (OperationalError, DBAPIError) as exc:
+        logger.error("Failed to list reviews from database: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="The review database service is temporarily unavailable. Please retry shortly.",
+        ) from exc
 
     # Convert ORM objects to DTOs at the adapter boundary.
     # WIKI: Interface Adapters Layer — "convert to the form convenient for the caller."
@@ -221,7 +229,14 @@ async def get_review_endpoint(
     Enforces that non-admin callers cannot access reviews from another workspace.
     """
     # Step 1: Fetch from Postgres (full data, authoritative).
-    record = await get_review(session, review_id)
+    try:
+        record = await get_review(session, review_id)
+    except (OperationalError, DBAPIError) as exc:
+        logger.error("Failed to get review %s from database: %s", review_id, exc)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="The review database service is temporarily unavailable. Please retry shortly.",
+        ) from exc
 
     if record is None:
         logger.info("GET /api/v1/reviews/%s -> 404", review_id)

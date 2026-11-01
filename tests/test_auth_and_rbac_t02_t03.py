@@ -269,3 +269,32 @@ class TestT03SessionManagementAndOAuthFlow:
         # Immediate second consumption (StrictMode re-render) within grace window succeeds
         res2 = await session_store.verify_and_consume_oauth_state(state, allow_recent_grace=15.0)
         assert res2 == {"redirect_uri": "/reviews"}
+
+    @pytest.mark.asyncio
+    async def test_preview_account_connection_issues_viewer_session(self, client):
+        """Preview/handle connection issues a VIEWER session that permits reading reviews but forbids mutations."""
+        resp = client.post("/api/v1/auth/connect", json={"account": "krishujeniya"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["login"] == "krishujeniya"
+        assert data["authenticated"] is True
+        assert data["auth_method"] == "preview"
+        assert "hadron_session" in resp.cookies
+        assert "hadron_csrf" in resp.cookies
+
+        preview_cookies = {"hadron_session": resp.cookies["hadron_session"]}
+
+        # Reading reviews with preview viewer session succeeds
+        with patch("backend.api.reviews.list_reviews", new=AsyncMock(return_value=([], 0))):
+            reviews_resp = client.get("/api/v1/reviews?account=krishujeniya", cookies=preview_cookies)
+            assert reviews_resp.status_code == 200
+            assert reviews_resp.json()["items"] == []
+
+        # Attempting mutation with viewer session is rejected (403)
+        mutation_resp = client.post(
+            "/api/v1/hitl/hitl-preview-test/decision",
+            json={"human_verdict": "APPROVE", "reason": "Testing viewer restriction"},
+            cookies=preview_cookies,
+            headers={"X-CSRF-Token": resp.cookies["hadron_csrf"]},
+        )
+        assert mutation_resp.status_code == 403

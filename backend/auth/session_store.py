@@ -60,6 +60,17 @@ class SessionStore:
         for st in expired_states:
             self._oauth_states.pop(st, None)
 
+    async def _get_redis_pool(self) -> Any:
+        """Retrieve Redis pool, lazily connecting if not already connected."""
+        try:
+            from backend.memory.redis_client import redis_client
+            if redis_client._pool is None:
+                await redis_client.connect()
+            return redis_client._pool
+        except Exception as e:
+            logger.debug("Redis lazy pool connection skipped: %s", e)
+            return None
+
     async def create_session(
         self,
         user_id: str,
@@ -88,11 +99,11 @@ class SessionStore:
 
         # Try to cache in Redis if available
         try:
-            from backend.memory.redis_client import redis_client
-            if redis_client._pool:
+            pool = await self._get_redis_pool()
+            if pool:
                 key = f"hadron:session:{session_id}"
                 data = session.model_dump_json()
-                await redis_client._pool.setex(key, ttl_seconds, data)
+                await pool.setex(key, ttl_seconds, data)
         except Exception as e:
             logger.debug("Redis session save skipped: %s", e)
 
@@ -110,10 +121,10 @@ class SessionStore:
 
         # Fallback to Redis if present
         try:
-            from backend.memory.redis_client import redis_client
-            if redis_client._pool:
+            pool = await self._get_redis_pool()
+            if pool:
                 key = f"hadron:session:{session_id}"
-                raw = await redis_client._pool.get(key)
+                raw = await pool.get(key)
                 if raw:
                     data = json.loads(raw)
                     sess = SessionData(**data)
@@ -129,10 +140,11 @@ class SessionStore:
         """Revoke a session completely."""
         existed = bool(self._sessions.pop(session_id, None))
         try:
-            from backend.memory.redis_client import redis_client
-            if redis_client._pool:
-                await redis_client._pool.delete(f"hadron:session:{session_id}")
-                existed = True
+            pool = await self._get_redis_pool()
+            if pool:
+                deleted = await pool.delete(f"hadron:session:{session_id}")
+                if deleted:
+                    existed = True
         except Exception:
             pass
         return existed
@@ -145,11 +157,19 @@ class SessionStore:
     ) -> None:
         """Store OAuth CSRF state with TTL."""
         self._cleanup_expired()
-        self._oauth_states[state] = {
+        state_data = {
             "expires_at": time.time() + ttl_seconds,
             "data": data or {},
             "consumed_at": None,
         }
+        self._oauth_states[state] = state_data
+        try:
+            pool = await self._get_redis_pool()
+            if pool:
+                key = f"hadron:oauth_state:{state}"
+                await pool.setex(key, ttl_seconds, json.dumps(state_data))
+        except Exception as e:
+            logger.debug("Redis oauth state save skipped: %s", e)
 
     async def verify_and_consume_oauth_state(
         self,
@@ -162,12 +182,28 @@ class SessionStore:
         """
         self._cleanup_expired()
         item = self._oauth_states.get(state)
+
+        # Lookup in Redis if not present in local process memory
+        pool = await self._get_redis_pool()
+        if not item and pool:
+            try:
+                raw = await pool.get(f"hadron:oauth_state:{state}")
+                if raw:
+                    item = json.loads(raw)
+            except Exception as e:
+                logger.debug("Redis oauth state lookup failed: %s", e)
+
         if not item:
             return None
 
         now = time.time()
         if now > item["expires_at"]:
             self._oauth_states.pop(state, None)
+            if pool:
+                try:
+                    await pool.delete(f"hadron:oauth_state:{state}")
+                except Exception:
+                    pass
             return None
 
         # Check if already consumed
@@ -178,10 +214,23 @@ class SessionStore:
                 return item.get("data")
             # Beyond grace window: reject replay
             self._oauth_states.pop(state, None)
+            if pool:
+                try:
+                    await pool.delete(f"hadron:oauth_state:{state}")
+                except Exception:
+                    pass
             return None
 
         # Mark consumed
         item["consumed_at"] = now
+        self._oauth_states[state] = item
+        if pool:
+            try:
+                remaining_ttl = max(1, int(item["expires_at"] - now))
+                await pool.setex(f"hadron:oauth_state:{state}", remaining_ttl, json.dumps(item))
+            except Exception as e:
+                logger.debug("Redis oauth state update failed: %s", e)
+
         return item.get("data")
 
 

@@ -15,7 +15,7 @@ import urllib.parse
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from pydantic import BaseModel, Field
 from sqlalchemy import distinct, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -294,15 +294,22 @@ async def logout(
 async def connect_account(
     payload: ConnectAccountRequest,
     response: Response,
+    request: Request,
     settings: Settings = Depends(get_settings),
 ) -> AccountProfile:
     """
     Connect an account. If a valid personal token is supplied, creates an authenticated session.
-    If no token is supplied, returns a preview of public profile without granting access to private resources.
+    If no token is supplied, returns a preview profile with a VIEWER session for dashboard inspection.
     """
     account_name = payload.account.strip()
     if not account_name:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Account username cannot be empty")
+
+    is_secure = (
+        request.headers.get("x-forwarded-proto", "").lower() == "https"
+        or request.url.scheme == "https"
+        or not settings.is_development
+    )
 
     token = payload.token
     if token and token not in ("ghp_test", "ghp_development_token_placeholder"):
@@ -326,7 +333,15 @@ async def connect_account(
                         provider_token=token,
                         ttl_seconds=86400 * 7,
                     )
-                    is_secure = not settings.is_development
+                    response.set_cookie(
+                        key="hadron_csrf",
+                        value=session.csrf_token,
+                        httponly=False,
+                        samesite="lax",
+                        secure=is_secure,
+                        max_age=86400 * 7,
+                        path="/",
+                    )
                     response.set_cookie(
                         key="hadron_session",
                         value=session.session_id,
@@ -351,7 +366,32 @@ async def connect_account(
         except Exception as exc:
             logger.warning("connect_account | GitHub token verification error: %s", exc)
 
-    # Fallback / Preview: unauthenticated profile info
+    # Fallback / Preview: grant a viewer session so user can inspect dashboard reviews in read-only mode
+    viewer_session = await session_store.create_session(
+        user_id=account_name,
+        role=Role.VIEWER,
+        account=account_name,
+        provider_token=None,
+        ttl_seconds=86400 * 7,
+    )
+    response.set_cookie(
+        key="hadron_csrf",
+        value=viewer_session.csrf_token,
+        httponly=False,
+        samesite="lax",
+        secure=is_secure,
+        max_age=86400 * 7,
+        path="/",
+    )
+    response.set_cookie(
+        key="hadron_session",
+        value=viewer_session.session_id,
+        httponly=True,
+        samesite="lax",
+        secure=is_secure,
+        max_age=86400 * 7,
+        path="/",
+    )
     return AccountProfile(
         login=account_name,
         name=account_name,
@@ -360,7 +400,7 @@ async def connect_account(
         bio=f"GitHub preview: {account_name}",
         public_repos=0,
         type="User",
-        authenticated=False,
+        authenticated=True,
         auth_method="preview",
         token=None,
     )

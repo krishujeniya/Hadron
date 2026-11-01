@@ -15,7 +15,7 @@ import type { Paginated, ReviewSummary } from "@/lib/types";
 const PAGE_SIZE = 25;
 
 function ReviewsContent() {
-  const { currentAccount } = useGitHubAccount();
+  const { currentAccount, openAccountModal, logout } = useGitHubAccount();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -228,15 +228,58 @@ function ReviewsContent() {
 
       {/* Main Content Area */}
       {error ? (
-        <div role="alert" className="rounded-xl border border-err/30 bg-err/10 p-6">
-          <h2 className="font-medium text-foreground">Reviews could not be loaded</h2>
-          <p className="mt-1 text-sm text-muted">
-            There was a problem contacting the review service. Check your connection or authentication.
-          </p>
-          <div className="mt-4">
-            <Button variant="outline" size="sm" onClick={() => void mutate()}>
-              Try again
-            </Button>
+        <div role="alert" className="rounded-xl border border-err/30 bg-err/10 p-6 space-y-4">
+          <div>
+            <h2 className="font-semibold text-foreground text-base">
+              {error.status === 401 || error.status === 403
+                ? "Authentication Required"
+                : error.status === 503
+                ? "Review Database Temporarily Unavailable"
+                : "Reviews could not be loaded"}
+            </h2>
+            <p className="mt-1.5 text-sm text-muted">
+              {error.status === 401 || error.status === 403
+                ? `Your session has expired or requires authentication to load reviews for ${
+                    currentAccount ? `@${currentAccount.login}` : "this account"
+                  }. Sign in or select your GitHub account to continue.`
+                : error.status === 503
+                ? "The review database service is temporarily reconnecting. Please retry in a few moments."
+                : error.message || "There was a problem contacting the review service. Check your connection or authentication."}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            {error.status === 401 || error.status === 403 ? (
+              <>
+                <Button size="sm" onClick={() => openAccountModal()}>
+                  Sign in or Reconnect
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => void mutate()}>
+                  Try again
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => void logout()}>
+                  Switch Account
+                </Button>
+              </>
+            ) : error.status === 503 ? (
+              <>
+                <Button size="sm" onClick={() => void mutate()}>
+                  Retry connection
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => router.push("/health")}>
+                  Check Service Health
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button size="sm" onClick={() => void mutate()}>
+                  Try again
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => openAccountModal()}>
+                  Reconnect Account
+                </Button>
+              </>
+            )}
           </div>
         </div>
       ) : isLoading ? (
