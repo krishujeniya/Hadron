@@ -99,19 +99,72 @@ class MigrationError(Exception):
     pass
 
 
+# ---------------------------------------------------------------------------
+# Supabase Root 2021 CA certificate (serial: 0x5CBA4CA1DEB63F692D0A2024C67289C2D13D54F6)
+# Required for verifying TLS connections to Supabase transaction poolers & direct DBs.
+# ---------------------------------------------------------------------------
+SUPABASE_ROOT_CA_PEM = (
+    "-----BEGIN CERTIFICATE-----\n"
+    "MIIDxDCCAqygAwIBAgIUbLxMod62P2ktCiAkxnKJwtE9VPYwDQYJKoZIhvcNAQEL\n"
+    "BQAwazELMAkGA1UEBhMCVVMxEDAOBgNVBAgMB0RlbHdhcmUxEzARBgNVBAcMCk5l\n"
+    "dyBDYXN0bGUxFTATBgNVBAoMDFN1cGFiYXNlIEluYzEeMBwGA1UEAwwVU3VwYWJh\n"
+    "c2UgUm9vdCAyMDIxIENBMB4XDTIxMDQyODEwNTY1M1oXDTMxMDQyNjEwNTY1M1ow\n"
+    "azELMAkGA1UEBhMCVVMxEDAOBgNVBAgMB0RlbHdhcmUxEzARBgNVBAcMCk5ldyBD\n"
+    "YXN0bGUxFTATBgNVBAoMDFN1cGFiYXNlIEluYzEeMBwGA1UEAwwVU3VwYWJhc2Ug\n"
+    "Um9vdCAyMDIxIENBMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqQXW\n"
+    "QyHOB+qR2GJobCq/CBmQ40G0oDmCC3mzVnn8sv4XNeWtE5XcEL0uVih7Jo4Dkx1Q\n"
+    "DmGHBH1zDfgs2qXiLb6xpw/CKQPypZW1JssOTMIfQppNQ87K75Ya0p25Y3ePS2t2\n"
+    "GtvHxNjUV6kjOZjEn2yWEcBdpOVCUYBVFBNMB4YBHkNRDa/+S4uywAoaTWnCJLUi\n"
+    "cvTlHmMw6xSQQn1UfRQHk50DMCEJ7Cy1RxrZJrkXXRP3LqQL2ijJ6F4yMfh+Gyb4\n"
+    "O4XajoVj/+R4GwywKYrrS8PrSNtwxr5StlQO8zIQUSMiq26wM8mgELFlS/32Uclt\n"
+    "NaQ1xBRizkzpZct9DwIDAQABo2AwXjALBgNVHQ8EBAMCAQYwHQYDVR0OBBYEFKjX\n"
+    "uXY32CztkhImng4yJNUtaUYsMB8GA1UdIwQYMBaAFKjXuXY32CztkhImng4yJNUt\n"
+    "aUYsMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAB8spzNn+4VU\n"
+    "tVxbdMaX+39Z50sc7uATmus16jmmHjhIHz+l/9GlJ5KqAMOx26mPZgfzG7oneL2b\n"
+    "VW+WgYUkTT3XEPFWnTp2RJwQao8/tYPXWEJDc0WVQHrpmnWOFKU/d3MqBgBm5y+6\n"
+    "jB81TU/RG2rVerPDWP+1MMcNNy0491CTL5XQZ7JfDJJ9CCmXSdtTl4uUQnSuv/Qx\n"
+    "Cea13BX2ZgJc7Au30vihLhub52De4P/4gonKsNHYdbWjg7OWKwNv/zitGDVDB9Y2\n"
+    "CMTyZKG3XEu5Ghl1LEnI3QmEKsqaCLv12BnVjbkSeZsMnevJPs1Ye6TjjJwdik5P\n"
+    "o/bKiIz+Fq8=\n"
+    "-----END CERTIFICATE-----\n"
+)
+
+
 def _build_ssl_context(dsn: str):
     """
     Builds a secure SSLContext verifying server certificates and hostname.
-    Loads system default CAs plus any custom CA bundle from POSTGRES_CA_CERT.
+    Loads system default CAs plus any custom CA bundle from POSTGRES_CA_CERT,
+    and automatically trusts Supabase Root CA for hosted Supabase instances.
     """
-    if not any(h in dsn for h in ("supabase.co", "pooler.supabase.com", "sslmode=require")):
+    is_supabase = any(h in dsn for h in ("supabase.co", "pooler.supabase.com", "supabase.com"))
+    if not (is_supabase or "sslmode=require" in dsn):
         return None
 
     import ssl
     ctx = ssl.create_default_context()
+
+    # 1. Custom CA certificate bundle from environment variable if provided
     ca_file = os.getenv("POSTGRES_CA_CERT") or os.getenv("SSL_CERT_FILE")
     if ca_file and pathlib.Path(ca_file).exists():
-        ctx.load_verify_locations(cafile=ca_file)
+        try:
+            ctx.load_verify_locations(cafile=ca_file)
+        except Exception as exc:
+            logger.debug("Failed loading CA bundle from %s: %s", ca_file, exc)
+
+    # 2. Local packaged Supabase Root CA file if present
+    cert_path = pathlib.Path(__file__).parent / "certs" / "supabase-root.crt"
+    if cert_path.exists():
+        try:
+            ctx.load_verify_locations(cafile=str(cert_path))
+        except Exception as exc:
+            logger.debug("Failed loading cert file %s: %s", cert_path, exc)
+
+    # 3. Embedded Supabase Root 2021 CA certificate
+    if is_supabase or True:
+        try:
+            ctx.load_verify_locations(cadata=SUPABASE_ROOT_CA_PEM)
+        except Exception as exc:
+            logger.debug("Failed loading embedded Supabase root CA: %s", exc)
 
     # Insecure bypass allowed ONLY when explicitly configured by operator
     if os.getenv("POSTGRES_INSECURE_DISABLE_TLS_VERIFY", "").lower() in ("true", "1"):

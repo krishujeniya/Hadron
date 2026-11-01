@@ -169,7 +169,7 @@ async def list_reviews_endpoint(
             offset=offset,
             cursor=cursor,
         )
-    except (OperationalError, DBAPIError) as exc:
+    except (OperationalError, DBAPIError, OSError) as exc:
         logger.error("Failed to list reviews from database: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -231,7 +231,7 @@ async def get_review_endpoint(
     # Step 1: Fetch from Postgres (full data, authoritative).
     try:
         record = await get_review(session, review_id)
-    except (OperationalError, DBAPIError) as exc:
+    except (OperationalError, DBAPIError, OSError) as exc:
         logger.error("Failed to get review %s from database: %s", review_id, exc)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
