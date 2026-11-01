@@ -148,7 +148,7 @@ export default function EconomicsPage() {
               <span>Status: <strong className="font-mono text-foreground">{budget.ledger_status}</strong></span>
               {budget.exceeded && (
                 <span className="text-err font-semibold">
-                  · DAILY CAP EXCEEDED — new provider calls halted
+                  · Daily cap exceeded: new provider calls halted
                 </span>
               )}
             </div>

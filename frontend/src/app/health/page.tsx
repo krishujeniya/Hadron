@@ -54,22 +54,22 @@ export default function HealthPage() {
               {!isLive ? (
                 <span className="text-err flex items-center gap-2">
                   <span className="h-3 w-3 rounded-full bg-err inline-block animate-pulse" />
-                  API OFFLINE — Server Unreachable
+                  API offline: server unreachable
                 </span>
               ) : readyError ? (
                 <span className="text-err flex items-center gap-2">
                   <span className="h-3 w-3 rounded-full bg-err inline-block animate-pulse" />
-                  TELEMETRY UNREACHABLE — Status Probe Failed
+                  Telemetry unreachable: status probe failed
                 </span>
               ) : isPipelineReady ? (
                 <span className="text-ok flex items-center gap-2">
                   <span className="h-3 w-3 rounded-full bg-ok inline-block" />
-                  OPERATIONAL — Autonomous Review Pipeline Active
+                  Operational: review pipeline active
                 </span>
               ) : (
                 <span className="text-warn flex items-center gap-2">
                   <span className="h-3 w-3 rounded-full bg-warn inline-block animate-pulse" />
-                  PIPELINE DEGRADED — API Online, Execution Capability Offline
+                  Pipeline degraded: execution capability offline
                 </span>
               )}
             </div>

@@ -173,7 +173,7 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground font-mono">
-            {viewMode === "executive" ? "Executive Summary & Guidance" : "Developer Operations Overview"}
+            {viewMode === "executive" ? "Executive summary and guidance" : "Developer operations overview"}
           </h1>
           <p className="text-muted text-sm mt-1">
             {viewMode === "executive"
@@ -193,7 +193,6 @@ export default function DashboardPage() {
                 : "text-muted hover:text-foreground"
             }`}
           >
-            <span aria-hidden="true">✨</span>
             <span>Plain English</span>
           </button>
           <button
@@ -205,7 +204,6 @@ export default function DashboardPage() {
                 : "text-muted hover:text-foreground"
             }`}
           >
-            <span aria-hidden="true">⚡</span>
             <span>Developer View</span>
           </button>
         </div>
@@ -224,7 +222,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-mono">
-                  <span aria-hidden="true">🚀</span> Recent Pull Request Impacts
+                  Recent pull request impacts
                 </h2>
                 <p className="text-xs text-muted">
                   Every pull request translated into business impact and review status.

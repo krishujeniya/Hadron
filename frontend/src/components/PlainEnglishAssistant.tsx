@@ -52,10 +52,10 @@ export function PlainEnglishAssistant({ recentReviews, accountName }: PlainEngli
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-separator pb-4">
         <div>
           <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-panel text-muted border border-border">
-            <span>📊</span> Operational Guidance
+            Operational guidance
           </div>
           <h3 className="text-lg font-bold text-foreground mt-1.5 font-mono">
-            Workspace PR Review Summary
+            Workspace PR review summary
           </h3>
           <p className="text-xs text-muted">
             Factual overview derived from recent review results in {accountName ? `@${accountName}` : "your workspace"}.
@@ -77,7 +77,7 @@ export function PlainEnglishAssistant({ recentReviews, accountName }: PlainEngli
               : "bg-panel text-muted border-border hover:border-muted/50 hover:text-foreground"
           }`}
         >
-          <span>📋 Overview</span>
+          <span>Overview</span>
         </button>
         <button
           type="button"
@@ -91,7 +91,7 @@ export function PlainEnglishAssistant({ recentReviews, accountName }: PlainEngli
               : "bg-panel text-muted border-border hover:border-muted/50 hover:text-foreground"
           }`}
         >
-          <span>🛡️ Security Status</span>
+          <span>Security status</span>
         </button>
         <button
           type="button"
@@ -105,7 +105,7 @@ export function PlainEnglishAssistant({ recentReviews, accountName }: PlainEngli
               : "bg-panel text-muted border-border hover:border-muted/50 hover:text-foreground"
           }`}
         >
-          <span>⚡ Approvals Queue ({hitlCount})</span>
+          <span>Approvals queue ({hitlCount})</span>
         </button>
       </div>
 

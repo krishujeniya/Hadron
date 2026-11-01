@@ -78,7 +78,7 @@ export function HadronAuthScreen() {
           Autonomous AI PR Review Engine
         </p>
         <p className="text-muted text-sm leading-relaxed mb-8 px-4">
-          Four specialist sub-agents reason over your pull requests in parallel — detecting vulnerabilities, enforcing code quality, and verifying coverage before merge.
+          Four specialist sub-agents review pull requests in parallel to detect vulnerabilities, enforce code quality, and verify test coverage before merge.
         </p>
 
         {/* Main Card */}

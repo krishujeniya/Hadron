@@ -8,7 +8,7 @@ import { Shell } from "@/components/Shell";
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://hadron.dev"),
   title: "Hadron | AI PR Review Engine",
-  description: "Hadron — Autonomous Multi-Agent Pull Request Review Engine",
+  description: "Autonomous multi-agent pull request review engine",
   alternates: {
     canonical: "/",
   },

@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Hadron — Autonomous AI PR Review Agent";
+export const alt = "Hadron AI PR review engine";
 export const size = {
   width: 1200,
   height: 630,

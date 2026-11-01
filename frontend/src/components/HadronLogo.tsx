@@ -64,7 +64,7 @@ export function HadronLogo({
 
   if (withLink) {
     return (
-      <Link href="/" className="inline-block" title="Hadron — Autonomous AI PR Review">
+      <Link href="/" className="inline-block" title="Hadron PR review engine">
         {content}
       </Link>
     );
