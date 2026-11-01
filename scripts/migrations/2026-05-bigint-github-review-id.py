@@ -1,4 +1,5 @@
 """One-shot ALTER: github_review_id INT -> BIGINT on reviews table."""
+import asyncio
 import os
 from pathlib import Path
 

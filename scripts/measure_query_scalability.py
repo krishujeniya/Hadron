@@ -24,10 +24,9 @@ import time
 from datetime import datetime, timezone
 
 from sqlalchemy import select, text
-from backend.config.settings import get_settings
-from backend.database.models import PRReviewRecord, FindingRecord, RepoFileIndexRecord
+from backend.database.models import PRReviewRecord
 from backend.database.postgres import get_session_factory, get_engine, init_db
-from backend.database.repository import list_reviews, get_review
+from backend.database.repository import list_reviews
 from backend.data.freshness import get_stale_files, mark_files_embedded
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")

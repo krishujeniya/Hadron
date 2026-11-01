@@ -29,7 +29,6 @@ from backend.database.postgres import Base, get_db
 from backend.disaster_recovery.backup import create_backup
 from backend.disaster_recovery.reconciliation import (
     reconcile_after_redis_loss,
-    verify_isolated_restore,
 )
 from backend.disaster_recovery.restore import restore_backup
 from backend.memory.redis_client import redis_client
