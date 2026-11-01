@@ -11,6 +11,7 @@ import { Status } from "@/components/ui/Status";
 import { Button } from "@/components/ui/Button";
 import { NonTechReviewCard } from "@/components/NonTechReviewCard";
 import { PlainEnglishAssistant } from "@/components/PlainEnglishAssistant";
+import { BangMotionPipeline } from "@/components/BangMotionPipeline";
 import type { HITLItem, Paginated, ReviewSummary } from "@/lib/types";
 
 export default function DashboardPage() {
@@ -67,40 +68,43 @@ export default function DashboardPage() {
   const recentReviews = reviews.slice(0, 8);
 
   // Determine state-aware primary action (T34)
-  let actionTitle = "Operational Overview";
+  let actionTitle = "Operational overview";
   let actionDescription = "All monitored repositories are active.";
   let actionLink = "/reviews";
-  let actionLabel = "Browse Reviews";
+  let actionLabel = "Browse reviews";
   let actionTone: "warning" | "error" | "info" | "neutral" = "neutral";
 
   if (pendingHitl.length > 0) {
-    actionTitle = `${pendingHitl.length} Human Decision${pendingHitl.length === 1 ? "" : "s"} Pending`;
+    actionTitle = `${pendingHitl.length} human decision${pendingHitl.length === 1 ? "" : "s"} pending`;
     actionDescription = "Specialist agents escalated pull requests requiring human sign-off before merge.";
     actionLink = "/hitl";
-    actionLabel = "Review Approvals Queue →";
+    actionLabel = "Review approvals queue →";
     actionTone = "warning";
   } else if (failedReviews.length > 0) {
-    actionTitle = `${failedReviews.length} Review${failedReviews.length === 1 ? "" : "s"} Failed`;
+    actionTitle = `${failedReviews.length} review${failedReviews.length === 1 ? "" : "s"} failed`;
     actionDescription = "Reviews encountered unexpected execution errors or timeouts.";
     actionLink = "/reviews?status=failed";
-    actionLabel = "Inspect Failed Reviews →";
+    actionLabel = "Inspect failed reviews →";
     actionTone = "error";
   } else if (runningReviews.length > 0) {
-    actionTitle = `${runningReviews.length} Review${runningReviews.length === 1 ? "" : "s"} Actively Processing`;
+    actionTitle = `${runningReviews.length} review${runningReviews.length === 1 ? "" : "s"} actively processing`;
     actionDescription = "Specialist security, quality, test, and documentation agents are running over diffs.";
     actionLink = "/reviews";
-    actionLabel = "Monitor Reviews →";
+    actionLabel = "Monitor reviews →";
     actionTone = "info";
   } else if (repositories.length === 0) {
-    actionTitle = "No Repositories Connected";
+    actionTitle = "No repositories connected";
     actionDescription = "Connect your GitHub organization or repository to begin automated code reviews.";
     actionLink = "/repositories";
-    actionLabel = "Connect Repository →";
+    actionLabel = "Connect repository →";
     actionTone = "info";
   }
 
   return (
     <div className="space-y-8">
+      {/* Cinematic Multi-Agent Telemetry & Motion Pipeline (Bang Motion) */}
+      <BangMotionPipeline />
+
       {/* Account Context Banner */}
       {currentAccount ? (
         <div className="border border-border rounded-2xl bg-surface p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
@@ -204,7 +208,7 @@ export default function DashboardPage() {
                 : "text-muted hover:text-foreground"
             }`}
           >
-            <span>Developer View</span>
+            <span>Developer view</span>
           </button>
         </div>
       </div>
@@ -238,7 +242,7 @@ export default function DashboardPage() {
             ) : recentReviews.length === 0 ? (
               <Empty>
                 {currentAccount
-                  ? `No reviews recorded yet for @${currentAccount.login}. When developers open a PR, Hadron will show review findings here.`
+                  ? `No reviews recorded yet for @${currentAccount.login}. Pull requests opened on connected repositories appear here.`
                   : "No reviews yet. Connect a repository and open a pull request."}
               </Empty>
             ) : (
@@ -255,16 +259,16 @@ export default function DashboardPage() {
         <div className="space-y-8">
           {/* Operational Metrics Cards */}
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label="Total Reviews" value={reviewsResp?.total ?? reviews.length} err={!!reviewsErr} />
-            <StatCard label="Watched Repos" value={repositories.length} tone="ok" />
+            <StatCard label="Total reviews" value={reviewsResp?.total ?? reviews.length} err={!!reviewsErr} />
+            <StatCard label="Watched repositories" value={repositories.length} tone="ok" />
             <StatCard
-              label="Approvals Pending"
+              label="Approvals pending"
               value={hitlResp?.total ?? pendingHitl.length}
               err={!!hitlErr}
               tone={pendingHitl.length > 0 ? "warn" : "ok"}
             />
             <StatCard
-              label="Running Reviews"
+              label="Running reviews"
               value={runningReviews.length}
               err={!!reviewsErr}
               tone={runningReviews.length > 0 ? "info" : "neutral"}
@@ -277,12 +281,12 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <h2 className="text-base font-semibold text-foreground font-mono">
-                    Pending Human Decisions ({pendingHitl.length})
+                    Pending human decisions ({pendingHitl.length})
                   </h2>
                   <Status variant="warning" label="Action Needed" />
                 </div>
                 <Link href="/hitl" className="text-xs text-accent hover:underline font-mono">
-                  Open Approvals Queue →
+                  Open approvals queue →
                 </Link>
               </div>
               <div className="border border-border rounded-xl bg-surface divide-y divide-border overflow-hidden shadow-sm">
@@ -316,12 +320,12 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <h2 className="text-base font-semibold text-foreground font-mono">
-                    Running Reviews ({runningReviews.length})
+                    Running reviews ({runningReviews.length})
                   </h2>
                   <Status variant="info" label="In-Flight" />
                 </div>
                 <Link href="/reviews" className="text-xs text-accent hover:underline font-mono">
-                  View All →
+                  View all reviews →
                 </Link>
               </div>
               <div className="border border-border rounded-xl bg-surface divide-y divide-border overflow-hidden shadow-sm">
@@ -350,7 +354,7 @@ export default function DashboardPage() {
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-semibold text-foreground font-mono">Recent Reviews</h2>
+                <h2 className="text-base font-semibold text-foreground font-mono">Recent reviews</h2>
                 {currentAccount && (
                   <span className="text-xs text-muted font-mono">
                     (@{currentAccount.login})
@@ -366,7 +370,7 @@ export default function DashboardPage() {
             ) : recentReviews.length === 0 ? (
               <Empty>
                 {currentAccount
-                  ? `No reviews recorded yet for @${currentAccount.login}. Pull requests sent to watched repositories will show up here.`
+                  ? `No reviews recorded yet for @${currentAccount.login}. Pull requests sent to watched repositories appear here.`
                   : "No reviews yet. Open a PR on a watched repository."}
               </Empty>
             ) : (
@@ -426,7 +430,7 @@ function StatCard({
     <div className="border border-border rounded-xl bg-surface px-4 py-3.5 hover:border-muted/50 transition-all shadow-sm">
       <div className="text-xs uppercase tracking-wider font-mono text-muted">{label}</div>
       <div className={`text-2xl font-mono font-bold mt-1.5 ${toneColor}`}>
-        {err ? "—" : value ?? "…"}
+        {err ? "N/A" : value ?? "…"}
       </div>
     </div>
   );

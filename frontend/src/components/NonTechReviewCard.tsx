@@ -25,7 +25,7 @@ export function NonTechReviewCard({ review }: NonTechReviewCardProps) {
             </span>
           </div>
           <h4 className="text-sm font-semibold text-foreground mt-1 truncate">
-            {review.pr_title || "Untitled Pull Request"}
+            {review.pr_title || "Untitled pull request"}
           </h4>
         </div>
 
@@ -36,7 +36,7 @@ export function NonTechReviewCard({ review }: NonTechReviewCardProps) {
       </div>
 
       <p className="text-xs text-foreground/90 leading-relaxed bg-panel p-2.5 rounded-lg border border-border">
-        <span className="text-muted font-medium">Review Status: </span>
+        <span className="text-muted font-medium">Review status: </span>
         {summary.impact}
       </p>
 
@@ -48,7 +48,7 @@ export function NonTechReviewCard({ review }: NonTechReviewCardProps) {
           href={`/reviews/${encodeURIComponent(review.id)}`}
           className="inline-flex items-center gap-1 font-semibold text-accent hover:underline transition-colors"
         >
-          Inspect Details →
+          Inspect details →
         </Link>
       </div>
     </div>
@@ -62,26 +62,26 @@ function getReviewOperationalSummary(review: ReviewSummary): {
   if (review.verdict === "approve") {
     return {
       impact: "Automated multi-agent screening passed without blocking issues.",
-      riskPill: "Automated Pass",
+      riskPill: "Automated pass",
     };
   }
 
   if (review.verdict === "request_changes") {
     return {
       impact: "Specialist agents identified code issues requiring developer attention before merge.",
-      riskPill: "Changes Requested",
+      riskPill: "Changes requested",
     };
   }
 
   if (review.verdict === "needs_human_review") {
     return {
       impact: "Review confidence or safety criteria triggered human-in-the-loop escalation.",
-      riskPill: "Pending Human Review",
+      riskPill: "Pending human review",
     };
   }
 
   return {
     impact: "Review is currently being processed by automated agent pipeline.",
-    riskPill: "In Progress",
+    riskPill: "In progress",
   };
 }
