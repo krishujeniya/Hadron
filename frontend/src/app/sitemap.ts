@@ -1,7 +1,7 @@
 import { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://hadron.dev";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://hadron.vercel.app";
   const now = new Date();
 
   const frameworkSolutions = [

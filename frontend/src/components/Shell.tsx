@@ -116,29 +116,64 @@ export function Shell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Allow public routes (solutions marketing pages, auth callback) to render with a dedicated public layout (T32)
+  // Allow public routes (solutions marketing pages, auth callback, and public landing page) to render without auth blocks (T32)
   const isSolutionsRoute = pathname?.startsWith("/solutions");
-  if (isSolutionsRoute) {
+  const isPublicHome = pathname === "/" && !currentAccount;
+
+  if (isSolutionsRoute || isPublicHome) {
     return (
       <div className="min-h-screen bg-bg text-foreground flex flex-col">
-        <header className="border-b border-border bg-surface px-6 py-4 flex items-center justify-between sticky top-0 z-40 backdrop-blur-md">
-          <HadronLogo size="sm" animated={false} />
+        {/* Accessible Skip Link (T39 / S05) */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-surface focus:text-foreground focus:border focus:border-border focus:rounded-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-accent"
+        >
+          Skip to main content
+        </a>
+
+        <header className="border-b border-border bg-surface/90 px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-40 backdrop-blur-md">
+          <div className="flex items-center gap-6">
+            <HadronLogo size="sm" animated={false} />
+            <nav className="hidden md:flex items-center gap-5 text-xs font-mono text-muted" aria-label="Public sections">
+              <a href="#demo" className="hover:text-foreground transition-colors py-1">Live demo</a>
+              <a href="#how-it-works" className="hover:text-foreground transition-colors py-1">How it works</a>
+              <a href="#security" className="hover:text-foreground transition-colors py-1">Security</a>
+              <a href="#pricing" className="hover:text-foreground transition-colors py-1">Pricing</a>
+              <a href="#faq" className="hover:text-foreground transition-colors py-1">FAQ</a>
+            </nav>
+          </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <Link
-              href="/"
-              className="px-3.5 py-1.5 bg-primary-action text-white hover:bg-primary-action/90 text-xs font-semibold rounded-lg transition shadow-sm"
+            <button
+              type="button"
+              onClick={openAccountModal}
+              className="inline-flex min-h-[44px] items-center px-4 py-2 bg-primary-action text-white hover:bg-primary-action/90 text-xs font-semibold rounded-xl transition shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               Sign In to App →
-            </Link>
+            </button>
           </div>
         </header>
+
         <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
           {children}
         </main>
-        <footer className="border-t border-separator py-6 text-center text-xs text-muted font-mono bg-panel/30">
-          Hadron · Autonomous Multi-Agent PR Review Engine
+
+        <footer className="border-t border-border py-8 text-xs text-muted font-mono bg-panel/30">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <p className="font-semibold text-foreground">Hadron · Autonomous Multi-Agent PR Review Engine</p>
+              <p className="text-[11px] text-muted/80 mt-1">Four specialist agents reviewing pull request diffs in parallel.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-4 text-xs">
+              <Link href="/solutions/python-security-audit" className="hover:text-foreground transition-colors">Python Security</Link>
+              <Link href="/solutions/nextjs-pr-review" className="hover:text-foreground transition-colors">Next.js Review</Link>
+              <a href="https://github.com/krishujeniya/Hadron" target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors">GitHub ↗</a>
+            </div>
+          </div>
         </footer>
+
+        {/* Mount GitHubAccountModal in public view too (T31) */}
+        <GitHubAccountModal />
       </div>
     );
   }
@@ -148,21 +183,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
     return <main className="min-h-screen bg-bg text-foreground">{children}</main>;
   }
 
-  // If loading local state, show clean loader
-  if (isLoading) {
+  // If on a private route (/reviews, /hitl, /repositories) and not logged in, render the clean auth screen
+  if (!currentAccount) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-bg text-foreground font-mono text-xs">
-        <div className="flex flex-col items-center gap-4">
-          <HadronIcon size={48} animated={true} />
-          <span className="text-muted tracking-widest text-[11px]">INITIALIZING HADRON ENGINE...</span>
-        </div>
+      <div className="min-h-screen bg-bg text-foreground">
+        <HadronAuthScreen />
+        <GitHubAccountModal />
       </div>
     );
-  }
-
-  // If not logged in, render the clean "Sign in with GitHub" starting screen
-  if (!currentAccount) {
-    return <HadronAuthScreen />;
   }
 
   return (

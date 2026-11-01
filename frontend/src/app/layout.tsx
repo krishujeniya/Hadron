@@ -6,9 +6,9 @@ import { ThemeProvider } from "@/lib/themeContext";
 import { Shell } from "@/components/Shell";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://hadron.dev"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://hadron.vercel.app"),
   title: "Hadron | AI PR Review Engine",
-  description: "Autonomous multi-agent pull request review engine",
+  description: "Ship pull requests faster with autonomous code reviews that catch critical security vulnerabilities, logic flaws, and test gaps before merge.",
   alternates: {
     canonical: "/",
   },
@@ -23,14 +23,14 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Hadron | AI PR Review Engine",
-    description: "Autonomous multi-agent pull request reviews powered by LangGraph & Tiger Cloud",
-    url: "https://hadron.dev",
+    description: "Ship pull requests faster with autonomous code reviews that catch critical security vulnerabilities, logic flaws, and test gaps before merge.",
+    url: "https://hadron.vercel.app",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Hadron PR Review Engine" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Hadron | AI PR Review Engine",
-    description: "Autonomous multi-agent pull request reviews powered by LangGraph & Tiger Cloud",
+    description: "Ship pull requests faster with autonomous code reviews that catch critical security vulnerabilities, logic flaws, and test gaps before merge.",
     images: ["/og-image.png"],
   },
 };
@@ -44,14 +44,14 @@ const schemaOrgData = {
       applicationCategory: "DeveloperApplication",
       operatingSystem: "All",
       description:
-        "Multi-agent pull request review engine combining LangGraph orchestration, Tiger Cloud telemetry, and semantic code retrieval.",
-      url: "https://hadron.dev",
+        "Autonomous multi-agent pull request review engine that coordinates Security, Quality, Test, and Docs agents in parallel.",
+      url: "https://hadron.vercel.app",
     },
     {
       "@type": "Organization",
       name: "Hadron AI",
-      url: "https://hadron.dev",
-      logo: "https://hadron.dev/icon-512.png",
+      url: "https://hadron.vercel.app",
+      logo: "https://hadron.vercel.app/icon-512.png",
     },
     {
       "@type": "FAQPage",

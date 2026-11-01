@@ -12,11 +12,13 @@ import { Button } from "@/components/ui/Button";
 import { NonTechReviewCard } from "@/components/NonTechReviewCard";
 import { PlainEnglishAssistant } from "@/components/PlainEnglishAssistant";
 import { BangMotionPipeline } from "@/components/BangMotionPipeline";
+import { PublicLandingPage } from "@/components/PublicLandingPage";
 import type { HITLItem, Paginated, ReviewSummary } from "@/lib/types";
 
 export default function DashboardPage() {
   const { currentAccount, repositories, openAccountModal } = useGitHubAccount();
   const [viewMode, setViewMode] = useState<"executive" | "developer">("executive");
+  const [showProductTour, setShowProductTour] = useState(false);
 
   // Synchronize view preference across storage events and command palette (T34)
   useEffect(() => {
@@ -100,6 +102,23 @@ export default function DashboardPage() {
     actionTone = "info";
   }
 
+  // When no account is connected (and during initial server-side rendering), render the complete public product landing showcase (F1, F2)
+  if (!currentAccount || showProductTour) {
+    return (
+      <div className="space-y-6">
+        {currentAccount && (
+          <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-panel text-xs font-mono">
+            <span className="text-muted">Viewing public product showcase while connected as @{currentAccount.login}</span>
+            <Button size="sm" variant="outline" onClick={() => setShowProductTour(false)}>
+              ← Back to operational dashboard
+            </Button>
+          </div>
+        )}
+        <PublicLandingPage />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* Cinematic Multi-Agent Telemetry & Motion Pipeline (Bang Motion) */}
@@ -133,7 +152,10 @@ export default function DashboardPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button onClick={() => setShowProductTour(true)} variant="outline" size="sm">
+              Product Showcase
+            </Button>
             <Link href="/repositories">
               <Button variant="secondary" size="sm">
                 Repositories ({repositories.length})
