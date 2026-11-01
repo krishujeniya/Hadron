@@ -28,14 +28,16 @@ export default function HITLDetailPage() {
       <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs font-mono text-muted">
         <Link href="/" className="hover:text-foreground transition-colors">Overview</Link>
         <span>/</span>
-        <Link href="/hitl" className="hover:text-foreground transition-colors">Human Review</Link>
+        <Link href="/hitl" className="hover:text-foreground transition-colors">Human review</Link>
         <span>/</span>
         <span className="text-foreground font-semibold">{data.repo_full_name} #{data.pr_number}</span>
       </nav>
 
       {/* Governance & Consequential Decision Callout */}
       <div className="p-3.5 rounded-xl border border-border bg-panel flex items-center gap-3 text-xs text-foreground">
-        <span className="text-base shrink-0" aria-hidden="true">🛡️</span>
+        <svg className="w-4 h-4 text-accent shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
         <div>
           <span className="font-semibold text-foreground">Consequential Decision Gate: </span>
           Decisions recorded here are binding human determinations permanently attributed to your authenticated identity. Once submitted, decisions cannot be edited or overridden. Submitting does not merge the pull request.
@@ -57,7 +59,7 @@ export default function HITLDetailPage() {
                 rel="noreferrer"
                 className="text-sm text-accent underline mt-2 inline-block font-mono"
               >
-                Open PR on GitHub →
+                Open pull request on GitHub →
               </a>
             </div>
             <div className="flex flex-col items-end gap-1.5 shrink-0">
@@ -90,7 +92,7 @@ export default function HITLDetailPage() {
           {isResolved ? (
             <div className="border border-border rounded-xl bg-surface p-4 text-sm shadow-sm">
               <div className="text-xs uppercase tracking-wide text-muted font-mono mb-2">
-                Resolution Status
+                Resolution status
               </div>
               <div className="font-mono text-foreground font-semibold">{data.status}</div>
               {data.resolved_at && (

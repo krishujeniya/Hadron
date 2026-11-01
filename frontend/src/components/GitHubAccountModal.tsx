@@ -119,7 +119,10 @@ export function GitHubAccountModal() {
             className="absolute top-4 right-4 text-muted hover:text-foreground text-sm p-1.5 rounded-lg hover:bg-panel transition"
             aria-label="Close modal"
           >
-            ✕
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         )}
 
@@ -132,7 +135,7 @@ export function GitHubAccountModal() {
           </div>
           <div>
             <h2 id="account-modal-title" className="text-lg font-semibold text-foreground">
-              Select GitHub Account
+              Select GitHub account
             </h2>
             <p className="text-muted text-xs">
               Choose which GitHub account or organization to inspect for PR reviews
@@ -214,7 +217,12 @@ GITHUB_CLIENT_SECRET=your_secret_here
               >
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-xs font-semibold text-foreground group-hover:text-accent group-hover:underline">@{p.login}</span>
-                  <span className="text-[10px] text-ok font-medium">✓ instant</span>
+                  <span className="inline-flex items-center gap-1 text-[10px] text-ok font-medium">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                    </svg>
+                    instant
+                  </span>
                 </div>
                 <div className="text-[11px] text-muted truncate mt-1">{p.desc}</div>
               </button>
@@ -225,7 +233,7 @@ GITHUB_CLIENT_SECRET=your_secret_here
         {/* Custom Username Input Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="modal-username" className="text-xs text-foreground block mb-1 font-medium">Or enter any GitHub Username / Org:</label>
+            <label htmlFor="modal-username" className="text-xs text-foreground block mb-1 font-medium">Or enter any GitHub username or organization:</label>
             <div className="relative">
               <span className="absolute left-3 top-2.5 text-muted text-sm font-mono" aria-hidden="true">@</span>
               <input

@@ -20,13 +20,13 @@ export function ExecutiveHealthScore({
       return {
         scoreDisplay: "—",
         scoreNumber: 0,
-        status: "Awaiting PR Reviews",
+        status: "Awaiting PR reviews",
         statusTone: "text-muted",
         pillars: [
-          { name: "Evaluated PRs", score: "0", desc: "No reviews run in this window" },
-          { name: "Escalation Queue", score: `${pendingHitlCount}`, desc: "Pending human decisions" },
-          { name: "Monitored Repos", score: `${watchedReposCount}`, desc: "Configured repositories" },
-          { name: "Approval Rate", score: "—", desc: "Requires completed reviews" },
+          { name: "Evaluated pull requests", score: "0", desc: "No reviews run in this window" },
+          { name: "Escalation queue", score: `${pendingHitlCount}`, desc: "Pending human decisions" },
+          { name: "Monitored repositories", score: `${watchedReposCount}`, desc: "Configured repositories" },
+          { name: "Approval rate", score: "—", desc: "Requires completed reviews" },
         ],
         metrics: {
           totalReviews: 0,
@@ -43,10 +43,10 @@ export function ExecutiveHealthScore({
 
     const statusText =
       pendingHitlCount > 0
-        ? `${pendingHitlCount} PR(s) Escalated to Human Review`
+        ? `${pendingHitlCount} PR(s) escalated to human review`
         : changesRequested > 0
-        ? `${changesRequested} PR(s) Changes Requested`
-        : "All Reviewed PRs Approved";
+        ? `${changesRequested} PR(s) changes requested`
+        : "All reviewed PRs approved";
 
     return {
       scoreDisplay: `${approvalRate}%`,
@@ -54,10 +54,10 @@ export function ExecutiveHealthScore({
       status: statusText,
       statusTone: pendingHitlCount > 0 ? "text-warn" : "text-ok",
       pillars: [
-        { name: "Evaluated PRs", score: `${reviews.length}`, desc: "Total pull requests reviewed" },
-        { name: "Approval Rate", score: `${approvalRate}%`, desc: "Automated passes approved" },
-        { name: "Escalation Queue", score: `${pendingHitlCount}`, desc: "Awaiting human review" },
-        { name: "Monitored Repos", score: `${watchedReposCount}`, desc: "Configured repositories" },
+        { name: "Evaluated pull requests", score: `${reviews.length}`, desc: "Total pull requests reviewed" },
+        { name: "Approval rate", score: `${approvalRate}%`, desc: "Automated passes approved" },
+        { name: "Escalation queue", score: `${pendingHitlCount}`, desc: "Awaiting human review" },
+        { name: "Monitored repositories", score: `${watchedReposCount}`, desc: "Configured repositories" },
       ],
       metrics: {
         totalReviews: reviews.length,
@@ -110,7 +110,7 @@ export function ExecutiveHealthScore({
                 {scoreDisplay}
               </span>
               <span className="text-[10px] font-mono uppercase tracking-widest text-muted -mt-1">
-                Pass Rate
+                Pass rate
               </span>
             </div>
           </div>
@@ -121,7 +121,7 @@ export function ExecutiveHealthScore({
               <span className={statusTone}>{status}</span>
             </div>
             <h2 className="text-xl font-bold tracking-tight text-foreground mt-2 font-mono">
-              PR Review Health &amp; Escalation Telemetry
+              PR review health &amp; escalation telemetry
             </h2>
             <p className="text-xs text-muted mt-1 max-w-lg leading-relaxed">
               Measured operational metrics from automated specialist agents and human-in-the-loop dispute workflows.

@@ -53,22 +53,25 @@ function CallbackHandler() {
       <div className="bg-panel border border-border rounded-xl p-8 max-w-md w-full text-center space-y-4">
         {errorText ? (
           <>
-            <div className="w-12 h-12 rounded-full bg-err/15 text-err flex items-center justify-center mx-auto text-xl">
-              ✕
+            <div className="w-12 h-12 rounded-full bg-err/15 text-err flex items-center justify-center mx-auto text-xl" aria-hidden="true">
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
             </div>
-            <h2 className="text-lg font-semibold text-white">Sign-in Failed</h2>
+            <h2 className="text-lg font-semibold text-white">Sign-in failed</h2>
             <p className="text-sm text-err">{errorText}</p>
             <button
               onClick={() => router.push("/")}
               className="mt-4 px-4 py-2 bg-accent text-white text-xs font-medium rounded-lg hover:bg-accent/90"
             >
-              Return to Dashboard
+              Return to dashboard
             </button>
           </>
         ) : (
           <>
             <div className="w-10 h-10 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto" />
-            <h2 className="text-lg font-semibold text-white">GitHub Authentication</h2>
+            <h2 className="text-lg font-semibold text-white">GitHub authentication</h2>
             <p className="text-sm text-muted">{statusText}</p>
           </>
         )}

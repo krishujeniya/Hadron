@@ -11,17 +11,17 @@ import type { DecisionAction, HITLDecisionResponse } from "@/lib/types";
 const ACTIONS: { value: DecisionAction; label: string; description: string }[] = [
   {
     value: "approve",
-    label: "Approve Review",
+    label: "Approve review",
     description: "Accept automated review findings and clear escalation gate.",
   },
   {
     value: "request_changes",
-    label: "Request Changes",
+    label: "Request changes",
     description: "Require author to resolve findings before pull request can proceed.",
   },
   {
     value: "dismiss",
-    label: "Dismiss Escalation",
+    label: "Dismiss escalation",
     description: "Close escalation without approval. Findings remain on record.",
   },
 ];
@@ -182,7 +182,9 @@ export function HITLDecisionForm({ hitlId, onResolved }: HITLDecisionFormProps) 
       >
         <div role="status" className="space-y-2">
           <div className="flex items-center gap-2 text-ok font-semibold text-sm">
-            <span>✓</span>
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+            </svg>
             <span>Human Determination Recorded</span>
           </div>
           <p className="text-xs text-muted">
@@ -191,13 +193,20 @@ export function HITLDecisionForm({ hitlId, onResolved }: HITLDecisionFormProps) 
           <div className="rounded-lg border border-border bg-surface p-3 text-xs space-y-1">
             <p className="text-foreground">
               {result.posted_to_github ? (
-                <span>
-                  ✓ Determination posted as an official review on GitHub under your authenticated identity.
+                <span className="flex items-start gap-1.5 text-foreground">
+                  <svg className="w-4 h-4 text-ok shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Determination posted as an official review on GitHub under your authenticated identity.</span>
                 </span>
               ) : (
-                <span className="text-warn">
-                  ⚠️ Determination is recorded in Hadron audit ledger, but publication to GitHub is queued
-                  or awaiting token confirmation.
+                <span className="flex items-start gap-1.5 text-warn">
+                  <svg className="w-4 h-4 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                  <span>Determination is recorded in Hadron audit ledger, but publication to GitHub is queued or awaiting token confirmation.</span>
                 </span>
               )}
             </p>
@@ -211,7 +220,7 @@ export function HITLDecisionForm({ hitlId, onResolved }: HITLDecisionFormProps) 
           href="/hitl"
           className="inline-flex min-h-9 items-center rounded-lg border border-border bg-surface px-4 text-xs font-medium text-foreground hover:bg-raised transition-colors"
         >
-          Return to Human Review Queue
+          Return to human review queue
         </Link>
       </section>
     );
@@ -221,7 +230,7 @@ export function HITLDecisionForm({ hitlId, onResolved }: HITLDecisionFormProps) 
   if (conflictDetail) {
     return (
       <div role="alert" className="rounded-xl border border-warn/40 bg-warn/10 p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-foreground">Determination Conflict</h3>
+        <h3 className="text-sm font-semibold text-foreground">Determination conflict</h3>
         <p className="text-xs text-muted leading-relaxed">{conflictDetail}</p>
         <Button
           variant="outline"
@@ -241,7 +250,7 @@ export function HITLDecisionForm({ hitlId, onResolved }: HITLDecisionFormProps) 
   return (
     <form onSubmit={onSubmit} className="rounded-xl border border-border bg-panel p-5 space-y-5">
       <fieldset disabled={confirming || submitting} className="space-y-4 disabled:opacity-75">
-        <legend className="text-sm font-semibold text-foreground">Select Determination</legend>
+        <legend className="text-sm font-semibold text-foreground">Select determination</legend>
 
         <div className="space-y-2.5">
           {ACTIONS.map((item) => (
@@ -274,7 +283,7 @@ export function HITLDecisionForm({ hitlId, onResolved }: HITLDecisionFormProps) 
         <div className="rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted">
           <span>Reviewer: </span>
           <strong className="text-foreground font-mono">
-            {currentAccount?.login ? `@${currentAccount.login}` : "Authenticated Session"}
+            {currentAccount?.login ? `@${currentAccount.login}` : "Authenticated session"}
           </strong>{" "}
           <span className="text-[11px] block mt-0.5">
             Decisions are permanently attributed to your server-authenticated credentials in the audit ledger.

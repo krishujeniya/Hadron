@@ -25,7 +25,7 @@ export interface ParsedFileDiff {
 }
 
 /**
- * Robust unified diff parser.
+ * Unified diff parser.
  * Handles:
  *  - Filenames containing spaces
  *  - Deleted files (+++ /dev/null)
@@ -192,8 +192,14 @@ export function DiffViewer({ diff, findings = [] }: DiffViewerProps) {
   if (!diff || files.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-panel p-8 text-center">
-        <div className="text-3xl mb-2" aria-hidden="true">📄</div>
-        <h3 className="text-sm font-semibold text-foreground">No Unified Diff Available</h3>
+        <svg className="w-8 h-8 text-muted mx-auto mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+          <polyline points="10 9 9 9 8 9" />
+        </svg>
+        <h3 className="text-sm font-semibold text-foreground">No unified diff available</h3>
         <p className="text-xs text-muted mt-1 max-w-md mx-auto">
           Diff data was not attached or is unavailable for this pull request commit. All findings detected by specialist agents are listed in the findings breakdown.
         </p>
@@ -376,7 +382,11 @@ export function DiffViewer({ diff, findings = [] }: DiffViewerProps) {
                               colSpan={2}
                               className="bg-err/20 text-center py-2 text-err font-bold select-none text-xs"
                             >
-                              ⚠️
+                              <svg className="w-3.5 h-3.5 mx-auto text-err" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                              </svg>
                             </td>
                             <td className="p-3 text-foreground">
                               <div className="flex flex-wrap items-center gap-2 mb-1.5">

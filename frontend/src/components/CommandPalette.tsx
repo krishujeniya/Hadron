@@ -23,50 +23,86 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     {
       id: "dash",
       category: "Navigation",
-      label: "Overview & Review Dashboard",
-      icon: "📊",
+      label: "Overview dashboard",
+      icon: (
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <rect x="3" y="3" width="7" height="7" rx="1.5" />
+          <rect x="14" y="3" width="7" height="7" rx="1.5" />
+          <rect x="14" y="14" width="7" height="7" rx="1.5" />
+          <rect x="3" y="14" width="7" height="7" rx="1.5" />
+        </svg>
+      ),
       action: () => router.push("/"),
     },
     {
       id: "approvals",
       category: "Navigation",
-      label: "Human Review & Sign-Offs (Action Needed)",
-      icon: "⚡",
+      label: "Human review queue (action required)",
+      icon: (
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
+      ),
       action: () => router.push("/hitl"),
     },
     {
       id: "reviews",
       category: "Navigation",
-      label: "All Pull Request Reviews",
-      icon: "📋",
+      label: "Pull request reviews",
+      icon: (
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <circle cx="18" cy="18" r="3" />
+          <circle cx="6" cy="6" r="3" />
+          <path d="M13 6h3a2 2 0 0 1 2 2v7" />
+          <line x1="6" y1="9" x2="6" y2="21" />
+        </svg>
+      ),
       action: () => router.push("/reviews"),
     },
     {
       id: "repos",
       category: "Navigation",
-      label: "Connected Repositories",
-      icon: "📂",
+      label: "Connected repositories",
+      icon: (
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+        </svg>
+      ),
       action: () => router.push("/repositories"),
     },
     {
       id: "economics",
       category: "Navigation",
-      label: "Usage & Cost Control Guardrails",
-      icon: "💰",
+      label: "Usage and cost limits",
+      icon: (
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <line x1="12" y1="1" x2="12" y2="23" />
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+        </svg>
+      ),
       action: () => router.push("/economics"),
     },
     {
       id: "health",
       category: "Navigation",
-      label: "Engine Health & System Telemetry",
-      icon: "🟢",
+      label: "Engine health and telemetry",
+      icon: (
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+        </svg>
+      ),
       action: () => router.push("/health"),
     },
     {
       id: "mode-exec",
       category: "View Mode",
-      label: "Switch to Executive View (High-Level Summary)",
-      icon: "✨",
+      label: "Switch to plain English view",
+      icon: (
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+        </svg>
+      ),
       action: () => {
         try {
           localStorage.setItem("hadron_view_mode", "executive");
@@ -78,8 +114,13 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     {
       id: "mode-dev",
       category: "View Mode",
-      label: "Switch to Developer View (Telemetry & Diffs)",
-      icon: "⚡",
+      label: "Switch to developer view",
+      icon: (
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <polyline points="16 18 22 12 16 6" />
+          <polyline points="8 6 2 12 8 18" />
+        </svg>
+      ),
       action: () => {
         try {
           localStorage.setItem("hadron_view_mode", "developer");
@@ -91,8 +132,13 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     {
       id: "switch-acc",
       category: "Account",
-      label: "Switch GitHub Account or Organization",
-      icon: "👤",
+      label: "Switch GitHub account or organization",
+      icon: (
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+      ),
       action: () => openAccountModal(),
     },
   ];
@@ -193,9 +239,10 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       >
         {/* Search Input Bar (Combobox Semantics) */}
         <div className="flex items-center gap-3 px-3 py-2 border-b border-border">
-          <span className="text-muted text-sm" aria-hidden="true">
-            🔍
-          </span>
+          <svg className="w-4 h-4 text-muted shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
           <input
             ref={inputRef}
             type="text"

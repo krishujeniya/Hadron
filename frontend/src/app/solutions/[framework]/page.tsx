@@ -273,7 +273,8 @@ export default async function SolutionDetailPage({
       {/* Hero Header */}
       <div className="space-y-4">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-panel text-foreground border border-border font-mono">
-          <span>⚡ {solution.badge}</span>
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent" aria-hidden="true" />
+          <span>{solution.badge}</span>
         </div>
         <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-foreground font-mono">
           {solution.title}
@@ -286,13 +287,13 @@ export default async function SolutionDetailPage({
             href="/"
             className="px-6 py-3 rounded-xl bg-primary-action hover:bg-primary-action/90 text-white font-semibold text-sm transition shadow-sm"
           >
-            Deploy Hadron on GitHub Free →
+            Deploy Hadron on GitHub free →
           </Link>
           <Link
             href="/reviews"
             className="px-6 py-3 rounded-xl bg-panel hover:bg-surface border border-border text-foreground font-semibold text-sm transition"
           >
-            Explore Live Reviews
+            Explore live reviews
           </Link>
         </div>
       </div>
@@ -300,7 +301,7 @@ export default async function SolutionDetailPage({
       {/* Architecture Highlights */}
       <div className="space-y-6">
         <h2 className="text-2xl font-bold tracking-tight text-foreground border-b border-separator pb-3 font-mono">
-          Specialist Agent Capabilities
+          Specialist agent capabilities
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {solution.features.map((feat, idx) => (
@@ -325,7 +326,7 @@ export default async function SolutionDetailPage({
       {/* Real-World Diff Finding Example */}
       <div className="space-y-4">
         <h2 className="text-2xl font-bold tracking-tight text-foreground border-b border-separator pb-3 font-mono">
-          Automated Finding Detection Preview
+          Automated finding detection preview
         </h2>
         <div className="rounded-xl border border-border bg-surface overflow-hidden shadow-sm">
           <div className="px-4 py-2 bg-panel border-b border-border flex items-center justify-between text-xs font-mono">
@@ -337,12 +338,18 @@ export default async function SolutionDetailPage({
           <div className="p-4 font-mono text-xs overflow-x-auto bg-panel text-foreground">
             <pre className="whitespace-pre-wrap">{solution.exampleDiff.code}</pre>
           </div>
-          <div className="p-4 bg-err/5 border-t border-border space-y-1">
-            <div className="text-xs font-bold text-err">
-              ⚠️ {solution.exampleDiff.finding}
+          <div className="p-4 bg-err/5 border-t border-border space-y-2">
+            <div className="text-xs font-bold text-err flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+              <span>{solution.exampleDiff.finding}</span>
             </div>
-            <div className="text-xs text-foreground/90 font-medium">
-              💡 Recommendation: {solution.exampleDiff.recommendation}
+            <div className="text-xs text-foreground/90 font-medium flex items-center gap-1.5">
+              <span className="font-semibold text-accent">Recommendation:</span>
+              <span>{solution.exampleDiff.recommendation}</span>
             </div>
           </div>
         </div>
@@ -351,7 +358,7 @@ export default async function SolutionDetailPage({
       {/* FAQ Section */}
       <div className="space-y-4">
         <h2 className="text-2xl font-bold tracking-tight text-foreground border-b border-separator pb-3 font-mono">
-          Frequently Asked Questions
+          Frequently asked questions
         </h2>
         <div className="space-y-3">
           {solution.faqs.map((faq, idx) => (
@@ -370,7 +377,7 @@ export default async function SolutionDetailPage({
       {/* CTA Box */}
       <div className="rounded-2xl border border-border bg-surface p-8 text-center space-y-4 shadow-sm">
         <h2 className="text-2xl md:text-3xl font-bold text-foreground font-mono">
-          Accelerate Your Code Reviews With Hadron Today
+          Accelerate your code reviews with Hadron
         </h2>
         <p className="text-sm text-muted max-w-xl mx-auto">
           Install the Hadron GitHub App in under 2 minutes. Free for open-source and public repositories.
@@ -379,7 +386,7 @@ export default async function SolutionDetailPage({
           href="/"
           className="inline-block px-8 py-3.5 rounded-xl bg-primary-action hover:bg-primary-action/90 text-white font-semibold text-sm transition shadow-sm"
         >
-          Get Started with GitHub OAuth →
+          Get started with GitHub OAuth →
         </Link>
       </div>
     </div>

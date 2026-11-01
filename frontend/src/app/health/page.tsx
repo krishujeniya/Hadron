@@ -59,7 +59,7 @@ export default function HealthPage() {
               ) : readyError ? (
                 <span className="text-err flex items-center gap-2">
                   <span className="h-3 w-3 rounded-full bg-err inline-block animate-pulse" />
-                  Telemetry unreachable: status probe failed
+                  TELEMETRY UNREACHABLE: status probe failed
                 </span>
               ) : isPipelineReady ? (
                 <span className="text-ok flex items-center gap-2">

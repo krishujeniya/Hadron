@@ -14,16 +14,69 @@ import { GitHubAccountModal } from "./GitHubAccountModal";
 
 // Primary work navigation & secondary operations (T32)
 const PRIMARY_NAV = [
-  { href: "/", label: "Overview", icon: "📊" },
-  { href: "/reviews", label: "Reviews", icon: "📋" },
-  { href: "/hitl", label: "Human Review", icon: "⚡", badge: "Action" },
-  { href: "/repositories", label: "Repositories", icon: "📂" },
+  { href: "/", label: "Overview", iconId: "overview" },
+  { href: "/reviews", label: "Reviews", iconId: "reviews" },
+  { href: "/hitl", label: "Human Review", iconId: "hitl", badge: "Action" },
+  { href: "/repositories", label: "Repositories", iconId: "repos" },
 ];
 
 const SECONDARY_NAV = [
-  { href: "/economics", label: "Usage & Cost", icon: "💰" },
-  { href: "/health", label: "Service Health", icon: "🟢" },
+  { href: "/economics", label: "Usage and cost", iconId: "economics" },
+  { href: "/health", label: "Service health", iconId: "health" },
 ];
+
+function NavIcon({ id }: { id: string }) {
+  if (id === "overview") {
+    return (
+      <svg className="w-4 h-4 shrink-0 text-muted group-hover:text-foreground transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <rect x="3" y="3" width="7" height="7" rx="1.5" />
+        <rect x="14" y="3" width="7" height="7" rx="1.5" />
+        <rect x="14" y="14" width="7" height="7" rx="1.5" />
+        <rect x="3" y="14" width="7" height="7" rx="1.5" />
+      </svg>
+    );
+  }
+  if (id === "reviews") {
+    return (
+      <svg className="w-4 h-4 shrink-0 text-muted group-hover:text-foreground transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <circle cx="18" cy="18" r="3" />
+        <circle cx="6" cy="6" r="3" />
+        <path d="M13 6h3a2 2 0 0 1 2 2v7" />
+        <line x1="6" y1="9" x2="6" y2="21" />
+      </svg>
+    );
+  }
+  if (id === "hitl") {
+    return (
+      <svg className="w-4 h-4 shrink-0 text-muted group-hover:text-foreground transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      </svg>
+    );
+  }
+  if (id === "repos") {
+    return (
+      <svg className="w-4 h-4 shrink-0 text-muted group-hover:text-foreground transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+      </svg>
+    );
+  }
+  if (id === "economics") {
+    return (
+      <svg className="w-4 h-4 shrink-0 text-muted group-hover:text-foreground transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <line x1="12" y1="1" x2="12" y2="23" />
+        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+      </svg>
+    );
+  }
+  if (id === "health") {
+    return (
+      <svg className="w-4 h-4 shrink-0 text-muted group-hover:text-foreground transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+      </svg>
+    );
+  }
+  return null;
+}
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -130,9 +183,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
             type="button"
             onClick={() => setPaletteOpen(true)}
             className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-muted hover:text-foreground bg-surface text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            aria-label="Open Command Palette"
+            aria-label="Open command palette"
           >
-            🔍
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
           </button>
           <ThemeToggle />
           <button
@@ -144,7 +200,18 @@ export function Shell({ children }: { children: React.ReactNode }) {
             aria-expanded={mobileOpen}
             aria-controls="mobile-nav-drawer"
           >
-            {mobileOpen ? "✕" : "☰"}
+            {mobileOpen ? (
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            )}
           </button>
         </div>
       </div>
@@ -236,8 +303,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
               className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl border border-border bg-surface hover:bg-panel transition-colors text-xs text-muted hover:text-foreground group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               <span className="flex items-center gap-2">
-                <span aria-hidden="true">🔍</span>
-                <span className="group-hover:text-foreground transition-colors">Quick Command</span>
+                <svg className="w-3.5 h-3.5 text-muted group-hover:text-foreground transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <span className="group-hover:text-foreground transition-colors">Commands</span>
               </span>
               <kbd className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-panel text-muted border border-border">
                 ⌘K
@@ -268,7 +338,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   )}
                 >
                   <div className="flex items-center gap-2.5">
-                    <span className="text-sm opacity-90 group-hover:scale-110 transition-transform" aria-hidden="true">{item.icon}</span>
+                    <NavIcon id={item.iconId} />
                     <span>{item.label}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -305,7 +375,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   )}
                 >
                   <div className="flex items-center gap-2.5">
-                    <span className="text-sm opacity-90 group-hover:scale-110 transition-transform" aria-hidden="true">{item.icon}</span>
+                    <NavIcon id={item.iconId} />
                     <span>{item.label}</span>
                   </div>
                   {active && <span className="w-1.5 h-1.5 rounded-full bg-accent" />}

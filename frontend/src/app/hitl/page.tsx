@@ -48,8 +48,8 @@ function HITLQueueContent() {
     <div className="space-y-6">
       {/* Header & Context */}
       <PageHeader
-        tag={currentAccount ? `Workspace @${currentAccount.login}` : "Human Governance"}
-        title="Human Review & Sign-Offs"
+        tag={currentAccount ? `Workspace @${currentAccount.login}` : "Human governance"}
+        title="Human review queue"
         description={
           currentAccount
             ? `Pull requests escalated for human determination in workspace @${currentAccount.login}.`
@@ -70,11 +70,11 @@ function HITLQueueContent() {
 
       {/* Governance Banner */}
       <div className="p-4 rounded-xl border border-border bg-panel flex items-start sm:items-center gap-3 text-xs text-foreground">
-        <span className="text-base shrink-0" aria-hidden="true">
-          🛡️
-        </span>
+        <svg className="w-4 h-4 text-accent shrink-0 mt-0.5 sm:mt-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
         <div>
-          <span className="font-semibold text-foreground">Consequential Governance Gate: </span>
+          <span className="font-semibold text-foreground">Governance policy: </span>
           Decisions recorded here represent binding human determinations. Approved, rejected, or
           dismissed actions are permanently attributed to your authenticated identity in the audit ledger
           and posted to GitHub. Submitting does not merge the pull request.
@@ -95,8 +95,12 @@ function HITLQueueContent() {
         </Empty>
       ) : pending.length === 0 ? (
         <div className="border border-border rounded-2xl bg-surface p-8 text-center space-y-3 shadow-sm">
-          <div className="text-2xl" aria-hidden="true">
-            📋
+          <div className="w-10 h-10 rounded-xl bg-panel border border-border flex items-center justify-center mx-auto text-muted" aria-hidden="true">
+            <svg className="w-5 h-5 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+              <path d="m9 14 2 2 4-4" />
+            </svg>
           </div>
           <h3 className="text-base font-semibold text-foreground font-mono">
             No Pending Decisions in Scope
@@ -122,7 +126,7 @@ function HITLQueueContent() {
                       {h.repo_full_name} #{h.pr_number}
                     </span>
                     <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-warn/10 text-warn border border-warn/30">
-                      Needs Sign-Off
+                      Needs sign-off
                     </span>
                   </div>
                   <div className="text-sm text-foreground/90 leading-snug break-words">
@@ -145,7 +149,7 @@ function HITLQueueContent() {
                 <div className="shrink-0 flex items-center gap-3 pt-1 sm:pt-0">
                   <VerdictChip verdict={h.agent_verdict} />
                   <span className="text-xs font-medium text-accent group-hover:translate-x-0.5 transition-transform">
-                    Inspect & Decide →
+                    Inspect and decide →
                   </span>
                 </div>
               </Link>

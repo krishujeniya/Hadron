@@ -78,11 +78,11 @@ export default function EconomicsPage() {
 
       {/* Autonomous Cloud Guardrails Banner */}
       <div className="p-4 rounded-xl border border-border bg-panel flex items-start sm:items-center gap-3 text-xs text-foreground">
-        <span className="text-base shrink-0" aria-hidden="true">
-          🛡️
-        </span>
+        <svg className="w-4 h-4 text-accent shrink-0 mt-0.5 sm:mt-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
         <div>
-          <span className="font-semibold text-foreground">Tenant-Scoped Cost Guardrails: </span>
+          <span className="font-semibold text-foreground">Tenant cost guardrails: </span>
           Hadron enforces strict daily spend reservations and advisory per-review budget ceilings.
           Usage metrics are settled against PostgreSQL ledger records in UTC. Provider calls are bounded
           automatically to prevent runaway token spend.

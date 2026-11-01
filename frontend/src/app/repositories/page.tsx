@@ -16,7 +16,7 @@ export default function RepositoriesPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground font-mono">Account Repositories</h1>
+          <h1 className="text-2xl font-semibold text-foreground font-mono">Account repositories</h1>
           <p className="text-muted text-sm mt-1">Please connect or select a GitHub account first.</p>
         </div>
         <div className="border border-border rounded-xl bg-surface p-8 text-center space-y-4 shadow-sm">
@@ -25,7 +25,7 @@ export default function RepositoriesPage() {
             onClick={openAccountModal}
             variant="primary"
           >
-            Select GitHub Account
+            Select GitHub account
           </Button>
         </div>
       </div>
@@ -53,14 +53,17 @@ export default function RepositoriesPage() {
               variant="secondary"
               size="sm"
             >
-              {loadingRepos ? "Refreshing..." : "↻ Refresh"}
+              <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              {loadingRepos ? "Refreshing..." : "Refresh"}
             </Button>
             <Button
               onClick={openAccountModal}
               variant="primary"
               size="sm"
             >
-              Switch Account
+              Switch account
             </Button>
           </>
         }
@@ -138,10 +141,18 @@ export default function RepositoriesPage() {
               <div className="mt-4 pt-3 border-t border-separator flex items-center justify-between text-xs text-muted">
                 <div className="flex items-center gap-3 font-mono text-[11px]">
                   <span title="Stars" className="flex items-center gap-1">
-                    ★ {repo.stargazers_count}
+                    <svg className="w-3 h-3 text-muted" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                    {repo.stargazers_count}
                   </span>
                   <span title="Open Issues & PRs" className="flex items-center gap-1">
-                    ⑂ {repo.open_issues_count}
+                    <svg className="w-3 h-3 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    {repo.open_issues_count}
                   </span>
                   <span className="text-muted/60">
                     branch: {repo.default_branch}

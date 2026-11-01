@@ -164,7 +164,7 @@ export default async function Image() {
                 color: "#38BDF8",
               }}
             >
-              <span>🛡️ Security Sub-Agent</span>
+              <span>Security Specialist</span>
             </div>
             <div
               style={{
@@ -180,7 +180,7 @@ export default async function Image() {
                 color: "#818CF8",
               }}
             >
-              <span>⚡ Quality Sub-Agent</span>
+              <span>Quality Specialist</span>
             </div>
             <div
               style={{
@@ -196,7 +196,7 @@ export default async function Image() {
                 color: "#34D399",
               }}
             >
-              <span>🧪 Coverage Sub-Agent</span>
+              <span>Coverage Specialist</span>
             </div>
             <div
               style={{
@@ -212,7 +212,7 @@ export default async function Image() {
                 color: "#C084FC",
               }}
             >
-              <span>📚 Docs Sub-Agent</span>
+              <span>Documentation Specialist</span>
             </div>
           </div>
 

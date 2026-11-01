@@ -45,7 +45,7 @@ export function FindingCard({ finding, index }: { finding: Finding; index?: numb
             <span>
               :{finding.line_start}
               {finding.line_end && finding.line_end !== finding.line_start
-                ? `–${finding.line_end}`
+                ? `-${finding.line_end}`
                 : ""}
             </span>
           ) : (
