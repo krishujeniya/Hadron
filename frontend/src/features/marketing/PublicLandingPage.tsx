@@ -160,7 +160,7 @@ export function PublicLandingPage() {
   };
 
   const handleCopyMarkdown = () => {
-    const md = `## 🤖 Hadron Review: ${currentDiff.prTitle}
+    const md = `## Hadron Review: ${currentDiff.prTitle}
 **Verdict:** ${currentDiff.verdict} (Confidence: ${Math.round(currentDiff.confidence * 100)}%)
 
 ### Specialist Agent Findings (${currentDiff.findings.length})
@@ -196,7 +196,7 @@ ${currentDiff.findings
           </h1>
 
           <p className="text-base sm:text-lg text-muted leading-relaxed max-w-2xl mx-auto font-sans">
-            Four specialized AI agents inspect your pull request diffs in parallel, analyzing syntax trees and test suites to post deterministic, actionable reviews directly to GitHub.
+            Four specialized review agents inspect your pull request diffs in parallel, analyzing syntax trees and test suites to post deterministic, actionable reviews directly to GitHub.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
@@ -505,7 +505,7 @@ ${currentDiff.findings
         <div className="text-center max-w-2xl mx-auto space-y-3">
           <h2 className="text-3xl font-extrabold font-mono text-foreground">Works with your developer stack</h2>
           <p className="text-sm text-muted">
-            Seamlessly integrates into your existing git workflow with zero changes to developer tooling.
+            Connects directly to your GitHub pull requests with zero changes to existing CI workflows.
           </p>
         </div>
 

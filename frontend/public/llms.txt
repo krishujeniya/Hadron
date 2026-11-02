@@ -1,0 +1,30 @@
+# Hadron
+
+> Autonomous multi-agent pull request review engine for GitHub. Four specialist sub-agents analyze pull request diffs concurrently across security, code quality, test coverage, and documentation.
+
+## Overview
+
+Hadron connects to GitHub pull requests via a native GitHub App or GitHub Actions. When a pull request is opened or updated, Hadron parses the Abstract Syntax Tree (AST), retrieves touched symbols and repository context using Tiger Cloud DiskANN vector search, and fans out analysis across four isolated specialist agents:
+
+1. **Security Specialist**: Identifies OWASP Top 10 vulnerabilities, raw SQL injections, tainted data flows, hardcoded secrets, and dependency CVEs.
+2. **Quality Specialist**: Detects anti-patterns, cyclomatic complexity spikes, goroutine/memory leaks, and framework-specific pitfalls.
+3. **Test Specialist**: Verifies assertion density, flags missing regression tests for modified functions, and checks boundary conditions.
+4. **Documentation Specialist**: Tracks API contract shifts, undocumented exported parameters, and outdated README or OpenAPI specs.
+
+Findings are synthesized through a LangGraph judge node that deduplicates observations and computes Bayesian confidence scores. High-confidence findings are published as inline review comments on GitHub. Low-confidence or high-risk findings (such as database migrations) are routed to an internal Human-in-the-Loop (HITL) queue.
+
+## Key URLs
+
+- Primary Dashboard: https://hadron.vercel.app
+- Python Security Audit: https://hadron.vercel.app/solutions/python-security-audit
+- Next.js PR Review: https://hadron.vercel.app/solutions/nextjs-pr-review
+- FastAPI Code Quality: https://hadron.vercel.app/solutions/fastapi-code-quality
+- Go Concurrency Checker: https://hadron.vercel.app/solutions/go-concurrency-checker
+- GitHub Repository: https://github.com/krishujeniya/Hadron
+
+## Privacy and Operational Guarantees
+
+- **Read-Only Scope**: Hadron only inspects diffs and touched files in the active pull request. Untouched repository files are never accessed.
+- **Zero Model Training**: Customer code is never stored for training or used to train public or proprietary models.
+- **Sandboxed Execution**: AST parsing and evaluation execute in memory-isolated environments with network egress blocked.
+- **Cost Controls**: Daily token budgets and automated circuit breakers isolate upstream LLM provider failures.

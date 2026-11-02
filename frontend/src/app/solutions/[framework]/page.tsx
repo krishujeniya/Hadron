@@ -68,7 +68,7 @@ const SOLUTIONS: Record<string, FrameworkSolution> = {
       },
       {
         question: "Does Hadron support Django, Flask, and FastAPI?",
-        answer: "Yes, Hadron includes tailored heuristics for Django ORM, Flask request handlers, and FastAPI Pydantic request models.",
+        answer: "Yes, Hadron includes dedicated static analysis rules for Django ORM queries, Flask request handlers, and FastAPI Pydantic models.",
       },
     ],
   },
@@ -213,6 +213,8 @@ const SOLUTIONS: Record<string, FrameworkSolution> = {
   },
 };
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://hadron.vercel.app";
+
 export async function generateStaticParams() {
   return Object.keys(SOLUTIONS).map((framework) => ({
     framework,
@@ -237,13 +239,18 @@ export async function generateMetadata({
     description: item.description,
     keywords: item.targetKeywords,
     alternates: {
-      canonical: `https://hadron.dev/solutions/${item.slug}`,
+      canonical: `${BASE_URL}/solutions/${item.slug}`,
     },
     openGraph: {
       title: `${item.title} | Hadron`,
       description: item.description,
-      url: `https://hadron.dev/solutions/${item.slug}`,
-      type: "website",
+      url: `${BASE_URL}/solutions/${item.slug}`,
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${item.title} | Hadron`,
+      description: item.description,
     },
   };
 }
@@ -259,8 +266,33 @@ export default async function SolutionDetailPage({
     notFound();
   }
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    headline: solution.title,
+    description: solution.description,
+    url: `${BASE_URL}/solutions/${solution.slug}`,
+    inLanguage: "en-US",
+    author: {
+      "@type": "Organization",
+      name: "Hadron AI",
+      url: "https://hadron.vercel.app",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Hadron AI",
+      url: "https://hadron.vercel.app",
+      logo: "https://hadron.vercel.app/icon-512.png",
+    },
+    keywords: solution.targetKeywords.join(", "),
+  };
+
   return (
     <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6 space-y-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Breadcrumb / Top Tag */}
       <div className="flex items-center gap-2 text-xs text-muted font-mono">
         <Link href="/" className="hover:text-foreground">Home</Link>

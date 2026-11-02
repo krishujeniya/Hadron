@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Hadron AI PR review engine";
+export const alt = "Hadron Autonomous PR Review Engine";
 export const size = {
   width: 1200,
   height: 630,
@@ -17,14 +17,14 @@ export default async function Image() {
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          backgroundColor: "#0B0D12",
-          color: "#E5E7EB",
+          backgroundColor: "#000000",
+          color: "#FFFFFF",
           padding: "56px 64px",
           fontFamily: "ui-sans-serif, system-ui, sans-serif",
           position: "relative",
         }}
       >
-        {/* Glow backdrop */}
+        {/* Glow backdrop - monochrome sheen */}
         <div
           style={{
             position: "absolute",
@@ -33,7 +33,7 @@ export default async function Image() {
             width: "600px",
             height: "600px",
             borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, rgba(56, 189, 248, 0.05) 50%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, rgba(161, 161, 170, 0.04) 50%, transparent 70%)",
           }}
         />
 
@@ -87,7 +87,7 @@ export default async function Image() {
                   color: "#A1A1AA",
                 }}
               >
-                AUTONOMOUS PR ACCELERATOR
+                AUTONOMOUS PR REVIEW
               </span>
             </div>
           </div>
@@ -99,11 +99,11 @@ export default async function Image() {
               gap: "8px",
               padding: "8px 18px",
               borderRadius: "9999px",
-              backgroundColor: "rgba(99, 102, 241, 0.15)",
-              border: "1px solid rgba(99, 102, 241, 0.35)",
+              backgroundColor: "rgba(255, 255, 255, 0.08)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
               fontSize: "13px",
               fontWeight: 700,
-              color: "#A5B4FC",
+              color: "#FFFFFF",
               letterSpacing: "1px",
             }}
           >
@@ -115,7 +115,7 @@ export default async function Image() {
         <div style={{ display: "flex", flexDirection: "column", gap: "16px", zIndex: 10 }}>
           <div
             style={{
-              fontSize: "58px",
+              fontSize: "56px",
               fontWeight: 800,
               lineHeight: 1.12,
               color: "#FFFFFF",
@@ -123,12 +123,12 @@ export default async function Image() {
               letterSpacing: "-1px",
             }}
           >
-            Multi-Agent PR Reviews With PhD-Level Precision.
+            Autonomous Multi-Agent PR Review Engine
           </div>
           <div
             style={{
               fontSize: "22px",
-              color: "#8A93A6",
+              color: "#A1A1AA",
               maxWidth: "840px",
               lineHeight: 1.4,
             }}
@@ -145,7 +145,7 @@ export default async function Image() {
             justifyContent: "space-between",
             width: "100%",
             paddingTop: "24px",
-            borderTop: "1px solid rgba(31, 36, 48, 0.8)",
+            borderTop: "1px solid rgba(39, 39, 42, 0.8)",
             zIndex: 10,
           }}
         >
@@ -220,7 +220,7 @@ export default async function Image() {
             style={{
               fontSize: "13px",
               fontFamily: "monospace",
-              color: "#8A93A6",
+              color: "#A1A1AA",
             }}
           >
             Tiger Cloud • DiskANN • LangGraph

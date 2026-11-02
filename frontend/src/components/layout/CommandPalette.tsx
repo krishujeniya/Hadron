@@ -287,7 +287,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         {/* Footer shortcuts helper */}
         <div className="flex items-center justify-between pt-2 border-t border-border text-[10px] text-muted font-mono">
           <div className="flex items-center gap-3">
-            <span>↑↓ Navigate</span>
+            <span>↑↓ Move</span>
             <span>↵ Select</span>
             <span>Esc Close</span>
           </div>

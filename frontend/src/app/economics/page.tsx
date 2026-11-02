@@ -97,7 +97,7 @@ export default function EconomicsPage() {
           </div>
           <div className="text-xs text-muted font-mono">
             {budget
-              ? `${pct(budget.daily_utilization)} utilized`
+              ? `${pct(budget.daily_utilization)} used`
               : budErr
               ? "Telemetry unavailable"
               : "Checking budget…"}
@@ -114,7 +114,7 @@ export default function EconomicsPage() {
           <>
             <div
               role="progressbar"
-              aria-label="Daily budget utilization"
+              aria-label="Daily budget usage"
               aria-valuenow={Math.round(budget.daily_utilization * 100)}
               aria-valuemin={0}
               aria-valuemax={100}
