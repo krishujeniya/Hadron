@@ -640,9 +640,9 @@ langgraph-sdk==0.3.14 \
     --hash=sha256:68935bf6f4924eda92617a9e5dfb4f4281197508c648cb9d62ff083907607f9d \
     --hash=sha256:acd1674c538e97f3cdaa610f6dd7e34bc9bad30167f0ccc482dcd563325e81f5
     # via langgraph
-langsmith==0.8.3 \
-    --hash=sha256:767ff7a8d136ed42926bf99059ac631dc6883542d6e3104b32e71c7625e1fa05 \
-    --hash=sha256:b2e40e308222fa0beb2dccee3b4b30bfee9062d7a4f20a3e3e93df3c51a08ab4
+langsmith==0.14.16 \
+    --hash=sha256:4e5816cbe1541f4d04d71f652eb8f4137889861bebcf7137bcba3553ae9e335e \
+    --hash=sha256:b9ea1a57622b0788b181d78605f974fb206c5f6f75793076ffec23cef4d904c8
     # via langchain-core
 numpy==2.2.6 ; python_full_version < '3.11' \
     --hash=sha256:038613e9fb8c72b0a41f025a7e4c3f0b7a1b5d768ece4796b674c8f3fe13efff \
