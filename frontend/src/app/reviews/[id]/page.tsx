@@ -232,7 +232,7 @@ export default function ReviewDetailPage() {
             onClick={() => setActiveView("findings")}
             className={`min-h-[44px] rounded-xl px-4 text-xs font-medium transition-colors ${
               activeView === "findings"
-                ? "bg-primary-action text-white font-semibold shadow-xs"
+                ? "bg-primary-action text-white dark:text-black font-semibold shadow-xs"
                 : "text-muted hover:text-foreground hover:bg-surface border border-border"
             }`}
           >
@@ -244,7 +244,7 @@ export default function ReviewDetailPage() {
             onClick={() => setActiveView("diff")}
             className={`min-h-[44px] rounded-xl px-4 text-xs font-medium transition-colors ${
               activeView === "diff"
-                ? "bg-primary-action text-white font-semibold shadow-xs"
+                ? "bg-primary-action text-white dark:text-black font-semibold shadow-xs"
                 : "text-muted hover:text-foreground hover:bg-surface border border-border"
             }`}
           >

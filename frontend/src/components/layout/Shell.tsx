@@ -151,7 +151,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={openAccountModal}
-              className="inline-flex min-h-[44px] items-center px-4 py-2 bg-primary-action text-white hover:bg-primary-action/90 text-xs font-semibold rounded-xl transition shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="inline-flex min-h-[44px] items-center px-4 py-2 bg-primary-action text-white dark:text-black hover:opacity-90 text-xs font-semibold rounded-xl transition shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               Sign In to App →
             </button>
@@ -163,7 +163,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <section className="max-w-lg mx-auto px-6 py-20 space-y-4">
               <h1 className="text-2xl font-semibold">Sign in to your workspace</h1>
               <p className="text-muted">Authenticate with GitHub to view your reviews and repository activity.</p>
-              <button type="button" onClick={openAccountModal} className="min-h-[44px] px-4 py-2 rounded-lg bg-primary-action text-white">Sign in with GitHub</button>
+              <button type="button" onClick={openAccountModal} className="min-h-[44px] px-4 py-2 rounded-lg bg-primary-action text-white dark:text-black font-semibold hover:opacity-90 transition">Sign in with GitHub</button>
             </section>
           )}
         </main>

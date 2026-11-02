@@ -154,7 +154,7 @@ export function PlainEnglishAssistant({ recentReviews, accountName }: PlainEngli
         <button
           type="submit"
           disabled={isThinking || !customInput.trim()}
-          className="px-4 py-2 bg-primary-action text-white hover:bg-primary-action/90 font-medium text-xs rounded-xl transition disabled:opacity-50 shrink-0 shadow-sm"
+          className="px-4 py-2 bg-primary-action text-white dark:text-black font-semibold text-xs rounded-xl transition hover:opacity-90 disabled:opacity-50 shrink-0 shadow-sm"
         >
           {isThinking ? "Analyzing..." : "Ask Assistant"}
         </button>

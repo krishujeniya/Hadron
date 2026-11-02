@@ -142,7 +142,7 @@ export function BangMotionPipeline() {
     >
       {/* Background Ambient Depth Grid & Camera Horizon */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.04] bg-[radial-gradient(#93c5fd_1px,transparent_1px)] [background-size:16px_16px]"
+        className="pointer-events-none absolute inset-0 opacity-[0.04] bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px]"
         aria-hidden="true"
       />
       <div

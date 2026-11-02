@@ -57,9 +57,9 @@ export default async function Image() {
             >
               <defs>
                 <linearGradient id="hadronOgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#38BDF8" />
-                  <stop offset="50%" stopColor="#6366F1" />
-                  <stop offset="100%" stopColor="#A855F7" />
+                  <stop offset="0%" stopColor="#FFFFFF" />
+                  <stop offset="50%" stopColor="#A1A1AA" />
+                  <stop offset="100%" stopColor="#52525B" />
                 </linearGradient>
               </defs>
               <circle cx="50" cy="50" r="42" stroke="url(#hadronOgGrad)" strokeWidth="4" strokeDasharray="8 6" opacity="0.6" />
@@ -84,7 +84,7 @@ export default async function Image() {
                   fontSize: "12px",
                   fontWeight: 600,
                   letterSpacing: "2px",
-                  color: "#38BDF8",
+                  color: "#A1A1AA",
                 }}
               >
                 AUTONOMOUS PR ACCELERATOR
@@ -157,11 +157,11 @@ export default async function Image() {
                 gap: "8px",
                 padding: "8px 14px",
                 borderRadius: "8px",
-                backgroundColor: "rgba(17, 20, 27, 0.85)",
-                border: "1px solid rgba(56, 189, 248, 0.3)",
+                backgroundColor: "rgba(24, 24, 27, 0.85)",
+                border: "1px solid rgba(255, 255, 255, 0.15)",
                 fontSize: "13px",
                 fontWeight: 600,
-                color: "#38BDF8",
+                color: "#FFFFFF",
               }}
             >
               <span>Security Specialist</span>
@@ -173,11 +173,11 @@ export default async function Image() {
                 gap: "8px",
                 padding: "8px 14px",
                 borderRadius: "8px",
-                backgroundColor: "rgba(17, 20, 27, 0.85)",
-                border: "1px solid rgba(99, 102, 241, 0.3)",
+                backgroundColor: "rgba(24, 24, 27, 0.85)",
+                border: "1px solid rgba(255, 255, 255, 0.15)",
                 fontSize: "13px",
                 fontWeight: 600,
-                color: "#818CF8",
+                color: "#E4E4E7",
               }}
             >
               <span>Quality Specialist</span>
@@ -189,11 +189,11 @@ export default async function Image() {
                 gap: "8px",
                 padding: "8px 14px",
                 borderRadius: "8px",
-                backgroundColor: "rgba(17, 20, 27, 0.85)",
-                border: "1px solid rgba(16, 185, 129, 0.3)",
+                backgroundColor: "rgba(24, 24, 27, 0.85)",
+                border: "1px solid rgba(255, 255, 255, 0.15)",
                 fontSize: "13px",
                 fontWeight: 600,
-                color: "#34D399",
+                color: "#D4D4D8",
               }}
             >
               <span>Coverage Specialist</span>
@@ -205,11 +205,11 @@ export default async function Image() {
                 gap: "8px",
                 padding: "8px 14px",
                 borderRadius: "8px",
-                backgroundColor: "rgba(17, 20, 27, 0.85)",
-                border: "1px solid rgba(168, 85, 247, 0.3)",
+                backgroundColor: "rgba(24, 24, 27, 0.85)",
+                border: "1px solid rgba(255, 255, 255, 0.15)",
                 fontSize: "13px",
                 fontWeight: 600,
-                color: "#C084FC",
+                color: "#A1A1AA",
               }}
             >
               <span>Documentation Specialist</span>

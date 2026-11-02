@@ -285,7 +285,7 @@ export default async function SolutionDetailPage({
         <div className="pt-2 flex flex-wrap items-center gap-4">
           <Link
             href="/"
-            className="px-6 py-3 rounded-xl bg-primary-action hover:bg-primary-action/90 text-white font-semibold text-sm transition shadow-sm"
+            className="px-6 py-3 rounded-xl bg-primary-action hover:opacity-90 text-white dark:text-black font-semibold text-sm transition shadow-sm"
           >
             Deploy Hadron on GitHub free →
           </Link>
@@ -384,7 +384,7 @@ export default async function SolutionDetailPage({
         </p>
         <Link
           href="/"
-          className="inline-block px-8 py-3.5 rounded-xl bg-primary-action hover:bg-primary-action/90 text-white font-semibold text-sm transition shadow-sm"
+          className="inline-block px-8 py-3.5 rounded-xl bg-primary-action hover:opacity-90 text-white dark:text-black font-semibold text-sm transition shadow-sm"
         >
           Get started with GitHub OAuth →
         </Link>

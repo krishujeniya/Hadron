@@ -191,7 +191,7 @@ ${currentDiff.findings
             <span>Autonomous code review for GitHub pull requests</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-foreground leading-[1.12]">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-b from-white via-zinc-100 to-zinc-400 dark:from-white dark:via-zinc-100 dark:to-zinc-400 bg-clip-text text-transparent leading-[1.12]">
             Autonomous code reviews that catch critical vulnerabilities, logic flaws, and test gaps before you merge.
           </h1>
 
@@ -203,7 +203,7 @@ ${currentDiff.findings
             <button
               type="button"
               onClick={openAccountModal}
-              className="w-full sm:w-auto inline-flex min-h-[44px] items-center justify-center px-6 py-3 rounded-xl bg-primary-action text-white font-semibold text-sm hover:bg-primary-action/90 active:scale-95 transition-all shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="w-full sm:w-auto inline-flex min-h-[44px] items-center justify-center px-6 py-3 rounded-xl bg-primary-action text-white dark:text-black font-semibold text-sm hover:opacity-90 active:scale-95 transition-all shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
@@ -354,7 +354,7 @@ ${currentDiff.findings
                 type="button"
                 onClick={handleRunReview}
                 disabled={isRunningReview}
-                className="inline-flex min-h-[44px] items-center px-4 py-2 rounded-xl bg-primary-action text-white text-xs font-semibold hover:bg-primary-action/90 active:scale-95 transition-all disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                className="inline-flex min-h-[44px] items-center px-4 py-2 rounded-xl bg-primary-action text-white dark:text-black text-xs font-semibold hover:opacity-90 active:scale-95 transition-all disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
                 {isRunningReview ? "Analyzing diff..." : "Run review again"}
               </button>
@@ -634,7 +634,7 @@ ${currentDiff.findings
             <button
               type="button"
               onClick={openAccountModal}
-              className="w-full inline-flex min-h-[44px] items-center justify-center rounded-xl bg-primary-action text-white text-xs font-mono font-semibold hover:bg-primary-action/90 transition-colors shadow-sm"
+              className="w-full inline-flex min-h-[44px] items-center justify-center rounded-xl bg-primary-action text-white dark:text-black text-xs font-mono font-semibold hover:opacity-90 transition-colors shadow-sm"
             >
               Start team trial
             </button>
@@ -732,7 +732,7 @@ ${currentDiff.findings
             <button
               type="button"
               onClick={openAccountModal}
-              className="w-full sm:w-auto inline-flex min-h-[44px] items-center justify-center px-8 py-3 rounded-xl bg-primary-action text-white font-semibold text-sm hover:bg-primary-action/90 active:scale-95 transition-all shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="w-full sm:w-auto inline-flex min-h-[44px] items-center justify-center px-8 py-3 rounded-xl bg-primary-action text-white dark:text-black font-semibold text-sm hover:opacity-90 active:scale-95 transition-all shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               Install Hadron for GitHub
             </button>

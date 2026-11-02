@@ -84,7 +84,7 @@ export default function HealthPage() {
             </p>
           </div>
           {isTigerDegraded && (
-            <div className="px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-400 text-xs font-mono">
+            <div className="px-3 py-1.5 rounded-lg border border-warn/30 bg-warn/10 text-warn text-xs font-mono">
               Vector RAG Degraded (Soft Fallback)
             </div>
           )}
@@ -187,7 +187,7 @@ export default function HealthPage() {
                 <span className="text-muted">Fleet Heartbeat:</span>
                 <span
                   className={
-                    readyData?.services?.worker === "ok" ? "text-ok" : "text-amber-500"
+                    readyData?.services?.worker === "ok" ? "text-ok" : "text-warn"
                   }
                 >
                   {readyData?.services?.worker || "offline"}
@@ -243,7 +243,7 @@ export default function HealthPage() {
                   className={
                     readyData?.services?.tiger?.startsWith("ok")
                       ? "text-ok"
-                      : "text-amber-500"
+                      : "text-warn"
                   }
                 >
                   {readyData?.services?.tiger || "unconfigured"}
@@ -279,7 +279,7 @@ export default function HealthPage() {
                         ? "text-ok"
                         : b.state === "OPEN"
                         ? "text-err font-bold"
-                        : "text-amber-500"
+                        : "text-warn"
                     }
                   >
                     {b.state}
