@@ -537,6 +537,95 @@ ${currentDiff.findings
       </section>
 
       {/* ------------------------------------------------------------------ */}
+      {/* SECTION 5B: SPECIALIZED SOLUTIONS BY STACK                          */}
+      {/* ------------------------------------------------------------------ */}
+      <section id="solutions" className="px-4 sm:px-6 max-w-6xl mx-auto scroll-mt-24 space-y-8">
+        <div className="text-center max-w-2xl mx-auto space-y-3">
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-accent/10 text-accent text-xs font-mono font-semibold">
+            Dedicated framework analyzers
+          </div>
+          <h2 className="text-3xl font-extrabold font-mono text-foreground">Specialized solutions by stack</h2>
+          <p className="text-sm text-muted">
+            Static analysis rules crafted for your specific runtime, framework conventions, and concurrency models.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Link
+            href="/solutions/python-security-audit"
+            className="group rounded-2xl border border-border bg-surface p-6 flex flex-col justify-between space-y-4 hover:border-accent/40 transition-colors shadow-sm"
+          >
+            <div className="space-y-3">
+              <div className="font-mono text-xs font-semibold text-accent uppercase">Python & Django</div>
+              <h3 className="font-bold text-base font-mono text-foreground group-hover:text-accent transition-colors">
+                Python Security Audit
+              </h3>
+              <p className="text-xs text-muted leading-relaxed">
+                Taint analysis across SQLAlchemy, raw SQL queries, and subprocess sinks to eliminate injections and CVEs.
+              </p>
+            </div>
+            <span className="text-xs font-mono font-medium text-foreground flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+              Explore Python rules →
+            </span>
+          </Link>
+
+          <Link
+            href="/solutions/nextjs-pr-review"
+            className="group rounded-2xl border border-border bg-surface p-6 flex flex-col justify-between space-y-4 hover:border-accent/40 transition-colors shadow-sm"
+          >
+            <div className="space-y-3">
+              <div className="font-mono text-xs font-semibold text-accent uppercase">Next.js & React</div>
+              <h3 className="font-bold text-base font-mono text-foreground group-hover:text-accent transition-colors">
+                Next.js PR Review
+              </h3>
+              <p className="text-xs text-muted leading-relaxed">
+                Guarantees Server and Client Component separation, flags async fetch waterfalls, and checks Core Web Vitals.
+              </p>
+            </div>
+            <span className="text-xs font-mono font-medium text-foreground flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+              Explore Next.js rules →
+            </span>
+          </Link>
+
+          <Link
+            href="/solutions/fastapi-code-quality"
+            className="group rounded-2xl border border-border bg-surface p-6 flex flex-col justify-between space-y-4 hover:border-accent/40 transition-colors shadow-sm"
+          >
+            <div className="space-y-3">
+              <div className="font-mono text-xs font-semibold text-accent uppercase">FastAPI & AsyncIO</div>
+              <h3 className="font-bold text-base font-mono text-foreground group-hover:text-accent transition-colors">
+                FastAPI Code Quality
+              </h3>
+              <p className="text-xs text-muted leading-relaxed">
+                Detects event loop blocking, validates async context managers, and audits Pydantic v2 migrations.
+              </p>
+            </div>
+            <span className="text-xs font-mono font-medium text-foreground flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+              Explore FastAPI rules →
+            </span>
+          </Link>
+
+          <Link
+            href="/solutions/go-concurrency-checker"
+            className="group rounded-2xl border border-border bg-surface p-6 flex flex-col justify-between space-y-4 hover:border-accent/40 transition-colors shadow-sm"
+          >
+            <div className="space-y-3">
+              <div className="font-mono text-xs font-semibold text-accent uppercase">Golang Concurrency</div>
+              <h3 className="font-bold text-base font-mono text-foreground group-hover:text-accent transition-colors">
+                Go Concurrency Checker
+              </h3>
+              <p className="text-xs text-muted leading-relaxed">
+                Tracks goroutine termination paths, identifies unbuffered channel deadlocks, and enforces mutex lock ordering.
+              </p>
+            </div>
+            <span className="text-xs font-mono font-medium text-foreground flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+              Explore Go rules →
+            </span>
+          </Link>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
       {/* SECTION 6: SECURITY & PERMISSIONS (PLAIN WORDS)                    */}
       {/* ------------------------------------------------------------------ */}
       <section id="security" className="px-4 sm:px-6 max-w-6xl mx-auto scroll-mt-24">
@@ -748,6 +837,116 @@ ${currentDiff.findings
           </p>
         </div>
       </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* SECTION 10: HUMAN-FIRST DEVELOPER FOOTER & TOPICAL SITEMAP         */}
+      {/* ------------------------------------------------------------------ */}
+      <footer className="border-t border-border pt-12 pb-6 px-4 sm:px-6 max-w-6xl mx-auto text-xs font-mono text-muted space-y-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="space-y-3">
+            <div className="font-bold text-foreground uppercase tracking-wider text-[11px]">Solutions</div>
+            <ul className="space-y-2">
+              <li>
+                <Link href="/solutions/python-security-audit" className="hover:text-foreground transition-colors">
+                  Python Security Audit
+                </Link>
+              </li>
+              <li>
+                <Link href="/solutions/nextjs-pr-review" className="hover:text-foreground transition-colors">
+                  Next.js PR Review
+                </Link>
+              </li>
+              <li>
+                <Link href="/solutions/fastapi-code-quality" className="hover:text-foreground transition-colors">
+                  FastAPI Code Quality
+                </Link>
+              </li>
+              <li>
+                <Link href="/solutions/go-concurrency-checker" className="hover:text-foreground transition-colors">
+                  Go Concurrency Checker
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div className="space-y-3">
+            <div className="font-bold text-foreground uppercase tracking-wider text-[11px]">Platform</div>
+            <ul className="space-y-2">
+              <li>
+                <Link href="/reviews" className="hover:text-foreground transition-colors">
+                  Code Reviews
+                </Link>
+              </li>
+              <li>
+                <Link href="/hitl" className="hover:text-foreground transition-colors">
+                  Human Triage Queue
+                </Link>
+              </li>
+              <li>
+                <Link href="/repositories" className="hover:text-foreground transition-colors">
+                  Repositories
+                </Link>
+              </li>
+              <li>
+                <Link href="/economics" className="hover:text-foreground transition-colors">
+                  Usage & Cost Ledger
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div className="space-y-3">
+            <div className="font-bold text-foreground uppercase tracking-wider text-[11px]">Observability</div>
+            <ul className="space-y-2">
+              <li>
+                <Link href="/health" className="hover:text-foreground transition-colors">
+                  System Health & Uptime
+                </Link>
+              </li>
+              <li>
+                <a href="/llms.txt" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
+                  llms.txt (AI Discovery)
+                </a>
+              </li>
+              <li>
+                <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
+                  Sitemap Index
+                </a>
+              </li>
+              <li>
+                <a href="/robots.txt" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
+                  Robots Access Policy
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          <div className="space-y-3">
+            <div className="font-bold text-foreground uppercase tracking-wider text-[11px]">Engineering</div>
+            <ul className="space-y-2">
+              <li>
+                <a href="https://github.com/krishujeniya/Hadron" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
+                  GitHub Repository
+                </a>
+              </li>
+              <li>
+                <span className="text-muted/60">Tree-sitter AST</span>
+              </li>
+              <li>
+                <span className="text-muted/60">Tiger Cloud DiskANN</span>
+              </li>
+              <li>
+                <span className="text-muted/60">LangGraph State Machine</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="border-t border-border/60 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px]">
+          <p>© 2026 Hadron. Autonomous pull request review engine for GitHub.</p>
+          <p>Zero customer code training · Read-only PR diff access · Ephemeral sandboxes</p>
+        </div>
+      </footer>
     </div>
   );
 }

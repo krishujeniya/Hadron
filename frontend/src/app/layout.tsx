@@ -69,20 +69,38 @@ const schemaOrgData = {
       mainEntity: [
         {
           "@type": "Question",
-          name: "What is Hadron PR Review Engine?",
+          name: "How does Hadron prevent hallucinations common in AI chatbots?",
           acceptedAnswer: {
             "@type": "Answer",
             text:
-              "Hadron is an autonomous pull request review engine that coordinates Security, Quality, Test, and Documentation agents in parallel with calibrated confidence scoring and human-in-the-loop escalation.",
+              "Rather than asking a single general-purpose chat model to review raw files, Hadron parses the Abstract Syntax Tree, extracts modified symbols, and runs deterministic rule validators. Every reported issue requires exact file, line number, and rule citations.",
           },
         },
         {
           "@type": "Question",
-          name: "How does Hadron coordinate multiple specialist agents?",
+          name: "Can Hadron automatically approve or block pull requests?",
           acceptedAnswer: {
             "@type": "Answer",
             text:
-              "Hadron uses LangGraph state machines to fan out review tasks across specialist models with per-agent timeouts and combines findings via Bayesian confidence-weighted voting with human-in-the-loop escalation.",
+              "Yes. Hadron can be added to your GitHub branch protection rules as a required status check. Depending on your configuration, clean reviews pass immediately, while critical security flaws request changes and block merge.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "What permissions does the GitHub App require?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text:
+              "The GitHub App requests read access to pull request diffs and repository metadata, and write access to pull request reviews and status checks. It does not require admin, billing, or organization-level write permissions.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "How does the Human-in-the-Loop review queue work?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text:
+              "When an agent computes confidence below your configured threshold (such as 85%), or flags high-risk database migrations, the PR is routed to your Hadron HITL queue for human sign-off before comments are published to GitHub.",
           },
         },
         {
@@ -92,15 +110,6 @@ const schemaOrgData = {
             "@type": "Answer",
             text:
               "No. Source code is processed ephemerally in memory-isolated sandboxes with network egress blocked. Code is never used to train public or proprietary machine learning models.",
-          },
-        },
-        {
-          "@type": "Question",
-          name: "Can Hadron block pull requests with critical vulnerabilities?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text:
-              "Yes. Hadron integrates with GitHub branch protection as a required status check. Critical security issues or regressions request changes and block merge.",
           },
         },
       ],

@@ -70,6 +70,10 @@ const SOLUTIONS: Record<string, FrameworkSolution> = {
         question: "Does Hadron support Django, Flask, and FastAPI?",
         answer: "Yes, Hadron includes dedicated static analysis rules for Django ORM queries, Flask request handlers, and FastAPI Pydantic models.",
       },
+      {
+        question: "Can Hadron prevent secrets and API keys from leaking into pull requests?",
+        answer: "Yes. Hadron runs regex and Shannon entropy scanners on modified lines to detect hardcoded AWS tokens, GitHub PATs, private keys, and database connection strings before comments are posted.",
+      },
     ],
   },
   "nextjs-pr-review": {
@@ -119,6 +123,10 @@ const SOLUTIONS: Record<string, FrameworkSolution> = {
         question: "How does this compare to ESLint?",
         answer: "Hadron operates cross-file with codebase memory, identifying subtle architectural traps that static linters miss.",
       },
+      {
+        question: "How does Hadron flag React Server Component data waterfalls?",
+        answer: "Hadron analyzes async Server Components for sequential await expressions where queries do not depend on preceding results, advising developers to use Promise.all() or parallel Suspense boundaries.",
+      },
     ],
   },
   "fastapi-code-quality": {
@@ -164,6 +172,14 @@ const SOLUTIONS: Record<string, FrameworkSolution> = {
         question: "Can Hadron detect synchronous DB calls in FastAPI?",
         answer: "Yes, it detects sync session queries executed within async handlers and recommends async_sessionmaker.",
       },
+      {
+        question: "Does Hadron support Pydantic v1 and v2 simultaneously?",
+        answer: "Yes. Hadron inspects the installed Pydantic version in project dependencies and flags deprecated v1 syntax only when upgrading to v2.",
+      },
+      {
+        question: "How does Hadron flag blocking CPU operations?",
+        answer: "Hadron parses route definition ASTs. If an async def handler contains synchronous network calls or heavy loops, it advises offloading to anyio.to_thread.run_sync or run_in_threadpool.",
+      },
     ],
   },
   "go-concurrency-checker": {
@@ -208,6 +224,14 @@ const SOLUTIONS: Record<string, FrameworkSolution> = {
       {
         question: "Does Hadron support Go 1.21+ toolchains?",
         answer: "Yes, including modern standard library slog structured logging and generics semantics.",
+      },
+      {
+        question: "Can Hadron detect data races without executing test binaries?",
+        answer: "Hadron uses static synchronization graph analysis on git diffs to detect shared memory writes without mutex protection, complementing the Go runtime race detector (go test -race).",
+      },
+      {
+        question: "How are unbuffered channel deadlocks caught?",
+        answer: "Hadron inspects channel creation AST nodes and verifies that goroutine sends have a matching concurrent receiver or select timeout case to avoid permanent channel blocking.",
       },
     ],
   },
@@ -268,23 +292,38 @@ export default async function SolutionDetailPage({
 
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "TechArticle",
-    headline: solution.title,
-    description: solution.description,
-    url: `${BASE_URL}/solutions/${solution.slug}`,
-    inLanguage: "en-US",
-    author: {
-      "@type": "Organization",
-      name: "Hadron AI",
-      url: "https://hadron.vercel.app",
-    },
-    publisher: {
-      "@type": "Organization",
-      name: "Hadron AI",
-      url: "https://hadron.vercel.app",
-      logo: "https://hadron.vercel.app/icon-512.png",
-    },
-    keywords: solution.targetKeywords.join(", "),
+    "@graph": [
+      {
+        "@type": "TechArticle",
+        headline: solution.title,
+        description: solution.description,
+        url: `${BASE_URL}/solutions/${solution.slug}`,
+        inLanguage: "en-US",
+        author: {
+          "@type": "Organization",
+          name: "Hadron AI",
+          url: "https://hadron.vercel.app",
+        },
+        publisher: {
+          "@type": "Organization",
+          name: "Hadron AI",
+          url: "https://hadron.vercel.app",
+          logo: "https://hadron.vercel.app/icon-512.png",
+        },
+        keywords: solution.targetKeywords.join(", "),
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: solution.faqs.map((faq) => ({
+          "@type": "Question",
+          name: faq.question,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: faq.answer,
+          },
+        })),
+      },
+    ],
   };
 
   return (
