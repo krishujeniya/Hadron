@@ -5,10 +5,10 @@ import useSWR from "swr";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
-import { FindingsByAgent } from "@/components/AgentFindingCard";
+import { FindingsByAgent } from "@/features/reviews/AgentFindingCard";
 
 const DiffViewer = dynamic(
-  () => import("@/components/DiffViewer").then((mod) => mod.DiffViewer),
+  () => import("@/features/reviews/DiffViewer").then((mod) => mod.DiffViewer),
   {
     loading: () => (
       <div className="rounded-xl border border-border bg-panel p-8 text-center text-sm text-muted">
@@ -17,12 +17,12 @@ const DiffViewer = dynamic(
     ),
   }
 );
-import { ReviewStatusBadge } from "@/components/ReviewStatusBadge";
-import { VerdictChip } from "@/components/VerdictChip";
-import { ExecutiveReviewSummary } from "@/components/ExecutiveReviewSummary";
-import { Empty } from "@/components/Empty";
+import { ReviewStatusBadge } from "@/features/reviews/ReviewStatusBadge";
+import { VerdictChip } from "@/features/reviews/VerdictChip";
+import { ExecutiveReviewSummary } from "@/features/reviews/ExecutiveReviewSummary";
+import { Empty } from "@/components/ui/Empty";
 import { Button } from "@/components/ui/Button";
-import { useGitHubAccount } from "@/lib/githubContext";
+import { useGitHubAccount } from "@/features/auth/github-context";
 import { api } from "@/lib/api";
 import type { ReviewDetail } from "@/lib/types";
 

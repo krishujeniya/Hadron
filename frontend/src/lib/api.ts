@@ -160,6 +160,9 @@ export function clearClientTenantData(): void {
 export const api = {
   // ── Auth ─────────────────────────────────────────────────────────
   auth: {
+    callback: (code: string, state: string) => req<AccountProfile>("/api/v1/auth/github/callback", {
+      method: "POST", body: JSON.stringify({ code, state }),
+    }),
     me: (signal?: AbortSignal) => req<AccountProfile>("/api/v1/auth/me", { signal }),
     logout: () => req<{ status: string }>("/api/v1/auth/logout", { method: "POST" }),
     repos: (account: string, signal?: AbortSignal) =>

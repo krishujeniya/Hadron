@@ -1,7 +1,7 @@
 # One-shot migrations
 
 Project uses SQLAlchemy `create_all_tables()` (no Alembic — see
-`docs/FUTURE_WORK.md` Phase 15). When a column type needs to change on a
+`docs/product/roadmap.md` Phase 15). When a column type needs to change on a
 table that already exists in production, the change is captured here as a
 one-shot script. Run once against the live DB, then leave in tree for
 audit.

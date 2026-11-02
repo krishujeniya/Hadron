@@ -1,0 +1,35 @@
+{
+  "verified_at": "2026-11-02T03:02:04.070063+00:00",
+  "moved_files": 91,
+  "python_suite": "414 passed, 1 deselected, 107 warnings in 40.41s",
+  "frontend_typecheck": "PASS",
+  "frontend_build": "PASS; 18 static pages and dynamic HITL/review routes",
+  "frontend_browser": {
+    "results": [
+      "shared sign-in, forged-storage rejection, focus trap and overflow at 375px: PASS",
+      "shared sign-in, forged-storage rejection, focus trap and overflow at 768px: PASS",
+      "shared sign-in, forged-storage rejection, focus trap and overflow at 1280px: PASS",
+      "single dashboard with legacy executive preference and session reload: PASS",
+      "single dashboard with legacy developer preference and session reload: PASS",
+      "OAuth callback exchanges code once and opens dashboard: PASS",
+      "API outage shows unavailable state without false healthy status: PASS"
+    ],
+    "verdict": "PASS"
+  },
+  "structure_checker": "PASS: 91 destinations, old source removal, frontend aliases and shared component boundaries",
+  "frontend_behavior_preservation": "PASS: normalized TypeScript AST equality across 48 source files",
+  "backend_behavior_preservation": "PASS: Python AST equality against pre-move working tree",
+  "assets_and_sql": "PASS: byte equality against pre-move working tree",
+  "deployment_files": "PASS: byte equality across 10 entrypoint/config files",
+  "local_markdown_links": "PASS: README, tests/README and all docs Markdown checked; zero broken local links",
+  "ruff": "PASS: backend tests scripts api",
+  "git_diff_check": "PASS",
+  "python_lock": "PASS: uv lock --check",
+  "npm_lock": "PASS: npm ci --ignore-scripts --dry-run --prefix frontend",
+  "production_deployment_performed": false,
+  "limits": [
+    "Browser API responses are mocked",
+    "GitHub CI workflow has not executed this change",
+    "Existing production worker/environment blockers remain open"
+  ]
+}

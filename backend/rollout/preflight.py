@@ -196,7 +196,8 @@ async def run_migration_preflight(cfg: Settings | None = None) -> PreflightRepor
 
     try:
         from backend.database.postgres import check_schema_readiness
-        is_ready, details = await check_schema_readiness()
+        timeout = max(10.0, getattr(cfg, "probe_timeout_seconds", 10.0))
+        is_ready, details = await check_schema_readiness(timeout_seconds=timeout)
         if is_ready:
             checks.append(PreflightCheckResult(
                 check_name="schema_tables_readiness",

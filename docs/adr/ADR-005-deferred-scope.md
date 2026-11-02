@@ -2,7 +2,7 @@
 
 Status: Accepted
 Date: 2026-05-15
-Related: ADR-001, ADR-002, ADR-003, ADR-004; `docs/FUTURE_WORK.md`
+Related: ADR-001, ADR-002, ADR-003, ADR-004; `docs/product/roadmap.md`
 
 ## Context
 
@@ -25,7 +25,7 @@ treat the existing scaffolding as half-finished work to be ripped out.
 ## Decision
 
 Defer Phase 15, 17, and 20 in their entirety. Document the deferral
-in `docs/FUTURE_WORK.md`. Keep — not delete — the partial hooks that
+in `docs/product/roadmap.md`. Keep — not delete — the partial hooks that
 already exist in the tree, because removing them now would force
 re-instrumentation later when the phase is actually picked up.
 
@@ -106,7 +106,7 @@ Don't.
 
 Positive
     - The repo is honest about what's shipped and what isn't.
-      `docs/FUTURE_WORK.md` is the single source of truth for deferred
+      `docs/product/roadmap.md` is the single source of truth for deferred
       scope.
     - Future re-instrumentation cost is paid down (hooks are already
       in place where they belong).
@@ -116,7 +116,7 @@ Positive
 
 Negative
     - A reader of the codebase might mistake an unused hook for
-      forgotten work. Mitigated by `docs/FUTURE_WORK.md` and by this
+      forgotten work. Mitigated by `docs/product/roadmap.md` and by this
       ADR being linked from the README.
     - If priorities change and Phase 15/17/20 are abandoned outright
       (not just deferred), the kept hooks become genuine dead code.

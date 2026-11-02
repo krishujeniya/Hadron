@@ -1,0 +1,20 @@
+{
+  "checked_at": "2026-11-02T02:50:12.728271+00:00",
+  "backend_suite": "414 passed, 107 warnings in 48.06s",
+  "paid_evaluation": "not run; placeholder guard separately verified: 1 skipped; not-eval selection deselects it",
+  "frontend_typecheck": "PASS",
+  "frontend_build": "PASS; 18 static pages; dynamic review/HITL detail routes retained",
+  "ruff": "PASS: backend tests scripts api",
+  "git_diff_check": "PASS",
+  "browser": "PASS: 7 scenarios, 375/768/1280 px, light/dark, mock API",
+  "npm_audit": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "production": "FAIL: environment development; worker offline; pipeline_ready false; proxy auth availability intermittent",
+  "deployed": false
+}

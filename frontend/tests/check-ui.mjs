@@ -1,0 +1,93 @@
+// Run against a built local server. Requires Playwright (or PLAYWRIGHT_MODULE).
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+import { mkdir, writeFile } from 'node:fs/promises';
+const require = createRequire(new URL("../package.json", import.meta.url));
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright-core');
+const base = process.env.FRONTEND_URL || 'http://127.0.0.1:3000';
+const output = process.env.UI_EVIDENCE_DIR || '/tmp/hadron-ui-evidence';
+await mkdir(output, { recursive: true });
+const browser = await chromium.launch({ headless: true });
+const results = [];
+const profile = { login: 'alice', name: 'Alice', authenticated: true, auth_method: 'session', public_repos: 1 };
+async function setup({ signedIn = false, mode = 'executive', width = 1280, failReviews = false, theme = 'light' } = {}) {
+  const context = await browser.newContext({ viewport: { width, height: 900 } });
+  const errors = [];
+  let callbacks = 0;
+  let protectedCalls = 0;
+  await context.addInitScript(({ mode, theme }) => {
+    localStorage.setItem("hadron_theme", theme);
+    localStorage.setItem('hadron_view_mode', mode);
+    localStorage.setItem('ai_pr_review_github_account', JSON.stringify({ login: 'forged', authenticated: true }));
+  }, { mode, theme });
+  await context.route('**/api/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    let status = 200, body;
+    if (path.endsWith('/auth/me')) { status = signedIn ? 200 : 401; body = signedIn ? profile : { detail: 'Authentication required' }; }
+    else if (path.endsWith('/auth/github/callback')) { callbacks++; signedIn = true; body = profile; }
+    else if (path.endsWith('/auth/repos')) body = [];
+    else if (path.endsWith('/auth/github/login')) body = { oauth_available: false };
+    else { protectedCalls++; status = failReviews ? 503 : 200; body = failReviews ? { detail: 'Service unavailable' } : { items: [], total: 0, limit: 50, offset: 0 }; }
+    await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
+  });
+  const page = await context.newPage();
+  page.on('pageerror', (error) => errors.push(error.message));
+  return { context, page, errors, callbackCount: () => callbacks, protectedCount: () => protectedCalls };
+}
+try {
+  for (const width of [375, 768, 1280]) {
+    const run = await setup({ width });
+    await run.page.goto(base);
+    await run.page.getByRole('button', { name: 'Sign In to App' }).waitFor();
+    assert.equal(run.protectedCount(), 0, 'anonymous landing must not fetch private reviews');
+    await run.page.getByRole('button', { name: 'Sign In to App' }).click();
+    const dialog = run.page.getByRole('dialog', { name: 'Sign in to Hadron' });
+    await dialog.waitFor();
+    await run.page.keyboard.press('Shift+Tab');
+    assert(await dialog.evaluate((node) => node.contains(document.activeElement)), 'focus must stay in sign-in dialog');
+    await dialog.getByText('Use a personal access token', { exact: true }).click();
+    const username = dialog.getByLabel('GitHub username');
+    await username.fill('alice');
+    assert(await username.evaluate((node) => node === document.activeElement), 'typing must not reset dialog focus');
+    await run.page.keyboard.press('Escape');
+    await run.page.goto(`${base}/reviews`);
+    await run.page.getByRole('heading', { name: 'Sign in to your workspace' }).waitFor();
+    await run.page.getByRole('button', { name: 'Sign in with GitHub', exact: true }).click();
+    await run.page.getByRole('dialog', { name: 'Sign in to Hadron' }).waitFor();
+    await run.page.screenshot({ path: `${output}/sign-in-${width}.png`, fullPage: true });
+    assert(await run.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'no page horizontal overflow');
+    assert.deepEqual(run.errors, []);
+    results.push(`shared sign-in, forged-storage rejection, focus trap and overflow at ${width}px: PASS`);
+    await run.context.close();
+  }
+  for (const mode of ['executive', 'developer']) {
+    const run = await setup({ signedIn: true, mode, width: 375, theme: mode === 'developer' ? 'dark' : 'light' });
+    await run.page.goto(base);
+    await run.page.getByRole('heading', { name: 'Review overview', exact: true }).waitFor();
+    assert.equal(await run.page.getByRole('button', { name: 'Developer view', exact: true }).count(), 0);
+    const wordmarkColor = await run.page.getByText('HADRON', { exact: true }).first().evaluate((node) => getComputedStyle(node).color);
+    assert.notEqual(wordmarkColor, 'rgba(0, 0, 0, 0)', 'wordmark must use a visible theme foreground');
+    await run.page.reload();
+    await run.page.getByRole('heading', { name: 'Review overview', exact: true }).waitFor();
+    assert(await run.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'dashboard must fit mobile viewport');
+    await run.page.screenshot({ path: `${output}/dashboard-${mode}.png`, fullPage: true });
+    assert.deepEqual(run.errors, []);
+    results.push(`single dashboard with legacy ${mode} preference and session reload: PASS`);
+    await run.context.close();
+  }
+  const callback = await setup();
+  await callback.page.goto(`${base}/auth/callback?code=test-code&state=test-state`);
+  await callback.page.getByRole('heading', { name: 'Review overview', exact: true }).waitFor();
+  assert.equal(callback.callbackCount(), 1);
+  assert.deepEqual(callback.errors, []);
+  results.push('OAuth callback exchanges code once and opens dashboard: PASS');
+  await callback.context.close();
+  const outage = await setup({ signedIn: true, failReviews: true });
+  await outage.page.goto(base);
+  await outage.page.getByText('Review data unavailable', { exact: true }).waitFor();
+  assert.equal(await outage.page.getByText('All monitored repositories are active.', { exact: true }).count(), 0);
+  results.push('API outage shows unavailable state without false healthy status: PASS');
+  await outage.context.close();
+  console.log(results.join('\n'));
+  await writeFile(`${output}/results.json`, JSON.stringify({ results, verdict: 'PASS' }, null, 2));
+} finally { await browser.close(); }

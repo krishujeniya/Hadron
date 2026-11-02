@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import logging
+import hmac
 import secrets
 import urllib.parse
 from typing import Any
@@ -35,12 +36,11 @@ router = APIRouter(
     tags=["auth"],
 )
 
-ALLOWED_REDIRECT_HOSTS = {"localhost", "127.0.0.1", "hadron.dev", "localhost:3000"}
 
 
 class ConnectAccountRequest(BaseModel):
     account: str = Field(..., description="GitHub username or organization name")
-    token: str | None = Field(default=None, description="Optional GitHub Personal Access Token")
+    token: str | None = Field(default=None, description="GitHub Personal Access Token verified before issuing a session")
 
 
 class AccountProfile(BaseModel):
@@ -52,7 +52,7 @@ class AccountProfile(BaseModel):
     public_repos: int = 0
     type: str = "User"
     authenticated: bool = True
-    auth_method: str = "oauth"  # "oauth" | "token" | "session" | "preview"
+    auth_method: str = "oauth"  # Verified authentication method
     token: str | None = None  # Always None in responses to prevent credential leaks
 
 
@@ -84,17 +84,18 @@ class RepositoryItem(BaseModel):
     last_review_at: str | None = None
 
 
-def _validate_redirect_uri(redirect_uri: str | None) -> str | None:
-    """Ensure redirect URI targets an allowlisted host."""
+def _validate_redirect_uri(redirect_uri: str | None, settings: Settings) -> str | None:
+    """Only redirect to a configured frontend origin, never arbitrary hosting tenants."""
     if not redirect_uri:
         return None
     parsed = urllib.parse.urlparse(redirect_uri)
-    if parsed.netloc and parsed.netloc not in ALLOWED_REDIRECT_HOSTS:
-        logger.warning("auth | rejected untrusted redirect_uri: %s", redirect_uri)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Disallowed redirect_uri host.",
-        )
+    origin = f"{parsed.scheme}://{parsed.netloc}"
+    allowed = {value.strip().rstrip("/") for value in settings.cors_origins.split(",") if value.strip()}
+    allowed.update({"https://hadron.dev", "https://hadron.vercel.app"})
+    if settings.is_development:
+        allowed.update({"http://localhost:3000", "http://127.0.0.1:3000"})
+    if parsed.username or parsed.password or parsed.fragment or origin not in allowed:
+        raise HTTPException(status_code=400, detail="Disallowed redirect_uri host.")
     return redirect_uri
 
 
@@ -104,6 +105,7 @@ def _validate_redirect_uri(redirect_uri: str | None) -> str | None:
     summary="Get GitHub OAuth authorization URL",
 )
 async def github_oauth_login(
+    response: Response,
     redirect_uri: str | None = None,
     settings: Settings = Depends(get_settings),
 ) -> OAuthLoginResponse:
@@ -116,7 +118,7 @@ async def github_oauth_login(
             client_id=None,
         )
 
-    validated_redirect = _validate_redirect_uri(redirect_uri)
+    validated_redirect = _validate_redirect_uri(redirect_uri, settings)
     state = secrets.token_urlsafe(32)
 
     await session_store.save_oauth_state(
@@ -125,6 +127,8 @@ async def github_oauth_login(
         ttl_seconds=600,
     )
 
+    response.set_cookie("hadron_oauth_state", state, httponly=True, secure=not settings.is_development,
+                        samesite="lax", max_age=600, path="/")
     scope = "read:user,repo"
     url = f"https://github.com/login/oauth/authorize?client_id={client_id}&scope={scope}&state={state}"
     if validated_redirect:
@@ -145,6 +149,7 @@ async def github_oauth_login(
 )
 async def github_oauth_callback(
     payload: OAuthCallbackRequest,
+    request: Request,
     response: Response,
     settings: Settings = Depends(get_settings),
 ) -> AccountProfile:
@@ -161,7 +166,12 @@ async def github_oauth_callback(
             detail="Missing OAuth state parameter (CSRF verification failed).",
         )
 
-    # Verify and consume state (supports 15s grace for StrictMode duplicate mounts)
+    browser_state = request.cookies.get("hadron_oauth_state", "")
+    if not browser_state or not hmac.compare_digest(browser_state, payload.state):
+        raise HTTPException(status_code=403, detail="OAuth state does not match the initiating browser.")
+    response.delete_cookie("hadron_oauth_state", path="/")
+
+    # One-time state; the frontend deduplicates StrictMode effect replay.
     state_data = await session_store.verify_and_consume_oauth_state(payload.state)
     if state_data is None:
         raise HTTPException(
@@ -177,6 +187,7 @@ async def github_oauth_callback(
                 "client_id": settings.github_client_id,
                 "client_secret": settings.github_client_secret,
                 "code": payload.code,
+                **({"redirect_uri": state_data["redirect_uri"]} if state_data.get("redirect_uri") else {}),
             },
             headers={"Accept": "application/json"},
         )
@@ -299,7 +310,7 @@ async def connect_account(
 ) -> AccountProfile:
     """
     Connect an account. If a valid personal token is supplied, creates an authenticated session.
-    If no token is supplied, returns a preview profile with a VIEWER session for dashboard inspection.
+    A username alone never grants access to stored workspace data.
     """
     account_name = payload.account.strip()
     if not account_name:
@@ -311,7 +322,9 @@ async def connect_account(
         or not settings.is_development
     )
 
-    token = payload.token
+    token = (payload.token or "").strip()
+    if not token or token in ("ghp_test", "ghp_development_token_placeholder"):
+        raise HTTPException(status_code=401, detail="Sign in with GitHub or provide a valid personal access token.")
     if token and token not in ("ghp_test", "ghp_development_token_placeholder"):
         # Verify PAT against GitHub API
         headers = {
@@ -366,44 +379,7 @@ async def connect_account(
         except Exception as exc:
             logger.warning("connect_account | GitHub token verification error: %s", exc)
 
-    # Fallback / Preview: grant a viewer session so user can inspect dashboard reviews in read-only mode
-    viewer_session = await session_store.create_session(
-        user_id=account_name,
-        role=Role.VIEWER,
-        account=account_name,
-        provider_token=None,
-        ttl_seconds=86400 * 7,
-    )
-    response.set_cookie(
-        key="hadron_csrf",
-        value=viewer_session.csrf_token,
-        httponly=False,
-        samesite="lax",
-        secure=is_secure,
-        max_age=86400 * 7,
-        path="/",
-    )
-    response.set_cookie(
-        key="hadron_session",
-        value=viewer_session.session_id,
-        httponly=True,
-        samesite="lax",
-        secure=is_secure,
-        max_age=86400 * 7,
-        path="/",
-    )
-    return AccountProfile(
-        login=account_name,
-        name=account_name,
-        avatar_url=f"https://github.com/{account_name}.png",
-        html_url=f"https://github.com/{account_name}",
-        bio=f"GitHub preview: {account_name}",
-        public_repos=0,
-        type="User",
-        authenticated=True,
-        auth_method="preview",
-        token=None,
-    )
+    raise HTTPException(status_code=401, detail="GitHub token verification failed. Check your token and try again.")
 
 
 @router.get(
@@ -421,10 +397,14 @@ async def list_account_repos(
     repos: list[RepositoryItem] = []
     seen_names: set[str] = set()
 
+    authorized_account = principal.account or principal.tenant_id
+    if not principal.is_admin and (not authorized_account or account.lower() != authorized_account.lower()):
+        raise HTTPException(status_code=403, detail="Cannot list repositories for another workspace.")
+
     # Retrieve provider token from session if available
     session_id = principal.metadata.get("session_id")
     sess_obj = await session_store.get_session(session_id) if session_id else None
-    active_token = (sess_obj.provider_token if sess_obj else None) or settings.github_token
+    active_token = (sess_obj.provider_token if sess_obj else None) or (settings.github_token if principal.is_admin else None)
 
     auth_header = (
         f"Bearer {active_token}"

@@ -60,7 +60,7 @@ async def get_current_principal(
                         status_code=status.HTTP_403_FORBIDDEN,
                         detail="Cross-origin mutation forbidden (anti-CSRF protection).",
                     )
-                if csrf_header and not hmac.compare_digest(csrf_header, session.csrf_token):
+                if not csrf_header or not hmac.compare_digest(csrf_header, session.csrf_token):
                     raise HTTPException(
                         status_code=status.HTTP_403_FORBIDDEN,
                         detail="Invalid CSRF token.",

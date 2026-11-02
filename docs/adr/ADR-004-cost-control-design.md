@@ -82,7 +82,7 @@ Positive
 
 Negative
     - Per-review enforcement is best-effort until Phase 20 ships the
-      coordinator. Documented in `docs/FUTURE_WORK.md`.
+      coordinator. Documented in `docs/product/roadmap.md`.
     - ContextVar discipline must be respected: every new entry point
       (webhook, retry, replay) must call `set_workflow_context()` or
       cost rows are written with `workflow_id=None`.

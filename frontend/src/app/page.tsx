@@ -1,53 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import useSWR from "swr";
 import Link from "next/link";
-import { useGitHubAccount } from "@/lib/githubContext";
-import { ReviewStatusBadge } from "@/components/ReviewStatusBadge";
-import { VerdictChip } from "@/components/VerdictChip";
-import { Empty } from "@/components/Empty";
+import { useGitHubAccount } from "@/features/auth/github-context";
+import { ReviewStatusBadge } from "@/features/reviews/ReviewStatusBadge";
+import { VerdictChip } from "@/features/reviews/VerdictChip";
+import { Empty } from "@/components/ui/Empty";
 import { Status } from "@/components/ui/Status";
 import { Button } from "@/components/ui/Button";
-import { NonTechReviewCard } from "@/components/NonTechReviewCard";
-import { PlainEnglishAssistant } from "@/components/PlainEnglishAssistant";
-import { BangMotionPipeline } from "@/components/BangMotionPipeline";
-import { PublicLandingPage } from "@/components/PublicLandingPage";
+import { PlainEnglishAssistant } from "@/features/overview/PlainEnglishAssistant";
+import { PublicLandingPage } from "@/features/marketing/PublicLandingPage";
 import type { HITLItem, Paginated, ReviewSummary } from "@/lib/types";
 
 export default function DashboardPage() {
   const { currentAccount, repositories, openAccountModal } = useGitHubAccount();
-  const [viewMode, setViewMode] = useState<"executive" | "developer">("executive");
-  const [showProductTour, setShowProductTour] = useState(false);
-
-  // Synchronize view preference across storage events and command palette (T34)
-  useEffect(() => {
-    const syncMode = () => {
-      try {
-        const saved = localStorage.getItem("hadron_view_mode");
-        if (saved === "developer" || saved === "executive") {
-          setViewMode(saved);
-        }
-      } catch {}
-    };
-    syncMode();
-    window.addEventListener("storage", syncMode);
-    return () => window.removeEventListener("storage", syncMode);
-  }, []);
-
-  const setMode = (mode: "executive" | "developer") => {
-    setViewMode(mode);
-    try {
-      localStorage.setItem("hadron_view_mode", mode);
-      window.dispatchEvent(new Event("storage"));
-    } catch {}
-  };
-
   const accountParam = currentAccount ? `&account=${encodeURIComponent(currentAccount.login)}` : "";
   const { data: reviewsResp, error: reviewsErr } =
-    useSWR<Paginated<ReviewSummary>>(`/api/v1/reviews?limit=50${accountParam}`);
+    useSWR<Paginated<ReviewSummary>>(currentAccount ? `/api/v1/reviews?limit=50${accountParam}` : null);
   const { data: hitlResp, error: hitlErr } =
-    useSWR<Paginated<HITLItem>>(`/api/v1/hitl/queue?limit=50${accountParam}`);
+    useSWR<Paginated<HITLItem>>(currentAccount ? `/api/v1/hitl/queue?limit=50${accountParam}` : null);
 
   const allReviews = reviewsResp?.items ?? [];
   const allHitl = hitlResp?.items ?? [];
@@ -66,17 +37,26 @@ export default function DashboardPage() {
     ["queued", "received", "in_progress", "agents_running", "aggregating", "posting"].includes(r.status)
   );
   const failedReviews = reviews.filter((r) => r.status === "failed");
-  const completedReviews = reviews.filter((r) => r.status === "completed" || r.status === "escalated");
   const recentReviews = reviews.slice(0, 8);
 
   // Determine state-aware primary action (T34)
   let actionTitle = "Operational overview";
-  let actionDescription = "All monitored repositories are active.";
+  let actionDescription = "No pending actions in the loaded reviews.";
   let actionLink = "/reviews";
   let actionLabel = "Browse reviews";
   let actionTone: "warning" | "error" | "info" | "neutral" = "neutral";
 
-  if (pendingHitl.length > 0) {
+  if (reviewsErr || hitlErr) {
+    actionTitle = "Review data unavailable";
+    actionDescription = "We could not verify the current review state. Check service health and retry.";
+    actionLink = "/health";
+    actionLabel = "Check service health";
+    actionTone = "error";
+  } else if (!reviewsResp || !hitlResp) {
+    actionTitle = "Loading review status";
+    actionDescription = "Fetching recorded review activity for this workspace.";
+    actionLabel = "Browse reviews";
+  } else if (pendingHitl.length > 0) {
     actionTitle = `${pendingHitl.length} human decision${pendingHitl.length === 1 ? "" : "s"} pending`;
     actionDescription = "Specialist agents escalated pull requests requiring human sign-off before merge.";
     actionLink = "/hitl";
@@ -102,27 +82,10 @@ export default function DashboardPage() {
     actionTone = "info";
   }
 
-  // When no account is connected (and during initial server-side rendering), render the complete public product landing showcase (F1, F2)
-  if (!currentAccount || showProductTour) {
-    return (
-      <div className="space-y-6">
-        {currentAccount && (
-          <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-panel text-xs font-mono">
-            <span className="text-muted">Viewing public product showcase while connected as @{currentAccount.login}</span>
-            <Button size="sm" variant="outline" onClick={() => setShowProductTour(false)}>
-              ← Back to operational dashboard
-            </Button>
-          </div>
-        )}
-        <PublicLandingPage />
-      </div>
-    );
-  }
+  if (!currentAccount) return <PublicLandingPage />;
 
   return (
     <div className="space-y-8">
-      {/* Cinematic Multi-Agent Telemetry & Motion Pipeline (Bang Motion) */}
-      <BangMotionPipeline />
 
       {/* Account Context Banner */}
       {currentAccount ? (
@@ -153,9 +116,6 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button onClick={() => setShowProductTour(true)} variant="outline" size="sm">
-              Product Showcase
-            </Button>
             <Link href="/repositories">
               <Button variant="secondary" size="sm">
                 Repositories ({repositories.length})
@@ -195,90 +155,15 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {/* Top Header & Interactive Mode Switcher */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground font-mono">
-            {viewMode === "executive" ? "Executive summary and guidance" : "Developer operations overview"}
-          </h1>
-          <p className="text-muted text-sm mt-1">
-            {viewMode === "executive"
-              ? "Actionable code review findings translated into plain English for decision-makers."
-              : "Autonomous multi-agent review pipeline status, running jobs, and escalation queues."}
-          </p>
-        </div>
-
-        {/* View Mode Switcher */}
-        <div className="inline-flex p-1 rounded-xl bg-panel border border-border">
-          <button
-            type="button"
-            onClick={() => setMode("executive")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-              viewMode === "executive"
-                ? "bg-surface text-foreground shadow-sm border border-border"
-                : "text-muted hover:text-foreground"
-            }`}
-          >
-            <span>Plain English</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("developer")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
-              viewMode === "developer"
-                ? "bg-surface text-foreground shadow-sm border border-border"
-                : "text-muted hover:text-foreground"
-            }`}
-          >
-            <span>Developer view</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Actionable Review Sections */}
-      {viewMode === "executive" ? (
-        <div className="space-y-8">
-          <PlainEnglishAssistant
-            recentReviews={reviews}
-            accountName={currentAccount?.login}
-          />
-
-          {/* Non-Tech Review Impact Cards */}
-          <section className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-foreground flex items-center gap-2 font-mono">
-                  Recent pull request impacts
-                </h2>
-                <p className="text-xs text-muted">
-                  Every pull request translated into business impact and review status.
-                </p>
-              </div>
-              <Link href="/reviews" className="text-xs font-medium text-accent hover:underline font-mono">
-                View all reviews →
-              </Link>
-            </div>
-
-            {reviewsErr ? (
-              <Empty>Could not load reviews: {String(reviewsErr.message)}</Empty>
-            ) : recentReviews.length === 0 ? (
-              <Empty>
-                {currentAccount
-                  ? `No reviews recorded yet for @${currentAccount.login}. Pull requests opened on connected repositories appear here.`
-                  : "No reviews yet. Connect a repository and open a pull request."}
-              </Empty>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {recentReviews.map((r) => (
-                  <NonTechReviewCard key={r.id} review={r} />
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
-      ) : (
-        /* DEVELOPER TECHNICAL VIEW */
-        <div className="space-y-8">
+      <header>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Review overview</h1>
+        <p className="text-muted text-sm mt-1">Pending decisions, running reviews, and recent findings for your workspace.</p>
+      </header>
+      <details className="rounded-xl border border-border bg-surface p-4">
+        <summary className="cursor-pointer font-medium text-foreground">Plain-language guidance</summary>
+        <div className="mt-4"><PlainEnglishAssistant recentReviews={reviews} accountName={currentAccount.login} /></div>
+      </details>
+      <div className="space-y-8">
           {/* Operational Metrics Cards */}
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard label="Total reviews" value={reviewsResp?.total ?? reviews.length} err={!!reviewsErr} />
@@ -420,8 +305,7 @@ export default function DashboardPage() {
               </div>
             )}
           </section>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

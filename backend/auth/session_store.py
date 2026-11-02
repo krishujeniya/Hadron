@@ -14,6 +14,8 @@ import secrets
 import time
 from typing import Any, Optional
 from pydantic import BaseModel, Field
+from fastapi import HTTPException
+from backend.config.settings import get_settings
 
 from backend.security.rbac import Role
 
@@ -68,7 +70,9 @@ class SessionStore:
                 await redis_client.connect()
             return redis_client._pool
         except Exception as e:
-            logger.debug("Redis lazy pool connection skipped: %s", e)
+            if get_settings().is_production:
+                raise HTTPException(status_code=503, detail="Session service unavailable. Please retry.") from e
+            logger.debug("Redis lazy pool connection skipped: %s", type(e).__name__)
             return None
 
     async def create_session(
@@ -105,36 +109,33 @@ class SessionStore:
                 data = session.model_dump_json()
                 await pool.setex(key, ttl_seconds, data)
         except Exception as e:
-            logger.debug("Redis session save skipped: %s", e)
+            self._sessions.pop(session_id, None)
+            if get_settings().is_production:
+                raise HTTPException(status_code=503, detail="Session service unavailable. Please retry.") from e
+            self._sessions[session_id] = session
+            logger.debug("Redis session save skipped: %s", type(e).__name__)
 
         return session
 
     async def get_session(self, session_id: str) -> Optional[SessionData]:
-        """Retrieve active session by opaque id."""
+        """Redis is authoritative: local caches must not resurrect a revoked session."""
         if not session_id:
             return None
         self._cleanup_expired()
-
+        pool = await self._get_redis_pool()
+        if pool:
+            try:
+                raw = await pool.get(f"hadron:session:{session_id}")
+                if not raw:
+                    self._sessions.pop(session_id, None)
+                    return None
+                session = SessionData(**json.loads(raw))
+                return session if not session.is_expired else None
+            except Exception as exc:
+                logger.warning("Shared session verification unavailable: %s", type(exc).__name__)
+                return None
         session = self._sessions.get(session_id)
-        if session and not session.is_expired:
-            return session
-
-        # Fallback to Redis if present
-        try:
-            pool = await self._get_redis_pool()
-            if pool:
-                key = f"hadron:session:{session_id}"
-                raw = await pool.get(key)
-                if raw:
-                    data = json.loads(raw)
-                    sess = SessionData(**data)
-                    if not sess.is_expired:
-                        self._sessions[session_id] = sess
-                        return sess
-        except Exception as e:
-            logger.debug("Redis session get skipped: %s", e)
-
-        return None
+        return session if session and not session.is_expired else None
 
     async def invalidate_session(self, session_id: str) -> bool:
         """Revoke a session completely."""
@@ -145,8 +146,9 @@ class SessionStore:
                 deleted = await pool.delete(f"hadron:session:{session_id}")
                 if deleted:
                     existed = True
-        except Exception:
-            pass
+        except Exception as exc:
+            if get_settings().is_production:
+                raise HTTPException(status_code=503, detail="Session revocation unavailable. Please retry.") from exc
         return existed
 
     async def save_oauth_state(
@@ -169,68 +171,27 @@ class SessionStore:
                 key = f"hadron:oauth_state:{state}"
                 await pool.setex(key, ttl_seconds, json.dumps(state_data))
         except Exception as e:
-            logger.debug("Redis oauth state save skipped: %s", e)
+            if get_settings().is_production:
+                self._oauth_states.pop(state, None)
+                raise HTTPException(status_code=503, detail="Sign-in service unavailable. Please retry.") from e
+            logger.debug("Redis oauth state save skipped: %s", type(e).__name__)
 
-    async def verify_and_consume_oauth_state(
-        self,
-        state: str,
-        allow_recent_grace: float = 15.0,
-    ) -> Optional[dict[str, Any]]:
-        """
-        Verify state token and consume it.
-        Supports a short grace window (15s) for React 18 StrictMode duplicate callback mounts.
-        """
+    async def verify_and_consume_oauth_state(self, state: str) -> Optional[dict[str, Any]]:
+        """Atomically consume once across instances; duplicate code exchanges are rejected."""
         self._cleanup_expired()
-        item = self._oauth_states.get(state)
-
-        # Lookup in Redis if not present in local process memory
         pool = await self._get_redis_pool()
-        if not item and pool:
-            try:
-                raw = await pool.get(f"hadron:oauth_state:{state}")
-                if raw:
-                    item = json.loads(raw)
-            except Exception as e:
-                logger.debug("Redis oauth state lookup failed: %s", e)
-
-        if not item:
-            return None
-
-        now = time.time()
-        if now > item["expires_at"]:
-            self._oauth_states.pop(state, None)
-            if pool:
-                try:
-                    await pool.delete(f"hadron:oauth_state:{state}")
-                except Exception:
-                    pass
-            return None
-
-        # Check if already consumed
-        consumed_at = item.get("consumed_at")
-        if consumed_at is not None:
-            if now - consumed_at <= allow_recent_grace:
-                # Return the cached data during duplicate call grace period
-                return item.get("data")
-            # Beyond grace window: reject replay
-            self._oauth_states.pop(state, None)
-            if pool:
-                try:
-                    await pool.delete(f"hadron:oauth_state:{state}")
-                except Exception:
-                    pass
-            return None
-
-        # Mark consumed
-        item["consumed_at"] = now
-        self._oauth_states[state] = item
         if pool:
             try:
-                remaining_ttl = max(1, int(item["expires_at"] - now))
-                await pool.setex(f"hadron:oauth_state:{state}", remaining_ttl, json.dumps(item))
-            except Exception as e:
-                logger.debug("Redis oauth state update failed: %s", e)
-
+                raw = await pool.getdel(f"hadron:oauth_state:{state}")
+                self._oauth_states.pop(state, None)
+                item = json.loads(raw) if raw else None
+            except Exception:
+                # Never accept a process-local copy when shared consumption failed.
+                return None
+        else:
+            item = self._oauth_states.pop(state, None)
+        if not item or time.time() > item["expires_at"]:
+            return None
         return item.get("data")
 
 

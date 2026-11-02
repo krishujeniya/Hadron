@@ -90,6 +90,7 @@ ignore = [
 # Tell pytest to handle async test functions automatically
 asyncio_mode = "auto"
 testpaths = ["tests"]
+pythonpath = ["."]
 markers = [
     "unit: fast in-memory unit tests with mocked I/O",
     "contract: contract and API boundary acceptance tests",

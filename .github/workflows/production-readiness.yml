@@ -1,0 +1,26 @@
+name: Production readiness
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: production-readiness
+  cancel-in-progress: false
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check public frontend, API, auth boundary and worker readiness
+        shell: bash
+        run: python scripts/production_smoke.py | tee production-readiness.json
+      - name: Preserve readiness evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-readiness
+          path: production-readiness.json

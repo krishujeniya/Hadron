@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import { useGitHubAccount } from "@/lib/githubContext";
-import { Empty } from "@/components/Empty";
+import { useGitHubAccount } from "@/features/auth/github-context";
+import { Empty } from "@/components/ui/Empty";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import type {

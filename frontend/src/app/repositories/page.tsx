@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useGitHubAccount } from "@/lib/githubContext";
-import { Empty } from "@/components/Empty";
+import { useGitHubAccount } from "@/features/auth/github-context";
+import { Empty } from "@/components/ui/Empty";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Status } from "@/components/ui/Status";

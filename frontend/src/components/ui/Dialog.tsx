@@ -28,12 +28,13 @@ export function Dialog({
       previousFocusRef.current = document.activeElement as HTMLElement;
 
       // Lock document scroll
+      const previousOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
 
       // Focus the dialog container or first focusable child
-      const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
+      const focusable = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])'
+      ) ?? []).filter((node) => node.getClientRects().length > 0);
       if (focusable && focusable.length > 0) {
         focusable[0].focus();
       } else {
@@ -47,9 +48,9 @@ export function Dialog({
         } else if (e.key === "Tab") {
           // Trap focus inside modal
           if (!dialogRef.current) return;
-          const focusables = dialogRef.current.querySelectorAll<HTMLElement>(
-            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-          );
+          const focusables = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])'
+          )).filter((node) => node.getClientRects().length > 0);
           if (focusables.length === 0) return;
 
           const first = focusables[0];
@@ -67,7 +68,7 @@ export function Dialog({
 
       window.addEventListener("keydown", handleKeyDown);
       return () => {
-        document.body.style.overflow = "";
+        document.body.style.overflow = previousOverflow;
         window.removeEventListener("keydown", handleKeyDown);
         previousFocusRef.current?.focus();
       };

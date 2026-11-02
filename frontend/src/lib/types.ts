@@ -200,7 +200,7 @@ export interface AccountProfile {
   public_repos: number;
   type?: string;
   authenticated: boolean;
-  auth_method?: "oauth" | "token" | "username";
+  auth_method?: "oauth" | "token" | "session" | "api_key" | "bearer_api_key";
   token?: string;
 }
 

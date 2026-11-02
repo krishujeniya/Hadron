@@ -613,7 +613,7 @@ async def close_db() -> None:
             _engine = None
 
 
-async def check_schema_readiness(timeout_seconds: float = 2.0) -> tuple[bool, str]:
+async def check_schema_readiness(timeout_seconds: float = 5.0) -> tuple[bool, str]:
     """
     Verifies that essential database schema tables exist.
     Uses async SQLAlchemy inspection with bounded timeout.

@@ -3,10 +3,10 @@
 import useSWR from "swr";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { FindingsByAgent } from "@/components/AgentFindingCard";
-import { HITLDecisionForm } from "@/components/HITLDecisionForm";
-import { VerdictChip } from "@/components/VerdictChip";
-import { Empty } from "@/components/Empty";
+import { FindingsByAgent } from "@/features/reviews/AgentFindingCard";
+import { HITLDecisionForm } from "@/features/hitl/HITLDecisionForm";
+import { VerdictChip } from "@/features/reviews/VerdictChip";
+import { Empty } from "@/components/ui/Empty";
 import type { HITLDetail } from "@/lib/types";
 
 export default function HITLDetailPage() {

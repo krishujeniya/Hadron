@@ -1,0 +1,26 @@
+{
+  "checks": {
+    "frontend_available": true,
+    "backend_alive": true,
+    "pipeline_ready": false,
+    "production_environment": false,
+    "worker_available": false,
+    "anonymous_data_denied_through_proxy": false
+  },
+  "http_statuses": [
+    200,
+    200,
+    200,
+    0
+  ],
+  "environment": "development",
+  "services": {
+    "postgres": "ok",
+    "schema": "ok",
+    "redis": "ok",
+    "worker": "offline",
+    "tiger": "degraded",
+    "qdrant": "degraded"
+  },
+  "verdict": "FAIL"
+}

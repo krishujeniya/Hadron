@@ -148,40 +148,28 @@ Each specialist operates under a strict role contract, using domain-specific pro
 
 ## Repository structure
 
-```
+```text
 Hadron/
-├── assets/                    # Project logos, icons, and branding assets
-├── backend/
-│   ├── agents/                # Specialist agent implementations & contracts
-│   │   ├── base_agent.py      # Abstract agent interface & execution harness
-│   │   ├── security_agent.py  # Security vulnerability specialist
-│   │   ├── quality_agent.py   # Code cleanliness & architecture specialist
-│   │   ├── test_agent.py      # Test coverage & regression specialist
-│   │   └── docs_agent.py      # Documentation & API contract specialist
-│   ├── api/                   # REST routing (webhooks, reviews, HITL, stats)
-│   ├── auth/                  # Authentication dependencies & session handling
-│   ├── config/                # App configuration, settings & environment models
-│   ├── database/              # PostgreSQL async models, migrations & repositories
-│   ├── economics/             # Token budget controls & cost attribution ledger
-│   ├── evaluation/            # Automated evaluation gates & LLM-as-judge suite
-│   ├── hitl/                  # Human-in-the-Loop review queue & escalation logic
-│   ├── integrations/          # GitHub API client & webhook payload models
-│   ├── memory/                # Vector store, context retriever & embeddings
-│   ├── observability/         # OpenTelemetry tracing, audit logs & metrics
-│   ├── orchestrator/          # LangGraph graph topology, state models & nodes
-│   ├── prompts/               # System prompt registry & agent templates
-│   ├── reliability/           # Circuit breakers, retries & idempotency filters
-│   ├── tools/                 # Tool registry & model routing utilities
-│   └── webhook_receiver/      # GitHub webhook signature validator & parser
-├── frontend/                  # Next.js 15 dashboard & review portal
-│   ├── src/app/               # App Router pages (reviews, queue, analytics)
-│   ├── src/components/        # Reusable UI components & metrics graphs
-│   └── src/lib/               # Client-side API bindings & state handlers
-├── docs/                      # Architecture Decision Records (ADRs) & documentation
-├── scripts/                   # Migration helpers and execution entrypoints
-├── tests/                     # Unit, integration, and orchestration test suites
-└── docker-compose.yml         # Container configuration for local development
+├── api/                      Vercel ASGI adapter
+├── backend/                  Python domain packages and ARQ worker
+├── frontend/
+│   ├── src/app/              Next.js routes and layouts
+│   ├── src/features/         Auth, reviews, HITL, overview, marketing
+│   ├── src/components/       Shared ui, brand, and layout components
+│   ├── src/lib/              API transport, DTOs, theme and SWR
+│   ├── tests/                Browser regression checks
+│   └── public/               Browser-served assets
+├── tests/                    Python tests grouped by domain
+├── fixtures/                 Shared demo/test webhook payload
+├── scripts/                  Operational tools and migration artifacts
+├── docs/                     Architecture, operations, design and evidence
+├── assets/                   Repository branding assets
+└── .github/workflows/        CI and production readiness gate
 ```
+
+See [repository layout](docs/architecture/repository-layout.md) for dependency rules,
+verified upstream examples and the exact move mapping. The [documentation index](docs/README.md)
+and [test guide](tests/README.md) provide focused entrypoints.
 
 ---
 
@@ -269,7 +257,7 @@ The test suite validates agent contracts, state orchestration, idempotency, and 
 pytest -v
 
 # Run targeted orchestration tests
-pytest tests/test_phase13.py -v
+pytest tests/operations/test_health_settings_and_fixture.py -v
 ```
 
 ---

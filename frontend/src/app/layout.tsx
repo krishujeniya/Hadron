@@ -1,9 +1,9 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { SWRProvider } from "@/lib/swr";
-import { GitHubProvider } from "@/lib/githubContext";
+import { GitHubProvider } from "@/features/auth/github-context";
 import { ThemeProvider } from "@/lib/themeContext";
-import { Shell } from "@/components/Shell";
+import { Shell } from "@/components/layout/Shell";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://hadron.vercel.app"),

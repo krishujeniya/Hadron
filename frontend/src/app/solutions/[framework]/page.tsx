@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { HadronLogo } from "@/components/HadronLogo";
+import { HadronLogo } from "@/components/brand/HadronLogo";
 
 interface FrameworkSolution {
   slug: string;

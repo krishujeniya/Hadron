@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useGitHubAccount } from "@/lib/githubContext";
+import { api } from "@/lib/api";
+import { useGitHubAccount } from "@/features/auth/github-context";
 
 function CallbackHandler() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { selectAccount } = useGitHubAccount();
+
+  const exchangeRef = useRef<Promise<import("@/lib/types").AccountProfile> | null>(null);
 
   const [statusText, setStatusText] = useState("Authenticating with GitHub...");
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -16,36 +19,25 @@ function CallbackHandler() {
     const code = searchParams.get("code");
     const state = searchParams.get("state");
 
-    if (!code) {
-      setErrorText("No authorization code received from GitHub.");
+    if (!code || !state) {
+      setErrorText("Missing GitHub authorization code or security state. Please sign in again.");
       return;
     }
 
-    async function exchangeCode() {
-      try {
-        const res = await fetch("/api/v1/auth/github/callback", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code, state }),
-        });
-
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.detail || "Failed to exchange code for GitHub token");
-        }
-
-        const profile = await res.json();
-        selectAccount(profile);
-        setStatusText(`Authenticated as @${profile.login}! Redirecting...`);
-        setTimeout(() => {
-          router.push("/");
-        }, 800);
-      } catch (err: any) {
-        setErrorText(err.message || "Authentication failed");
-      }
+    let active = true;
+    // Reuse the in-flight exchange during StrictMode's effect replay.
+    if (!exchangeRef.current) {
+      exchangeRef.current = api.auth.callback(code!, state!);
     }
-
-    exchangeCode();
+    exchangeRef.current.then((profile) => {
+      if (!active) return;
+      selectAccount(profile);
+      setStatusText(`Authenticated as @${profile.login}. Redirecting...`);
+      router.replace("/");
+    }).catch((err: unknown) => {
+      if (active) setErrorText(err instanceof Error ? err.message : "Authentication failed");
+    });
+    return () => { active = false; };
   }, [searchParams, router, selectAccount]);
 
   return (
@@ -59,7 +51,7 @@ function CallbackHandler() {
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </div>
-            <h2 className="text-lg font-semibold text-white">Sign-in failed</h2>
+            <h2 className="text-lg font-semibold text-foreground">Sign-in failed</h2>
             <p className="text-sm text-err">{errorText}</p>
             <button
               onClick={() => router.push("/")}
@@ -71,7 +63,7 @@ function CallbackHandler() {
         ) : (
           <>
             <div className="w-10 h-10 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto" />
-            <h2 className="text-lg font-semibold text-white">GitHub authentication</h2>
+            <h2 className="text-lg font-semibold text-foreground">GitHub authentication</h2>
             <p className="text-sm text-muted">{statusText}</p>
           </>
         )}

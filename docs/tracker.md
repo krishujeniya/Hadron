@@ -1,3 +1,94 @@
+# Repository organization — 2 November 2026
+
+Status: **DONE for local restructuring and verification**. Owner: Codex. Commit: uncommitted working tree. This changes repository organization; it does not close the live release blockers in the next section.
+
+The layout is specific to Hadron's Python modular monolith, shared API/worker package and Next.js frontend. It uses direct inspections of maintained Sentry, Langfuse and FastAPI repositories pinned at exact commits, plus Next.js organization guidance. No starter template or third-party implementation was copied. Upstream maintenance does not prove that every line was written without AI assistance.
+
+## Completed sequence
+
+1. Inventoried the tracked/untracked application files and saved the existing working tree before moving anything, including earlier uncommitted fixes. Confirmed the existing deployment roots and Python package imports.
+2. Inspected upstream root and nested trees. Recorded observed directories and exact commit IDs in `docs/verification/structure-research-2026-11-02.json`; documented why the applicable boundaries fit Hadron in [repository layout](architecture/repository-layout.md).
+3. Relocated **91 files**. Frontend product code now lives in `src/features/{auth,reviews,hitl,overview,marketing}`; reusable presentation lives in `src/components/{ui,brand,layout}`. Authentication context moved with its feature. Browser regressions live in `frontend/tests/check-ui.mjs`.
+4. Grouped all Python test modules into behavior domains and replaced phase/task filenames with behavior names. Updated pytest root configuration, source-inspection tests, CI evaluation paths and test commands. Fixtures remain at the shared repository location used by the demo and tests.
+5. Organized design, research, architecture, product, security and operations documents. Corrected the Tiger ADR filename to ADR-006 to match its existing identifier. Added documentation/test entrypoints and replaced the README's stale tree.
+6. Updated imports and documentation references without compatibility stubs or duplicate source files. Added `scripts/check_structure.py` to CI to enforce moved destinations, resolve frontend aliases and prevent shared presentation from depending on features.
+7. Verified the final tree. One initial source-inspection assertion still expected the old dynamic DiffViewer path; corrected that assertion's path and reran the full suite. No assertions or acceptance thresholds were removed.
+
+## Verification evidence
+
+- Python: **414 passed, 1 paid evaluation deselected** (`pytest -m "not eval"`) using isolated test configuration.
+- Frontend: TypeScript passes; production build passes with 18 static pages; all 7 runtime browser scenarios pass at 375/768/1280px, including shared login, old stored modes, light/dark, reload, callback and unavailable-data behavior.
+- Preservation: all 48 frontend source files have identical normalized TypeScript ASTs after resolving import paths; backend Python ASTs match the pre-move working tree. Assets and SQL migrations match byte for byte. Ten deployment entrypoint/config files are unchanged.
+- Structure checker, Ruff, local Markdown links and `git diff --check` pass. Python lock validation and npm locked-install dry run pass.
+- [Machine-readable results](verification/structure-validation-2026-11-02.json), [exact file moves and hashes](verification/structure-moves-2026-11-02.json), and [repository guide with pinned research](architecture/repository-layout.md).
+
+The backend's existing domain packages and deployment entrypoints were retained because they already express the runtime boundaries. No database migration, hosting configuration change, provider request, paid evaluation, GitHub publication or production deployment was performed. GitHub CI execution remains a post-push check. Rollback must preserve the earlier fixes; use the old/new manifest and reverse reference changes together rather than resetting the repository.
+
+---
+
+# Current verification and remediation — 2 November 2026
+
+**Release decision: BLOCKED on live deployment configuration and worker availability.** Local changes unify both duplicate interfaces, as requested: one shared sign-in dialog and one operational dashboard, with plain-language guidance available inline. Landing/solution pages remain public content; they do not constitute another authenticated dashboard. No production deployment or account configuration change was performed.
+
+This section supersedes older completion claims below. The October task records are historical implementation evidence, not current production certification. Existing uncommitted edits were preserved. Owner for this remediation: Codex; commit: uncommitted working tree.
+
+Planning policy: deep; dependency context; impact verification; no delegation. Scope: frontend consistency, authentication/session boundaries, dependency security, deterministic test isolation, and read-only production checks. No production database changes, paid model evaluations, or real GitHub review publication.
+
+## Verified problems and resulting behavior
+
+| ID / priority | Finding and fix | Status / evidence | Remaining acceptance |
+| --- | --- | --- | --- |
+| R01 / P0 | Separate auth screen and account modal, plus Executive/Developer dashboard branches, selected different interfaces. Removed standalone screen and mode commands/preferences; use one dialog and overview. | Implemented; browser regression covers both legacy preferences, reload, anonymous deep links, mobile/tablet/desktop. | Deploy same frontend artifact to the production alias; repeat real session checks. |
+| R02 / P0 | Username-only connection issued a viewer session for a claimed workspace. Missing/invalid PAT now returns 401 without issuing sessions; GitHub identity is verified. | Authentication regression tests pass. | Existing preview sessions must be invalidated during rollout; see sequence below. |
+| R03 / P0 | Cookie mutations accepted missing CSRF header. Now require the correct token; role and tenant checks remain enforced. | Missing-token rejection and legitimate logout tested. | Real OAuth/PAT session through production proxy. |
+| R04 / P0 | Repository lookup used a service token for arbitrary caller-supplied accounts. Now authorize account before any upstream request and reserve service-token fallback for admins. | Cross-workspace rejection proves no GitHub request occurs. | Production credential permission review. |
+| R05 / P0 | OAuth state was unbound and replayable during a grace period; callback could repeat exchanges. Now bind HttpOnly state cookie, atomically GETDEL shared state, allow exact frontend origins, and reuse the UI's in-flight exchange. | Browser single-exchange test plus server browser-binding/replay/redirect regressions. | Real provider flow across instances; production Redis must support GETDEL (Redis 6.2+). |
+| R06 / P0 | Local session cache could resurrect a session revoked by another instance. Redis is now authoritative; production shared-store failures fail closed. Failed Redis connection clears its pool. | Shared-revocation regression and full suite. | Multi-instance production logout/revocation drill. |
+| R07 / P1 | Browser trusted stored profile and retained PAT in memory; loading/error states could imply healthy operation. Restore from /auth/me, purge legacy secrets, suppress anonymous review calls, show loading/unavailable state, and keep guidance in the common layout. | Browser forged-storage/reload/outage checks. | Real user session and network-transition checks. |
+| R08 / P1 | Logo used white gradient in light mode; account modal bypassed shared focus management. Use semantic foreground color and shared dialog with visible focusable controls. | Type/build checks and browser focus/viewport checks. | Human screen-reader and contrast audit across all routes. |
+| R09 / P0 | npm audit reported vulnerable direct/nested PostCSS versions. Pin and override PostCSS 8.5.32 without upgrading framework major. | npm install reports zero vulnerabilities; machine audit evidence retained. | Repeat audit in CI at release time. |
+| R10 / P1 | Settings default tests read external environment/.env; embedding masking test spawned real cost-ledger work. Isolate settings and mock unrelated ledger I/O. | Full deterministic suite: 414 passed; paid test_eval_gate.py explicitly excluded. | Paid quality evaluation remains a separate release gate. |
+| R11 / P0 | Public backend reports env=development, worker=offline, pipeline_ready=false while /health/ready returns 200. | Live probe evidence in docs/verification/production-smoke-2026-11-02.json. | Production environment configuration, persistent worker, strict readiness, and successful canary review. |
+
+## Repeatable verification
+
+- Backend: isolated placeholder credentials, APP_ENV=test, SQLite in memory, unreachable local Redis/Qdrant, `.venv/bin/python -m pytest -q --ignore=tests/evaluation/test_eval_gate.py --disable-warnings --timeout=25`. Final suite result is recorded above. No paid evaluation was run. The real-model test is now explicitly marked eval, so CI selection with `-m "not eval"` excludes it; CI placeholder keys also trigger its skip guard.
+- Static checks: `.venv/bin/ruff check backend tests scripts api`; `npm run lint --prefix frontend`; `git diff --check`.
+- Frontend artifact: `npm run build --prefix frontend` (18 static pages; dynamic review/HITL routes retained).
+- Browser: start the built frontend on port 3000, then `npm run test:ui --prefix frontend`. Install the locked browser with `cd frontend && npx playwright-core install chromium`. This machine used `PLAYWRIGHT_BROWSERS_PATH=/tmp/hadron-browsers`; use that same variable for install and test. The script mocks API responses; it proves frontend behavior, not real GitHub authorization. Results: `docs/verification/ui-results-2026-11-02.json`; screenshots produced in `/tmp/hadron-ui-evidence/`; selected light/dark/mobile images retained in `docs/verification/`. Final local summary: `docs/verification/local-checks-2026-11-02.json`.
+- Dependencies: `npm audit --prefix frontend --json`; evidence: `docs/verification/npm-audit-2026-11-02.json`.
+- Live: `python3 scripts/production_smoke.py`. This deliberately exits nonzero unless frontend, backend, anonymous auth rejection, production mode, and pipeline/worker readiness all pass. Health requests are read-only. Repeated probes observed a 401 through the proxy and also a subsequent timeout; proxy availability is intermittent and not a passing live gate. A timeout is an inconclusive availability failure, not proof that a dependency is down.
+- CI: frontend-build now runs the browser regressions. `.github/workflows/production-readiness.yml` provides a manually triggered, read-only live gate and uploads JSON even on failure. These workflow edits have not run on GitHub during this session.
+
+## Ordered AIOps and release handoff
+
+Execute in order; release owner assigns an actual operator before production changes. Local verification does not satisfy live acceptance.
+
+| Step | Owner / dependency | Action | Pass criterion / recovery |
+| --- | --- | --- | --- |
+| 1. Establish release identity | SRE; none | Record frontend and backend commit/build IDs, current production aliases, deployed env names, and current versions. Confirm frontend project root is frontend; backend root uses api/index.py. | One intended frontend alias points to the tested artifact; no alternate public app root. Cache/version skew is a hypothesis to check, not the confirmed cause of the duplicate source branches. Preserve previous deployment IDs for rollback. |
+| 2. Configure production boundaries | SEC/SRE; step 1 | Set APP_ENV=production, exact CORS_ORIGINS and GitHub callback origin. Use shared TLS Redis with GETDEL support. Remove/revoke pre-fix username-preview sessions from hadron:session:* using a scoped session invalidation procedure, never FLUSHALL; clear hadron:oauth_state:* separately. | Missing credentials cannot read review data; valid login survives reload; logout rejects the old cookie on a second instance. All users may need to sign in again. Keep authentication fixes if rolling back UI. |
+| 3. Restore execution capacity | SRE; step 2 | Run `python -m arq backend.job_queue.arq_worker.WorkerSettings` as a persistent worker with matching application version/configuration and shared Redis/Postgres. A serverless request handler cannot replace this process. Set REQUIRE_WORKER_FOR_READINESS=true. | Fresh worker heartbeat, active_workers > 0, pipeline_ready=true; readiness returns 503 when required worker is stopped. Restart previous worker artifact if canary fails; do not erase queue data. |
+| 4. Validate provider/data readiness | BE/ML; step 3 | Investigate degraded Tiger/Qdrant status against actual selected retrieval backend; verify database TLS/schema and provider credentials with designated test data. | Required providers reachable; optional retrieval degradation is explicit. Run real GitHub canary only in an authorized test repo with a stated model budget. Never interpret mocked tests as evaluation quality. |
+| 5. Deploy and verify one UI | FE/SRE; steps 2–4 | Deploy the verified frontend artifact. Test anonymous / and /reviews, OAuth callback, PAT fallback, both old view preferences, session expiry/reload, switching, logout, light/dark and 375/768/1280px. | Same sign-in dialog and single Review overview for both stored modes; no hydration/page errors, private-data flash, secret in storage, or page overflow. Roll back the frontend artifact if runtime regressions appear. |
+| 6. Observe user outcomes | SRE; step 5 | Run production_smoke.py from the manual workflow. Track request availability/latency, auth failures, queue depth/oldest-job age, worker heartbeat, review duration/failure rate, publication retries, model spend and redaction failures using existing telemetry. | Release owner defines SLO windows, thresholds and alert routing from measured baseline. Diagnose simultaneous metric/log/trace evidence with request/workflow/build IDs. Keep secrets, tokens and private diff content out of artifacts. |
+| 7. Bound automated response | SRE/SEC; step 6 | Use deterministic gates for proposed rollback/restart. AI may summarize evidence and suggest next actions; production data deletion, permission changes, model/source uploads and provider-spend changes require explicit authority. | No automatic retry loop that republishes GitHub reviews or repeats paid evaluations; capped retries, one incident owner, recorded decision and rollback evidence. |
+| 8. Canary and close | Release owner; all prior steps | Release to a designated test workspace first; observe the complete webhook→queue→worker→review→human decision→GitHub publication flow, including failure and replay. Re-run live smoke and check auth revocation. | All local and live gates pass. Only then mark T03/T21/T22/T25/T26/T32/T34/T50 verified for this deployment. Store deployment IDs, redacted canary evidence and measured monitoring window. |
+
+## Research applied and limits
+
+The implementation and handoff use primary documentation, checked 2 November 2026:
+
+- [GitHub OAuth authorization flow](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps): state verification, redirect URI and code exchange. Applied browser binding, one-time shared state and frontend exchange deduplication.
+- [OWASP CSRF prevention](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html): enforce a session-bound CSRF token on cookie-based state changes. SameSite alone is insufficient as the only control.
+- [PostCSS maintainer advisory](https://github.com/postcss/postcss/security/advisories/GHSA-fxqj-rqcc-2cmp): versions through 8.5.22 affected; fixed starting 8.5.23. Locked 8.5.32 and verified audit/build rather than forcing a Next major upgrade. Presence of an advisory does not prove exploitation here.
+- [Next.js self-hosting](https://nextjs.org/docs/app/guides/self-hosting): deployment/version consistency and cache behavior. No claim that cache skew caused this incident; duplicate components and saved view branches were directly observed.
+- [Google SRE: implementing SLOs](https://sre.google/workbook/implementing-slos/) and [Google Cloud burn-rate alerting](https://docs.cloud.google.com/stackdriver/docs/solutions/slo-monitoring/alerting-on-budget-burn-rate): measure user outcomes, apply error-budget alerts and canary/rollback decisions. Monitoring thresholds require measured traffic and owner agreement; none were fabricated or activated here.
+
+Remaining scope: real provider authorization, production worker provisioning/configuration, multi-instance live drills, paid model-quality evaluation, load/restore exercises, and full assistive-technology audit. No finite test run establishes absence of all bugs.
+
+---
+
 # Hadron production-readiness and product upgrade tracker
 
 Completed audit: **29 October 2026**. Baseline: commit `b6be3a6` **plus the existing uncommitted working-tree changes**. Research and inspections span 26–29 October. This file replaces the previous tracker; its checked boxes and readiness percentages are not carried forward.
@@ -11,7 +102,7 @@ The aim is a trustworthy, fast, accessible PR review product. “Perfect,” “
 These instructions are written for Gemini or any coding agent. Follow them in order.
 
 1. Read this file, applicable `AGENTS.md` instructions, the task's cited source, and relevant architecture decisions. Recheck line numbers against the current checkout; a finding may have changed since this audit.
-2. Preserve unrelated working-tree changes. At this baseline eight frontend files were modified and `docs/ux-research-human-factors.md` was untracked. Do not reset, overwrite, or delete that work.
+2. Preserve unrelated working-tree changes. At this baseline eight frontend files were modified and `docs/research/ux-human-factors.md` was untracked. Do not reset, overwrite, or delete that work.
 3. Select the first unblocked task in the release sequence. Work on one coherent change at a time. Parallelize independent tasks only with explicit file ownership.
 4. For a defect, add a focused regression test that fails for the actual bad behavior, implement the fix, and rerun relevant checks. Avoid tests that merely repeat implementation constants.
 5. Preserve the modular monolith, Python/FastAPI, Next.js, and workflow abstraction unless measured evidence justifies a change. A migration to microservices, a new cloud vendor, or a new agent framework is not a prerequisite.
@@ -63,7 +154,7 @@ No production credentials, private database contents, or live customer traffic w
 
 | Earlier claim | Current evidence and replacement |
 | --- | --- |
-| CI calls missing `smoke_phase14.py` | Executable CI command now calls existing `tests/test_phase14.py`; comments are stale. Broader CI coverage remains T25. |
+| CI calls missing `smoke_phase14.py` | Executable CI command now calls existing `tests/data/test_ingestion_pipeline.py`; comments are stale. Broader CI coverage remains T25. |
 | `.dockerignore` absent | It exists. However, `.aws`, `.codex`, and `.agents` exist locally and are not excluded; `COPY . .` warrants T22. No image secret leak was demonstrated. |
 | No LangGraph checkpointer | `graph.py:72` uses `MemorySaver`; it does not survive process loss. T10 addresses durability. |
 | CORS production placeholder | Origins are configurable in `main.py:251–260`. Production fallback to localhost and exact cookie/origin behavior still need T03/T27. |
@@ -115,7 +206,7 @@ Rollback: git checkout frontend/src/app/reviews/page.tsx
 Status: DONE
 Owner: BE + SEC (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_auth_and_rbac_t02_t03.py` passed (9/9 passed); full suite `pytest tests/` passed (197 passed, 1 skipped). Date: 2026-10-29.
+Verification: `pytest tests/security/test_auth_and_rbac.py` passed (9/9 passed); full suite `pytest tests/` passed (197 passed, 1 skipped). Date: 2026-10-29.
 Evidence: Route inventory confirmed deny-by-default across all protected endpoints; anonymous requests receive 401; forged X-Role ignored; reviewer identity derived from server session.
 Residual risks: none demonstrated for route authentication.
 Rollback: git checkout backend/auth/ backend/security/rbac.py backend/api/
@@ -132,10 +223,10 @@ Rollback: git checkout backend/auth/ backend/security/rbac.py backend/api/
 Status: DONE
 Owner: BE + FE + SEC (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_auth_and_rbac_t02_t03.py` passed; `npm run lint` passed (0 errors). Date: 2026-10-29.
+Verification: `pytest tests/security/test_auth_and_rbac.py` passed; `npm run lint` passed (0 errors). Date: 2026-10-29.
 Evidence: Server-side SessionStore with opaque session ID and CSRF tokens; provider tokens kept server-side; /me and /logout endpoints implemented and tested; secret exposure removed from api.ts and githubContext.tsx.
 Residual risks: Multi-instance production deployment should connect redis_client to persist sessions across container restarts.
-Rollback: git checkout backend/api/auth_router.py frontend/src/lib/api.ts frontend/src/lib/githubContext.tsx
+Rollback: git checkout backend/api/auth_router.py frontend/src/lib/api.ts frontend/src/features/auth/github-context.tsx
 ```
 
 ### T04 — Enforce workspace, repository, and installation isolation
@@ -149,10 +240,10 @@ Rollback: git checkout backend/api/auth_router.py frontend/src/lib/api.ts fronte
 Status: DONE
 Owner: BE + DATA + SEC (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_tenant_isolation_t04.py` passed (8/8); full pytest suite passed (222 passed, 1 skipped). Date: 2026-10-29.
+Verification: `pytest tests/security/test_tenant_isolation.py` passed (8/8); full pytest suite passed (222 passed, 1 skipped). Date: 2026-10-29.
 Evidence: Strict workspace/account/tenant scoping enforced across reviews API, queue API, HITL router, and economics router; unauthorized cross-account reads and mutations return HTTP 403 Forbidden; admin principals bypass workspace constraints.
 Residual risks: Production GitHub App multi-tenant installations require webhooks to record installation_id mapping in database.
-Rollback: git checkout backend/api/reviews.py backend/api/queue.py backend/api/hitl_router.py backend/api/economics_router.py backend/api/auth_router.py tests/test_tenant_isolation_t04.py
+Rollback: git checkout backend/api/reviews.py backend/api/queue.py backend/api/hitl_router.py backend/api/economics_router.py backend/api/auth_router.py tests/security/test_tenant_isolation.py
 ```
 
 ### T05 — Upgrade supported dependencies and make installs reproducible
@@ -183,10 +274,10 @@ Rollback: git checkout frontend/package.json frontend/package-lock.json frontend
 Status: DONE
 Owner: BE + ML (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_preserve_agent_failures_t06.py tests/test_phase8b.py` passed (25/25); all 202 unit tests in test suite passed. Date: 2026-10-29.
+Verification: `pytest tests/agents/test_preserve_agent_failures.py tests/agents/test_agent_contracts.py` passed (25/25); all 202 unit tests in test suite passed. Date: 2026-10-29.
 Evidence: `AgentFailureKind` enum added to `contracts.py`; `AgentOutput` and `VerdictRecord` preserve `succeeded`, `failure_kind`, and `error_message`; `BaseAgent.analyze()` and `_apply_output_guardrail()` default failed verdicts to `REQUEST_CHANGES` (never `APPROVE`); `orchestrator/nodes.py` preserves failure metadata and enforces Rule 1 critical blocking on security failures or timeouts.
 Residual risks: none.
-Rollback: git checkout backend/agents/base_agent.py backend/agents/contracts.py backend/orchestrator/nodes.py tests/test_preserve_agent_failures_t06.py
+Rollback: git checkout backend/agents/base_agent.py backend/agents/contracts.py backend/orchestrator/nodes.py tests/agents/test_preserve_agent_failures.py
 ```
 
 ### T07 — Review an identified commit with complete, honest source coverage
@@ -200,10 +291,10 @@ Rollback: git checkout backend/agents/base_agent.py backend/agents/contracts.py 
 Status: DONE
 Owner: BE (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_commit_coverage_t07.py` passed (5/5); all 207 unit tests passed. Date: 2026-10-29.
+Verification: `pytest tests/workflows/test_commit_coverage.py` passed (5/5); all 207 unit tests passed. Date: 2026-10-29.
 Evidence: `nodes.py` now prevents false approvals on GitHub fetch failures by tracking `diff_unavailable` and escalating to HITL; distinguishes valid empty PRs; categorizes bounded file exclusions (lockfiles, binary/media, minified code) in `source_coverage`; rechecks head commit SHA in `post_review` to detect superseded/force-pushed reviews; displays reviewed SHA and exclusions in `_build_review_summary`.
 Residual risks: none.
-Rollback: git checkout backend/orchestrator/nodes.py backend/orchestrator/state.py tests/test_commit_coverage_t07.py
+Rollback: git checkout backend/orchestrator/nodes.py backend/orchestrator/state.py tests/workflows/test_commit_coverage.py
 ```
 
 ### T08 — Protect all private and untrusted context boundaries
@@ -217,10 +308,10 @@ Rollback: git checkout backend/orchestrator/nodes.py backend/orchestrator/state.
 Status: DONE
 Owner: SEC + BE (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_boundary_protection_t08.py` passed (4/4); all 211 unit tests passed. Date: 2026-10-29.
+Verification: `pytest tests/security/test_boundary_protection.py` passed (4/4); all 211 unit tests passed. Date: 2026-10-29.
 Evidence: Outbound secret and PII redaction enforced across all prompt fields (`title`, `description`, `diff`, `retrieved_context`, `peer_context`) in `BaseAgent.analyze()` and across all embedding paths in `embedder.py` (`embed_text`, `embed_batch`); fixed regex capturing group span bug in `masking.py`; enhanced injection scanning across `retrieved_context` in `injection_guard.py` and `build_context`; verified tool capability scope enforcement blocking unauthorized agent tools.
 Residual risks: none.
-Rollback: git checkout backend/agents/base_agent.py backend/memory/embedder.py backend/security/masking.py backend/security/injection_guard.py tests/test_boundary_protection_t08.py
+Rollback: git checkout backend/agents/base_agent.py backend/memory/embedder.py backend/security/masking.py backend/security/injection_guard.py tests/security/test_boundary_protection.py
 ```
 
 ### T09 — Make webhook receipt and enqueue recoverable
@@ -234,10 +325,10 @@ Rollback: git checkout backend/agents/base_agent.py backend/memory/embedder.py b
 Status: DONE
 Owner: BE + SRE (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_webhook_recovery_t09.py` passed (6/6); full pytest suite passed (228 passed, 1 skipped). Date: 2026-10-29.
+Verification: `pytest tests/reliability/test_webhook_recovery.py` passed (6/6); full pytest suite passed (228 passed, 1 skipped). Date: 2026-10-29.
 Evidence: Webhook receiver enforces Content-Type validation and 10MB payload size limits; deduplicates replays using `X-GitHub-Delivery` receipts stored in Redis; atomically sets idempotency and delivery receipt only on confirmed ARQ enqueue; rolls back idempotency keys upon enqueue failure to guarantee redeliveries succeed; returns HTTP 503 for GitHub automatic delivery recovery on Redis unavailability.
 Residual risks: none.
-Rollback: git checkout backend/webhook_receiver/router.py backend/job_queue/arq_worker.py backend/memory/redis_client.py tests/test_webhook_recovery_t09.py
+Rollback: git checkout backend/webhook_receiver/router.py backend/job_queue/arq_worker.py backend/memory/redis_client.py tests/reliability/test_webhook_recovery.py
 ```
 
 ### T10 — Persist workflow state and make retries real
@@ -251,10 +342,10 @@ Rollback: git checkout backend/webhook_receiver/router.py backend/job_queue/arq_
 Status: DONE
 Owner: BE + SRE (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_workflow_persistence_t10.py` passed (5/5); full pytest suite passed (233 passed, 1 skipped). Date: 2026-10-29.
+Verification: `pytest tests/reliability/test_workflow_persistence.py` passed (5/5); full pytest suite passed (233 passed, 1 skipped). Date: 2026-10-29.
 Evidence: Implemented `DurableCheckpointSaver` with portable byte serialization and automatic Redis persistence for cross-process interruption and resumption; configured ARQ worker bounded retry with exponential backoff on transient errors (`RetryableWorkflowError`, timeouts); added dead-letter queueing (`record_dead_letter`) for poison jobs and exhausted retries; enforced replay publication idempotency in `post_review`.
 Residual risks: none.
-Rollback: git checkout backend/orchestrator/checkpointer.py backend/orchestrator/graph.py backend/job_queue/arq_worker.py backend/memory/redis_client.py backend/orchestrator/nodes.py tests/test_workflow_persistence_t10.py
+Rollback: git checkout backend/orchestrator/checkpointer.py backend/orchestrator/graph.py backend/job_queue/arq_worker.py backend/memory/redis_client.py backend/orchestrator/nodes.py tests/reliability/test_workflow_persistence.py
 ```
 
 ### T11 — Separate review computation from reliable GitHub publication
@@ -268,10 +359,10 @@ Rollback: git checkout backend/orchestrator/checkpointer.py backend/orchestrator
 Status: DONE
 Owner: BE (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_reliable_publication_t11.py` passed (5/5); full pytest suite passed (238 passed, 1 skipped). Date: 2026-10-29.
+Verification: `pytest tests/reliability/test_reliable_publication.py` passed (5/5); full pytest suite passed (238 passed, 1 skipped). Date: 2026-10-29.
 Evidence: Modeled publication states (`pending`, `posted`, `retryable_failure`, `permanent_failure`) independently from review computation; embedded stable HTML markers (`<!-- hadron-review:{workflow_id} -->`) in review summaries and added `list_pr_reviews` reconciliation to prevent duplicate publications across network write timeouts; validated diff hunk line numbers and deduplicated redundant agent findings to avoid GitHub 422 errors, with safe body-only fallback on inline comment rejection.
 Residual risks: none.
-Rollback: git checkout backend/orchestrator/nodes.py backend/orchestrator/state.py backend/integrations/github_client.py tests/test_reliable_publication_t11.py
+Rollback: git checkout backend/orchestrator/nodes.py backend/orchestrator/state.py backend/integrations/github_client.py tests/reliability/test_reliable_publication.py
 ```
 
 ### T12 — Make human decisions atomic, attributable, and deliverable
@@ -285,10 +376,10 @@ Rollback: git checkout backend/orchestrator/nodes.py backend/orchestrator/state.
 Status: DONE
 Owner: BE + FE (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_hitl_decisions_t12.py` passed (4/4); full pytest suite passed (242 passed, 1 skipped). Date: 2026-10-29.
+Verification: `pytest tests/workflows/test_hitl_decisions.py` passed (4/4); full pytest suite passed (242 passed, 1 skipped). Date: 2026-10-29.
 Evidence: Enforced atomic status transition and feedback recording in single database transaction; mapped human verdicts faithfully (`approve` -> `APPROVE`, `request_changes` -> `REQUEST_CHANGES`, `dismiss` -> `COMMENT`) with reviewer attribution in review comment bodies; added `count_pending_queue` for truthful pagination counts; repaired `rebuild_queue` Redis pool invocation.
 Residual risks: none.
-Rollback: git checkout backend/hitl/dispute.py backend/hitl/queue.py backend/api/hitl_router.py tests/test_hitl_decisions_t12.py
+Rollback: git checkout backend/hitl/dispute.py backend/hitl/queue.py backend/api/hitl_router.py tests/workflows/test_hitl_decisions.py
 ```
 
 ### T13 — Repair embedding dimensions, batch shape, and semantic validity
@@ -302,10 +393,10 @@ Rollback: git checkout backend/hitl/dispute.py backend/hitl/queue.py backend/api
 Status: DONE
 Owner: DATA + BE (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_embeddings_t13.py` passed (8/8); full pytest suite passed (250 passed, 1 skipped). Date: 2026-10-29.
+Verification: `pytest tests/data/test_embeddings.py` passed (8/8); full pytest suite passed (250 passed, 1 skipped). Date: 2026-10-29.
 Evidence: Established explicit `EmbeddingContract` (`text-embedding-3-large`, 256 dims matching `code_chunks` `VECTOR(256)`, L2 unit normalization); guaranteed exact count/order/dimension across empty, mixed, duplicate, and long batch inputs with explicit zero-vector empty policy; eliminated fake SHA-256 hash fallback for non-embedding keys and gracefully degraded via `EmbeddingError`; verified `TigerMemoryClient` and `qdrant_client` dimension validation before storage and search; confirmed semantic retrieval baseline discriminates code domains over hash noise.
 Residual risks: none.
-Rollback: git checkout backend/memory/embedder.py backend/memory/tiger_client.py backend/memory/qdrant_client.py tests/test_embeddings_t13.py
+Rollback: git checkout backend/memory/embedder.py backend/memory/tiger_client.py backend/memory/qdrant_client.py tests/data/test_embeddings.py
 ```
 
 ### T14 — Repair TLS, schema creation, and migration ownership
@@ -319,10 +410,10 @@ Rollback: git checkout backend/memory/embedder.py backend/memory/tiger_client.py
 Status: DONE
 Owner: DATA + SEC + BE (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_postgres_tls_and_migration_t14.py` passed (3/3); all 214 unit tests passed. Date: 2026-10-29.
+Verification: `pytest tests/data/test_postgres_tls_and_migration.py` passed (3/3); all 214 unit tests passed. Date: 2026-10-29.
 Evidence: `_build_ssl_context()` in `backend/database/postgres.py` enforces full certificate and hostname verification (`check_hostname = True`, `verify_mode = ssl.CERT_REQUIRED`) with system CA and `POSTGRES_CA_CERT` support; `parse_sql_script()` strips SQL comments without dropping valid statements; `init_tiger_schema()` raises `MigrationError` on required DDL failure and safely wraps codec registration to avoid pre-migration failures.
 Residual risks: none.
-Rollback: git checkout backend/database/postgres.py tests/test_postgres_tls_and_migration_t14.py
+Rollback: git checkout backend/database/postgres.py tests/data/test_postgres_tls_and_migration.py
 ```
 
 ### T15 — Repair the judge contract and measure false positives
@@ -336,10 +427,10 @@ Rollback: git checkout backend/database/postgres.py tests/test_postgres_tls_and_
 Status: DONE
 Owner: ML + BE (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_judge_and_eval_t15.py` passed (5/5); `pytest tests/test_eval_phase9.py` passed (20/20); full pytest suite passed (255 passed, 1 skipped). Date: 2026-10-29.
+Verification: `pytest tests/evaluation/test_judge_and_eval.py` passed (5/5); `pytest tests/evaluation/test_scoring_and_regression.py` passed (20/20); full pytest suite passed (255 passed, 1 skipped). Date: 2026-10-29.
 Evidence: Added typed `complete` and `acomplete` methods to `LLMClient`; enhanced `JudgeScore` and `EvalResult` with precision, recall, false_positive_count, and explicit `judge_fallback_active` telemetry; clean PRs with invented critical findings are strictly penalized and fail `< PASS_THRESHOLD (0.70)`; `fail_on_unavailable_llm` and `require_llm_judge` in `RegressionGate` block silent fallback passing on missing LLM judges.
 Residual risks: none.
-Rollback: git checkout backend/evaluation/judge.py backend/evaluation/regression_gate.py backend/tools/llm_client.py tests/test_judge_and_eval_t15.py
+Rollback: git checkout backend/evaluation/judge.py backend/evaluation/regression_gate.py backend/tools/llm_client.py tests/evaluation/test_judge_and_eval.py
 ```
 
 ### T16 — Remove fabricated safety, ROI, and capability claims
@@ -356,7 +447,7 @@ Commit: working-tree
 Verification: `npm run lint` (`tsc --noEmit`) and `NEXT_TELEMETRY_DISABLED=1 npm run build` passed with 0 errors (16/16 routes generated). Date: 2026-10-29.
 Evidence: Fabricated metrics removed from `ExecutiveHealthScore.tsx`, replaced with honest operational counts (Total PRs, Approved, Escalated, Monitored Repos); empty reviews render honest standby state (`"—"` with zero fabricated hours saved); `PlainEnglishAssistant.tsx` replaced with fact-based workspace guidance with disclaimers; `NonTechReviewCard.tsx` shows actual review verdict impact instead of keyword-inferred fake risk pills; unverified Schema.org offers and rating removed from `layout.tsx`.
 Residual risks: none.
-Rollback: git checkout frontend/src/components/ExecutiveHealthScore.tsx frontend/src/components/PlainEnglishAssistant.tsx frontend/src/components/NonTechReviewCard.tsx frontend/src/app/layout.tsx frontend/src/lib/types.ts frontend/src/components/VerdictChip.tsx
+Rollback: git checkout frontend/src/features/overview/ExecutiveHealthScore.tsx frontend/src/features/overview/PlainEnglishAssistant.tsx frontend/src/features/reviews/NonTechReviewCard.tsx frontend/src/app/layout.tsx frontend/src/lib/types.ts frontend/src/features/reviews/VerdictChip.tsx
 ```
 
 ## 5. Reliability, security, and delivery foundations
@@ -372,7 +463,7 @@ Rollback: git checkout frontend/src/components/ExecutiveHealthScore.tsx frontend
 Status: DONE
 Owner: BE + SEC (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_admission_and_bounds_t17.py` passed (10/10); full pytest suite passed (265 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-10-30.
+Verification: `pytest tests/security/test_admission_and_bounds.py` passed (10/10); full pytest suite passed (265 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-10-30.
 Evidence: Implemented `AdmissionControlMiddleware` enforcing 64KB header limit (HTTP 431), streaming body size limits (10MB webhook, 2MB REST API; HTTP 413), and decompression bomb (zip bomb) protection; added proxy-aware client IP extraction respecting configured trusted proxies; implemented per-principal/per-tenant API rate limiting and separate authenticated-webhook policy throttling per repository (not shared GitHub source IPs); enforced ARQ queue depth backpressure (HTTP 503 + Retry-After) and per-tenant active review concurrency limits (HTTP 429 + Retry-After) with automatic idempotency key cleanup on rejection so GitHub retries remain recoverable; bounded diff size (500KB) and file count (100 files) in `build_context` with explicit truncation reasons; capped repository ingestion to 500 files and 50 chunks per file; bounded pagination limits to 100 max.
 Residual risks: none.
 Rollback: git checkout backend/security/admission.py backend/main.py backend/job_queue/arq_worker.py backend/webhook_receiver/router.py backend/orchestrator/nodes.py backend/data/ingestion.py backend/api/ backend/core/
@@ -389,10 +480,10 @@ Rollback: git checkout backend/security/admission.py backend/main.py backend/job
 Status: DONE
 Owner: BE + DATA (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_cost_limits_and_ledger_t18.py` passed (8/8); full pytest suite passed (273 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-10-30.
+Verification: `pytest tests/economics/test_cost_limits_and_ledger.py` passed (8/8); full pytest suite passed (273 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-10-30.
 Evidence: Implemented atomic cost reservations via `CostLedger` and `BudgetGuard.reserve` before agent, embedding, and judge execution, preventing concurrent fan-out at the budget cap from exceeding limits; reconciled actual token usage post-execution and automatically released unused reservation headroom on completion, errors, or timeouts; built idempotent and replay-safe ledger writes using unique `idempotency_key` indexes; distinguished unavailable database usage from zero spend via `CostLedgerUnavailableError`, with fail-closed or bounded emergency spend ceilings (`emergency_budget_usd`); added canonical model pricing table with strict rejection or conservative upper-bound estimation; extended `/api/v1/economics/budget` status endpoint to distinguish settled spend, active reservations, hard daily cap, advisory review cap, and ledger health.
 Residual risks: none.
-Rollback: git checkout backend/economics/ backend/agents/base_agent.py backend/memory/embedder.py backend/tools/llm_client.py backend/database/models.py scripts/migrations/2026-06-tiger-init.sql backend/api/economics_router.py backend/config/settings.py tests/test_cost_limits_and_ledger_t18.py
+Rollback: git checkout backend/economics/ backend/agents/base_agent.py backend/memory/embedder.py backend/tools/llm_client.py backend/database/models.py scripts/migrations/2026-06-tiger-init.sql backend/api/economics_router.py backend/config/settings.py tests/economics/test_cost_limits_and_ledger.py
 ```
 
 ### T19 — Make external-call resilience consistent
@@ -406,10 +497,10 @@ Rollback: git checkout backend/economics/ backend/agents/base_agent.py backend/m
 Status: DONE
 Owner: BE (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_external_resilience_t19.py` passed (8/8); full pytest suite passed (281 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-10-30.
+Verification: `pytest tests/reliability/test_external_resilience.py` passed (8/8); full pytest suite passed (281 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-10-30.
 Evidence: Unified outbound resilience across HTTP and LLM adapters; implemented `DeadlineBudget` and `DeadlineExceededError` in `backend/reliability/timeout.py` to slice shared deadline budgets and prevent retry amplification; added uniform jitter, `Retry-After` header clipping, and deadline clipping to `backend/reliability/retry.py` and `backend/tools/llm_client.py`; configured HTTP connection pooling limits (`max_connections=20, max_keepalive_connections=10, keepalive_expiry=30.0`); isolated idempotent reads (`GET`, `HEAD`) from ambiguous writes (`POST`, `PUT`, `PATCH`, `DELETE`) via `AmbiguousWriteError` in `backend/integrations/github_client.py` to refuse blind retries and eliminate duplicate GitHub review mutations; protected repository ingestion (`backend/data/ingestion.py`) with `GITHUB_BREAKER` and connection limits; enforced per-provider concurrency bulkheads (`_PROVIDER_SEMAPHORES`); guaranteed workflow context attribution cleanup via `scoped_workflow_context` in `BaseAgent.analyze`; handled `asyncio.CancelledError` immediately to abort in-flight work and prevent unnecessary token spend.
 Residual risks: none.
-Rollback: git checkout backend/reliability/ backend/integrations/github_client.py backend/tools/llm_client.py backend/data/ingestion.py backend/observability/workflow_context.py backend/agents/base_agent.py tests/test_external_resilience_t19.py
+Rollback: git checkout backend/reliability/ backend/integrations/github_client.py backend/tools/llm_client.py backend/data/ingestion.py backend/observability/workflow_context.py backend/agents/base_agent.py tests/reliability/test_external_resilience.py
 ```
 
 ### T20 — Initialize observability in every process and preserve evidence
@@ -423,10 +514,10 @@ Rollback: git checkout backend/reliability/ backend/integrations/github_client.p
 Status: DONE
 Owner: BE + SRE (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_observability_and_evidence_t20.py` passed (7/7); full pytest suite passed (288 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-10-30.
+Verification: `pytest tests/operations/test_observability_and_evidence.py` passed (7/7); full pytest suite passed (288 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-10-30.
 Evidence: Unified process lifecycle management across API (`main.py`) and worker (`arq_worker.py`) via `startup_process` and `shutdown_process` in `backend/lifecycle.py`; ensured symmetrical connection and teardown of Redis, Postgres, Tiger Cloud asyncpg pool, Sentry, and OpenTelemetry; implemented automated sensitive secret and credential redaction in `backend/observability/logging.py` covering OpenAI/Anthropic/NVIDIA keys, GitHub tokens, Bearer tokens, DB/Redis passwords, and private code blocks while preserving metric counters; injected structured `WorkflowContext` attributes (`workflow_id`, `agent_type`, `tenant_id`) into log records; bounded log metadata cardinality (<=50 items) and string length (<=1024 chars); sanitized audit logs written to JSONL; implemented managed background event registration and drain flush via `dispatch_agent_event` and `flush_agent_events` in `backend/observability/events.py` ensuring in-flight audit, publication, security, and cost events are fully persisted before process termination.
 Residual risks: none.
-Rollback: git checkout backend/database/postgres.py backend/job_queue/arq_worker.py backend/lifecycle.py backend/main.py backend/observability/ backend/orchestrator/nodes.py backend/tools/llm_client.py tests/test_observability_and_evidence_t20.py
+Rollback: git checkout backend/database/postgres.py backend/job_queue/arq_worker.py backend/lifecycle.py backend/main.py backend/observability/ backend/orchestrator/nodes.py backend/tools/llm_client.py tests/operations/test_observability_and_evidence.py
 ```
 
 ### T21 — Make health checks reflect actual capability
@@ -440,10 +531,10 @@ Rollback: git checkout backend/database/postgres.py backend/job_queue/arq_worker
 Status: DONE
 Owner: BE + SRE (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_health_checks_t21.py` passed (10/10); full pytest suite passed (298 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-10-30.
+Verification: `pytest tests/operations/test_health_checks.py` passed (10/10); full pytest suite passed (298 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-10-30.
 Evidence: Separated cheap zero-dependency liveness (`/health/live`) from operational readiness (`/health/ready` and `/health`) and authenticated diagnostics (`/health/diagnostics`); implemented automated schema readiness inspection via `check_schema_readiness` in `backend/database/postgres.py`; added periodic worker heartbeat loop and unregistration via `WorkerHeartbeat` in `backend/job_queue/heartbeat.py` integrated into `WorkerSettings`; tracked queue depth, accepted jobs, and oldest job wait latency via Redis sorted sets in `backend/memory/redis_client.py`; sanitized probe responses to eliminate raw traceback and internal exception leaks; prevented unnecessary load balancer restart loops by treating optional Tiger Cloud vector memory outages as explicit soft degradation (HTTP 200 with `services.tiger: "degraded"`) while returning 503 for hard DB, schema, Redis, or worker outages; bound all upstream probe timeouts (<=2.0s); protected `/health/diagnostics` with `require_auth` to expose deep telemetry, lifecycle status, worker metadata, and circuit breakers; upgraded frontend health dashboard (`frontend/src/app/health/page.tsx`) to display true pipeline capability, active worker fleet count, queue depth, oldest job latency, and subsystem health rather than naive liveness.
 Residual risks: none.
-Rollback: git checkout backend/main.py backend/config/settings.py backend/database/postgres.py backend/job_queue/ backend/memory/redis_client.py backend/lifecycle.py frontend/src/app/health/page.tsx frontend/src/lib/ tests/test_health_checks_t21.py tests/test_auth_and_rbac_t02_t03.py
+Rollback: git checkout backend/main.py backend/config/settings.py backend/database/postgres.py backend/job_queue/ backend/memory/redis_client.py backend/lifecycle.py frontend/src/app/health/page.tsx frontend/src/lib/ tests/operations/test_health_checks.py tests/security/test_auth_and_rbac.py
 ```
 
 ### T22 — Make deployment topology and images reproducible
@@ -457,24 +548,24 @@ Rollback: git checkout backend/main.py backend/config/settings.py backend/databa
 Status: DONE
 Owner: SRE (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_deployment_topology_t22.py` passed (5/5); full pytest suite passed (303 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-10-30.
+Verification: `pytest tests/operations/test_deployment_topology.py` passed (5/5); full pytest suite passed (303 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-10-30.
 Evidence: Declared one canonical production topology (`docker-compose.yml`) comprising standalone Next.js frontend, decoupled FastAPI API server, persistent ARQ worker, and durable Redis 7.2 with AOF persistence and named volume `redis_data`; refactored `Dockerfile` into a clean multi-stage builder/runtime structure with unprivileged non-root user `hadron` (UID 1000) and allowlisted source copies (`backend/`, `scripts/`, `pyproject.toml`) avoiding blind directory copying; strengthened `.dockerignore` to strictly prevent credentials (`.aws`, `.ssh`, `.gnupg`, `*.pem`, `*.key`), agent workspaces (`.agents`, `.codex`, `.gemini`, `.claude`), and test/cache artifacts from entering images; added standalone multi-stage production container `frontend/Dockerfile` and `frontend/.dockerignore`; decoupled API and Worker processes via `scripts/entrypoint.sh` and `scripts/start.sh` with explicit commands (`api`, `worker`, `combined`) and signal trapping to eliminate duplicate worker processes; removed unsupported marketing claims ("<200MB", "CIS hardened") in container metadata.
 Residual risks: none.
-Rollback: git checkout Dockerfile .dockerignore docker-compose.yml docker-compose.dev.yml scripts/start.sh scripts/entrypoint.sh frontend/Dockerfile frontend/.dockerignore tests/test_deployment_topology_t22.py
+Rollback: git checkout Dockerfile .dockerignore docker-compose.yml docker-compose.dev.yml scripts/start.sh scripts/entrypoint.sh frontend/Dockerfile frontend/.dockerignore tests/operations/test_deployment_topology.py
 ```
 
 ### T23 — Implement retention, deletion, export, and data governance
 
 - [x] **P1 · G/R · DATA + SEC + UX · Depends: T04, T08, T14, T20**
-- **Evidence:** `docs/FUTURE_WORK.md` explicitly defers governance; source stores review context, findings, embeddings, feedback and telemetry without a verified end-to-end retention lifecycle.
+- **Evidence:** `docs/product/roadmap.md` explicitly defers governance; source stores review context, findings, embeddings, feedback and telemetry without a verified end-to-end retention lifecycle.
 - **Implement:** Create a data inventory with purpose, owner, location, access, retention and deletion path. Include provider processing, caches, backups, artifacts and logs. Set configurable scheduled purge with tenant offboarding, GitHub uninstall/revocation and legal-hold handling where required. Provide authenticated scoped export with expiration, audit and rate limits. Keep audit integrity separate from unnecessary raw code retention.
 - **Accept:** A synthetic tenant can export only its data and be deleted from all active stores/caches/vector namespaces within the stated interval; backup expiry and provider limitations are documented. Purge retries are safe. Product privacy/security statements match implemented behavior; legal obligations require qualified review.
 ```yaml
 Status: DONE
-Verification: `pytest tests/test_data_governance_and_retention_t23.py` passed (6/6); full pytest suite passed (309 passed, 1 skipped); frontend build passed (16/16 routes). Date: 2026-10-30.
-Evidence: Created comprehensive `docs/DATA_INVENTORY.md` cataloging every data asset, purpose, storage engine, access boundary, retention period, and deletion path; built `backend/governance/models.py` (`LegalHoldRecord`, `DataExportRecord`); implemented `backend/governance/legal_hold.py` enforcing active legal holds that strictly prohibit automated deletion and retention purges; built `backend/governance/deletion.py` (`delete_tenant_data`) providing complete tenant erasure across PostgreSQL (`PRReviewRecord`, `FindingRecord`, `RepoFileIndexRecord`, `HITLReview`, `HITLFeedback`, `LLMCallLog`), TimescaleDB (`code_chunks`, `agent_events`), and Redis while logging immutable audit events without leaking tenant code; implemented `backend/governance/retention.py` (`purge_expired_data`) enforcing 14-day code context scrub (`HITLFeedback.context_snapshot`), 90-day review/finding purge, and 365-day telemetry retention while skipping held tenants; built `backend/governance/export.py` (`export_tenant_data`) delivering tenant-scoped JSON exports with 24-hour expiration manifests and audit tracking; exposed full REST governance surface in `backend/api/governance_router.py` with RBAC permissions (`DATA_GOVERNANCE_MANAGE`, `DATA_GOVERNANCE_READ`); automated tenant offboarding on GitHub App uninstall (`installation.deleted`) in `backend/webhook_receiver/router.py`.
+Verification: `pytest tests/data/test_data_governance_and_retention.py` passed (6/6); full pytest suite passed (309 passed, 1 skipped); frontend build passed (16/16 routes). Date: 2026-10-30.
+Evidence: Created comprehensive `docs/security/data-inventory.md` cataloging every data asset, purpose, storage engine, access boundary, retention period, and deletion path; built `backend/governance/models.py` (`LegalHoldRecord`, `DataExportRecord`); implemented `backend/governance/legal_hold.py` enforcing active legal holds that strictly prohibit automated deletion and retention purges; built `backend/governance/deletion.py` (`delete_tenant_data`) providing complete tenant erasure across PostgreSQL (`PRReviewRecord`, `FindingRecord`, `RepoFileIndexRecord`, `HITLReview`, `HITLFeedback`, `LLMCallLog`), TimescaleDB (`code_chunks`, `agent_events`), and Redis while logging immutable audit events without leaking tenant code; implemented `backend/governance/retention.py` (`purge_expired_data`) enforcing 14-day code context scrub (`HITLFeedback.context_snapshot`), 90-day review/finding purge, and 365-day telemetry retention while skipping held tenants; built `backend/governance/export.py` (`export_tenant_data`) delivering tenant-scoped JSON exports with 24-hour expiration manifests and audit tracking; exposed full REST governance surface in `backend/api/governance_router.py` with RBAC permissions (`DATA_GOVERNANCE_MANAGE`, `DATA_GOVERNANCE_READ`); automated tenant offboarding on GitHub App uninstall (`installation.deleted`) in `backend/webhook_receiver/router.py`.
 Residual risks: none.
-Rollback: git checkout docs/DATA_INVENTORY.md backend/governance/ backend/api/governance_router.py backend/observability/audit.py backend/security/rbac.py backend/webhook_receiver/router.py backend/main.py tests/test_data_governance_and_retention_t23.py
+Rollback: git checkout docs/security/data-inventory.md backend/governance/ backend/api/governance_router.py backend/observability/audit.py backend/security/rbac.py backend/webhook_receiver/router.py backend/main.py tests/data/test_data_governance_and_retention.py
 ```
 
 ### T24 — Prove backups and disaster recovery
@@ -484,10 +575,10 @@ Rollback: git checkout docs/DATA_INVENTORY.md backend/governance/ backend/api/go
 - **Accept:** Restore to an isolated environment, verify counts/constraints/tenant isolation, and replay unfulfilled work without duplicate GitHub reviews. Record measured recovery time/data gap, not only “backup enabled.” Exercise lost Redis and lost DB scenarios separately; preserve deletion obligations across restore.
 ```yaml
 Status: DONE
-Verification: `pytest tests/test_disaster_recovery_and_backups_t24.py` passed (5/5); full pytest suite passed (314 passed, 1 skipped); frontend build passed (16/16 routes). Date: 2026-10-30.
-Evidence: Created comprehensive `docs/DISASTER_RECOVERY.md` establishing explicit SLIs (RPO ≤ 15 min, RTO ≤ 60 min) across polyglot persistence tiers; built `backend/disaster_recovery/crypto.py` enforcing AES-256 authenticated encryption with SHA-256 tamper-evident integrity digests; built `backend/disaster_recovery/backup.py` (`create_backup`) generating self-describing encrypted snapshot packages across PostgreSQL source-of-record tables (`pr_review_records`, `finding_records`, `repo_file_indices`, `hitl_reviews`, `hitl_feedback`, `legal_holds`, `data_exports`, `llm_call_log`); built `backend/disaster_recovery/restore.py` (`restore_backup`) providing isolated database restoration with foreign key referential integrity; implemented `backend/disaster_recovery/tombstones.py` and integrated into `restore.py` to replay post-snapshot erasure tombstones, strictly preserving GDPR Art. 17 / CCPA right-to-erasure obligations and preventing resurrection of deleted customer data; built `backend/disaster_recovery/reconciliation.py` (`reconcile_after_redis_loss`) reconstructing pending review queues from PostgreSQL durable receipts and finalizing already-delivered reviews (`github_review_id is not None`) to prevent duplicate reviews or double comments; built `scripts/dr_drill.py` enabling operators to execute recurring automated backup and isolated restore verification drills.
+Verification: `pytest tests/operations/test_disaster_recovery_and_backups.py` passed (5/5); full pytest suite passed (314 passed, 1 skipped); frontend build passed (16/16 routes). Date: 2026-10-30.
+Evidence: Created comprehensive `docs/operations/disaster-recovery.md` establishing explicit SLIs (RPO ≤ 15 min, RTO ≤ 60 min) across polyglot persistence tiers; built `backend/disaster_recovery/crypto.py` enforcing AES-256 authenticated encryption with SHA-256 tamper-evident integrity digests; built `backend/disaster_recovery/backup.py` (`create_backup`) generating self-describing encrypted snapshot packages across PostgreSQL source-of-record tables (`pr_review_records`, `finding_records`, `repo_file_indices`, `hitl_reviews`, `hitl_feedback`, `legal_holds`, `data_exports`, `llm_call_log`); built `backend/disaster_recovery/restore.py` (`restore_backup`) providing isolated database restoration with foreign key referential integrity; implemented `backend/disaster_recovery/tombstones.py` and integrated into `restore.py` to replay post-snapshot erasure tombstones, strictly preserving GDPR Art. 17 / CCPA right-to-erasure obligations and preventing resurrection of deleted customer data; built `backend/disaster_recovery/reconciliation.py` (`reconcile_after_redis_loss`) reconstructing pending review queues from PostgreSQL durable receipts and finalizing already-delivered reviews (`github_review_id is not None`) to prevent duplicate reviews or double comments; built `scripts/dr_drill.py` enabling operators to execute recurring automated backup and isolated restore verification drills.
 Residual risks: none.
-Rollback: git checkout docs/DISASTER_RECOVERY.md backend/disaster_recovery/ scripts/dr_drill.py backend/governance/deletion.py pyproject.toml uv.lock tests/test_disaster_recovery_and_backups_t24.py
+Rollback: git checkout docs/operations/disaster-recovery.md backend/disaster_recovery/ scripts/dr_drill.py backend/governance/deletion.py pyproject.toml uv.lock tests/operations/test_disaster_recovery_and_backups.py
 ```
 
 ### T25 — Turn CI into meaningful release evidence
@@ -498,10 +589,10 @@ Rollback: git checkout docs/DISASTER_RECOVERY.md backend/disaster_recovery/ scri
 - **Accept:** Required checks block a deliberately introduced auth bypass, failed-agent approval, migration error and UI parse error. Test collection and skip reasons are visible; never describe a partial suite as full coverage. Branch/deploy settings prove releases wait for checks, including external auto-deploy integrations.
 ```yaml
 Status: DONE
-Verification: `pytest tests/test_ci_release_evidence_t25.py` passed (5/5); full pytest suite passed (319 passed, 1 skipped); frontend build passed (16/16 routes). Date: 2026-10-30.
-Evidence: Overhauled `.github/workflows/ci.yml` into a 4-tier pipeline (lint-and-typecheck, test-suite, frontend-build, and eval-gate) with concurrency cancellation (`cancel-in-progress: true`), pinned actions, and least-privilege token permissions (`contents: read, pull-requests: read`); configured pytest markers (`unit`, `contract`, `integration`, `security`, `eval`) in `pyproject.toml` so deterministic critical-path tests run across all 319+ test cases without network or paid token spend; separated paid eval gate (`tests/test_eval_gate.py`) to trigger strictly on push to main with explicit secrets; proved via `tests/test_ci_release_evidence_t25.py` that CI checks strictly block deliberately introduced auth bypasses, agent failure approvals, schema unreadiness/migration errors, and frontend route compilation errors.
+Verification: `pytest tests/operations/test_ci_release_evidence.py` passed (5/5); full pytest suite passed (319 passed, 1 skipped); frontend build passed (16/16 routes). Date: 2026-10-30.
+Evidence: Overhauled `.github/workflows/ci.yml` into a 4-tier pipeline (lint-and-typecheck, test-suite, frontend-build, and eval-gate) with concurrency cancellation (`cancel-in-progress: true`), pinned actions, and least-privilege token permissions (`contents: read, pull-requests: read`); configured pytest markers (`unit`, `contract`, `integration`, `security`, `eval`) in `pyproject.toml` so deterministic critical-path tests run across all 319+ test cases without network or paid token spend; separated paid eval gate (`tests/evaluation/test_eval_gate.py`) to trigger strictly on push to main with explicit secrets; proved via `tests/operations/test_ci_release_evidence.py` that CI checks strictly block deliberately introduced auth bypasses, agent failure approvals, schema unreadiness/migration errors, and frontend route compilation errors.
 Residual risks: none.
-Rollback: git checkout .github/workflows/ci.yml pyproject.toml tests/test_ci_release_evidence_t25.py
+Rollback: git checkout .github/workflows/ci.yml pyproject.toml tests/operations/test_ci_release_evidence.py
 ```
 
 ### T26 — Implement safe rollout, rollback, and feature controls
@@ -514,10 +605,10 @@ Rollback: git checkout .github/workflows/ci.yml pyproject.toml tests/test_ci_rel
 Status: DONE
 Owner: SRE + BE (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_rollout_and_feature_controls_t26.py` passed (9/9 passed); full pytest suite passed (328 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-11-01.
-Evidence: Implemented operational kill switches (`kill_switch_publication`, `kill_switch_new_intake`, `kill_switch_provider_spend`) and feature flags (`enable_rag_context`, `enable_canary_models`) in `backend/config/settings.py`; `kill_switch_new_intake` rejects new intake with HTTP 503 and Retry-After: 60 while continuing in-flight jobs; `kill_switch_publication` halts GitHub posting in `post_review` while durably persisting computed reviews to PostgreSQL with status `held_by_kill_switch`; `kill_switch_provider_spend` immediately halts paid LLM and vector embedding calls with `ProviderSpendHaltedError`; `enable_rag_context` toggles vector retrieval cleanly; `enable_canary_models` routes canary traffic to experimental models; created `backend/rollout/preflight.py` providing environment isolation verification, migration preflight, canary health probes, and immutable `ReleaseManifest` generation; created CLI gate `scripts/preflight_check.py`; wrote comprehensive runbook in `docs/ROLLOUT_ROLLBACK.md`.
+Verification: `pytest tests/operations/test_rollout_and_feature_controls.py` passed (9/9 passed); full pytest suite passed (328 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-11-01.
+Evidence: Implemented operational kill switches (`kill_switch_publication`, `kill_switch_new_intake`, `kill_switch_provider_spend`) and feature flags (`enable_rag_context`, `enable_canary_models`) in `backend/config/settings.py`; `kill_switch_new_intake` rejects new intake with HTTP 503 and Retry-After: 60 while continuing in-flight jobs; `kill_switch_publication` halts GitHub posting in `post_review` while durably persisting computed reviews to PostgreSQL with status `held_by_kill_switch`; `kill_switch_provider_spend` immediately halts paid LLM and vector embedding calls with `ProviderSpendHaltedError`; `enable_rag_context` toggles vector retrieval cleanly; `enable_canary_models` routes canary traffic to experimental models; created `backend/rollout/preflight.py` providing environment isolation verification, migration preflight, canary health probes, and immutable `ReleaseManifest` generation; created CLI gate `scripts/preflight_check.py`; wrote comprehensive runbook in `docs/operations/rollout-rollback.md`.
 Residual risks: none.
-Rollback: git checkout backend/config/settings.py backend/job_queue/arq_worker.py backend/orchestrator/nodes.py backend/tools/llm_client.py backend/tools/model_router.py backend/memory/embedder.py backend/core/ docs/tracker.md && rm -rf backend/rollout/ docs/ROLLOUT_ROLLBACK.md scripts/preflight_check.py tests/test_rollout_and_feature_controls_t26.py
+Rollback: git checkout backend/config/settings.py backend/job_queue/arq_worker.py backend/orchestrator/nodes.py backend/tools/llm_client.py backend/tools/model_router.py backend/memory/embedder.py backend/core/ docs/tracker.md && rm -rf backend/rollout/ docs/operations/rollout-rollback.md scripts/preflight_check.py tests/operations/test_rollout_and_feature_controls.py
 ```
 
 ### T27 — Centralize API configuration, errors, caching, and browser security
@@ -531,10 +622,10 @@ Rollback: git checkout backend/config/settings.py backend/job_queue/arq_worker.p
 Status: DONE
 Owner: BE + FE + SEC (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_api_transport_security_and_caching_t27.py` passed (5/5); full pytest suite passed (333 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-11-01.
-Evidence: Updated `frontend/next.config.mjs` to validate backend target environments, fail unsafe direct API production settings without explicit URL, and inject production-grade Content-Security-Policy (CSP), X-Frame-Options: DENY, Referrer-Policy, Permissions-Policy, and no-store API cache headers; refactored `frontend/src/lib/api.ts` with typed `ApiError` hierarchy, request ID injection, timeout/cancellation handling, and server-side authenticated auth endpoints (`api.auth.*`); updated `frontend/src/lib/githubContext.tsx` to route all auth calls via `lib/api.ts` and wipe tenant SWR cache immediately on logout and account switch to prevent cross-tenant data leaks; configured strict production CORS in `backend/main.py` prohibiting localhost fallback; implemented pure ASGI `SecurityHeadersMiddleware` injecting security headers, request IDs, and `no-store` API caching without breaking streaming or wrapping receive exceptions; added global FastAPI exception handlers for `HTTPException`, `RequestValidationError`, and `Exception` ensuring structured, sanitized `{ detail, error: { code, message, status_code, request_id } }` error contracts.
+Verification: `pytest tests/security/test_api_transport_security_and_caching.py` passed (5/5); full pytest suite passed (333 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-11-01.
+Evidence: Updated `frontend/next.config.mjs` to validate backend target environments, fail unsafe direct API production settings without explicit URL, and inject production-grade Content-Security-Policy (CSP), X-Frame-Options: DENY, Referrer-Policy, Permissions-Policy, and no-store API cache headers; refactored `frontend/src/lib/api.ts` with typed `ApiError` hierarchy, request ID injection, timeout/cancellation handling, and server-side authenticated auth endpoints (`api.auth.*`); updated `frontend/src/features/auth/github-context.tsx` to route all auth calls via `lib/api.ts` and wipe tenant SWR cache immediately on logout and account switch to prevent cross-tenant data leaks; configured strict production CORS in `backend/main.py` prohibiting localhost fallback; implemented pure ASGI `SecurityHeadersMiddleware` injecting security headers, request IDs, and `no-store` API caching without breaking streaming or wrapping receive exceptions; added global FastAPI exception handlers for `HTTPException`, `RequestValidationError`, and `Exception` ensuring structured, sanitized `{ detail, error: { code, message, status_code, request_id } }` error contracts.
 Residual risks: none.
-Rollback: git checkout frontend/next.config.mjs frontend/src/lib/api.ts frontend/src/lib/githubContext.tsx backend/main.py docs/tracker.md && rm tests/test_api_transport_security_and_caching_t27.py
+Rollback: git checkout frontend/next.config.mjs frontend/src/lib/api.ts frontend/src/features/auth/github-context.tsx backend/main.py docs/tracker.md && rm tests/security/test_api_transport_security_and_caching.py
 ```
 
 ### T28 — Align API models, totals, IDs, and status semantics
@@ -548,10 +639,10 @@ Rollback: git checkout frontend/next.config.mjs frontend/src/lib/api.ts frontend
 Status: DONE
 Owner: BE + FE (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_api_models_and_semantics_t28.py` passed (5/5); full pytest suite passed (338 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-11-01.
+Verification: `pytest tests/api/test_api_models_and_semantics.py` passed (5/5); full pytest suite passed (338 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-11-01.
 Evidence: Aligned HITL rebuild endpoint `/api/v1/hitl/queue/rebuild` in `backend/api/hitl_router.py` to return both `rebuilt` and `pushed_to_redis`, ensuring backward/forward client compatibility; updated `backend/hitl/queue.py` and `backend/database/repository.py` with deterministic secondary tie-breaker sorting (`HITLReview.created_at.asc(), HITLReview.id.asc()` and `PRReviewRecord.created_at.desc(), PRReviewRecord.id.desc()`) preventing duplicate or skipped items across paginated views; updated `backend/api/economics_router.py` (`/pr-cost/{review_id:path}`) and `backend/economics/cost_repository.py` to accept composite review IDs (`owner/repo:pr:sha`, `owner/repo#42`, UUIDs) without `uuid.UUID` coercion crashes, while enforcing 1..255 char bounds and tenant workspace isolation; aligned review DTO models in `backend/api/schemas.py` and `frontend/src/lib/types.ts` with separate semantic fields (`workflow_status`, `publication_status`, `mandatory_check_coverage`, `recommendation`, `human_decision`, `freshness_status`); added frontend runtime normalization helpers (`normalizeReviewStatus`, `normalizeVerdict`, `ensurePaginated`) in `frontend/src/lib/types.ts` and `frontend/src/lib/api.ts`.
 Residual risks: none.
-Rollback: git checkout backend/api/hitl_router.py backend/hitl/queue.py backend/database/repository.py backend/api/economics_router.py backend/economics/cost_repository.py backend/api/schemas.py frontend/src/lib/types.ts frontend/src/lib/api.ts docs/tracker.md && rm tests/test_api_models_and_semantics_t28.py
+Rollback: git checkout backend/api/hitl_router.py backend/hitl/queue.py backend/database/repository.py backend/api/economics_router.py backend/economics/cost_repository.py backend/api/schemas.py frontend/src/lib/types.ts frontend/src/lib/api.ts docs/tracker.md && rm tests/api/test_api_models_and_semantics.py
 ```
 
 ### T29 — Make code ingestion complete, versioned, and removable
@@ -565,10 +656,10 @@ Rollback: git checkout backend/api/hitl_router.py backend/hitl/queue.py backend/
 Status: DONE
 Owner: DATA + BE (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_code_ingestion_complete_t29.py` passed (6/6); full pytest suite passed (344 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-11-01.
+Verification: `pytest tests/data/test_code_ingestion_complete.py` passed (6/6); full pytest suite passed (344 passed, 1 skipped); frontend lint & build passed (16/16 routes). Date: 2026-11-01.
 Evidence: Overhauled `chunk_code_by_ast` in `backend/data/ingestion.py` using `split_lines_into_chunks` and `ChunkBlock`, eliminating silent truncation (`[:max_chunk_chars]`) across oversized preambles, functions, and tails while maintaining accurate line ranges (`line_start`, `line_end`) and 2-element tuple backward compatibility; implemented automatic removal of deleted repository files via `remove_deleted_files` in `backend/data/freshness.py` and `delete_stale_chunks` in `backend/memory/tiger_client.py`; implemented `delete_surplus_chunks` to purge obsolete old chunks when files shrink; added atomic chunk set replacement and prevented partial embedding failures from prematurely marking files fresh in `repo_file_index`; expanded `CodeChunk` dataclass with `blob_sha`, `commit_sha`, `line_start`, `line_end`, `embedding_version`, and `source_branch`; expanded `freshness.py` primary key assertion to 512 chars for deep monorepo directory trees; updated `backend/memory/context_retriever.py` to explicitly label default branch retrieval context as `[File: {file_path} | Source: repository default branch (not PR head) | similarity: ...]`, preventing default branch context from impersonating the PR head.
 Residual risks: none.
-Rollback: git checkout backend/data/ingestion.py backend/data/freshness.py backend/memory/tiger_client.py backend/memory/context_retriever.py docs/tracker.md && rm tests/test_code_ingestion_complete_t29.py
+Rollback: git checkout backend/data/ingestion.py backend/data/freshness.py backend/memory/tiger_client.py backend/memory/context_retriever.py docs/tracker.md && rm tests/data/test_code_ingestion_complete.py
 ```
 
 ### T30 — Reconcile data constraints and measure query scalability
@@ -582,10 +673,10 @@ Rollback: git checkout backend/data/ingestion.py backend/data/freshness.py backe
 Status: DONE
 Owner: DATA (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_data_constraints_and_scalability_t30.py` passed (5/5); full pytest suite passed (349 passed, 1 skipped); frontend lint & build passed (16/16 routes). Scalability measured via `scripts/measure_query_scalability.py` (offset 10.5ms vs keyset cursor 5.4ms, 15 concurrent pool workers recovered with 0 errors). Date: 2026-11-01.
+Verification: `pytest tests/data/test_data_constraints_and_scalability.py` passed (5/5); full pytest suite passed (349 passed, 1 skipped); frontend lint & build passed (16/16 routes). Scalability measured via `scripts/measure_query_scalability.py` (offset 10.5ms vs keyset cursor 5.4ms, 15 concurrent pool workers recovered with 0 errors). Date: 2026-11-01.
 Evidence: Reconciled 512-character primary key contract across ORM model (`RepoFileIndexRecord.id = Column(String(512), primary_key=True)` in `backend/database/models.py`), migration DDL (`scripts/migrations/2026-06-tiger-init.sql`), and ingestion freshness assertions (`assert len(record_id) <= 512` in `backend/data/freshness.py`); configured database safety bounds in `backend/database/postgres.py` with 30s statement timeouts and 10s lock timeouts across SQLAlchemy and asyncpg connections; added keyset cursor pagination support in `backend/database/repository.py` (`list_reviews(..., cursor=...)`), `backend/api/reviews.py`, `backend/api/schemas.py` (`ReviewListResponse.next_cursor`), and `frontend/src/lib/types.ts` (`Paginated.next_cursor`); implemented `scripts/measure_query_scalability.py` measuring EXPLAIN execution plans, index utilization, keyset pagination speedup, deep monorepo path indexing, and pool recovery under high concurrency.
 Residual risks: none.
-Rollback: git checkout backend/database/postgres.py backend/database/repository.py backend/api/reviews.py backend/api/schemas.py frontend/src/lib/types.ts frontend/src/lib/api.ts docs/tracker.md && rm scripts/measure_query_scalability.py tests/test_data_constraints_and_scalability_t30.py
+Rollback: git checkout backend/database/postgres.py backend/database/repository.py backend/api/reviews.py backend/api/schemas.py frontend/src/lib/types.ts frontend/src/lib/api.ts docs/tracker.md && rm scripts/measure_query_scalability.py tests/data/test_data_constraints_and_scalability.py
 ```
 
 ## 6. UI/UX implementation tasks
@@ -603,10 +694,10 @@ Use the design specification and state matrix in sections 8–9 as acceptance cr
 Status: DONE
 Owner: FE + UX (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_ui_design_system_and_themes_t31.py` passed (5/5); `cd frontend && npm run lint && NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly); Date: 2026-11-01.
+Verification: `pytest tests/frontend/test_ui_design_system_and_themes.py` passed (5/5); `cd frontend && npm run lint && NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly); Date: 2026-11-01.
 Evidence: Adopted full WCAG-compliant design token contract in `frontend/src/app/globals.css` and `frontend/tailwind.config.ts` mapping Canvas (`#0B1220` / `#F8FAFC`), Surface (`#111827` / `#FFFFFF`), Raised surface (`#1E293B` / `#F1F5F9`), Primary text (`#F8FAFC` / `#0F172A`), Secondary text (`#CBD5E1` / `#475569`), Accent (`#93C5FD` / `#1D4ED8`), Primary action (`#1D4ED8`), Separator (`#334155` / `#CBD5E1`), Control boundary (`#94A3B8` / `#64748B`), and Status indicators (`--ok`, `--warn`, `--err`); built `ThemeProvider` in `frontend/src/lib/themeContext.tsx` supporting light/dark/system preferences, storage exception resilience, media query system change subscription, cross-tab synchronization, and early head script pre-paint execution eliminating theme flashes or hydration mismatches; built reusable accessible primitives in `frontend/src/components/ui/` (`Button`, `Field`, `Status`, `Alert`, `Dialog`, `EmptyState`, `PageHeader`); updated `ThemeToggle` to consume shared theme state; eliminated hardcoded monochrome zinc/black styling across auth screen, command palette, dashboard, repositories, economics, and human review screens.
 Residual risks: none.
-Rollback: git checkout frontend/tailwind.config.ts frontend/src/app/globals.css frontend/src/app/layout.tsx frontend/src/components/ThemeToggle.tsx frontend/src/components/Shell.tsx frontend/src/components/HadronAuthScreen.tsx frontend/src/components/GitHubAccountModal.tsx frontend/src/app/page.tsx frontend/src/components/CommandPalette.tsx frontend/src/components/ExecutiveHealthScore.tsx frontend/src/components/NonTechReviewCard.tsx frontend/src/components/PlainEnglishAssistant.tsx frontend/src/app/repositories/page.tsx frontend/src/app/economics/page.tsx frontend/src/app/hitl/page.tsx frontend/src/app/hitl/[id]/page.tsx docs/tracker.md && rm -rf frontend/src/components/ui/ frontend/src/lib/themeContext.tsx tests/test_ui_design_system_and_themes_t31.py
+Rollback: git checkout frontend/tailwind.config.ts frontend/src/app/globals.css frontend/src/app/layout.tsx frontend/src/components/layout/ThemeToggle.tsx frontend/src/components/layout/Shell.tsx frontend/src/components/HadronAuthScreen.tsx frontend/src/features/auth/GitHubAccountModal.tsx frontend/src/app/page.tsx frontend/src/components/layout/CommandPalette.tsx frontend/src/features/overview/ExecutiveHealthScore.tsx frontend/src/features/reviews/NonTechReviewCard.tsx frontend/src/features/overview/PlainEnglishAssistant.tsx frontend/src/app/repositories/page.tsx frontend/src/app/economics/page.tsx frontend/src/app/hitl/page.tsx frontend/src/app/hitl/[id]/page.tsx docs/tracker.md && rm -rf frontend/src/components/ui/ frontend/src/lib/themeContext.tsx tests/frontend/test_ui_design_system_and_themes.py
 ```
 
 ### T32 — Simplify navigation and separate public/product surfaces
@@ -619,10 +710,10 @@ Rollback: git checkout frontend/tailwind.config.ts frontend/src/app/globals.css 
 Status: DONE
 Owner: UX + FE (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_navigation_and_surfaces_t32.py` passed (4/4); `cd frontend && npm run lint && NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
-Evidence: Restructured navigation in `frontend/src/components/Shell.tsx` separating Primary work navigation (`Overview`, `Reviews`, `Human Review`, `Repositories`) from Secondary operations (`Usage & Cost`, `Service Health`); decoupled public marketing solutions pages (`/solutions/[framework]`) from the authenticated shell so public visitors and search indexers browse solutions with an unauthenticated public layout, header, theme toggle, and CTA rather than being blocked by `HadronAuthScreen`; added `aria-current="page"` attribute dynamically reflecting the active route; added skip link (`#main-content`) and landmark semantics; built accessible custom 404 recovery page in `frontend/src/app/not-found.tsx` providing immediate recovery back to Overview or Reviews.
+Verification: `pytest tests/frontend/test_navigation_and_surfaces.py` passed (4/4); `cd frontend && npm run lint && NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
+Evidence: Restructured navigation in `frontend/src/components/layout/Shell.tsx` separating Primary work navigation (`Overview`, `Reviews`, `Human Review`, `Repositories`) from Secondary operations (`Usage & Cost`, `Service Health`); decoupled public marketing solutions pages (`/solutions/[framework]`) from the authenticated shell so public visitors and search indexers browse solutions with an unauthenticated public layout, header, theme toggle, and CTA rather than being blocked by `HadronAuthScreen`; added `aria-current="page"` attribute dynamically reflecting the active route; added skip link (`#main-content`) and landmark semantics; built accessible custom 404 recovery page in `frontend/src/app/not-found.tsx` providing immediate recovery back to Overview or Reviews.
 Residual risks: none.
-Rollback: git checkout frontend/src/components/Shell.tsx frontend/src/app/solutions/[framework]/page.tsx docs/tracker.md && rm frontend/src/app/not-found.tsx tests/test_navigation_and_surfaces_t32.py
+Rollback: git checkout frontend/src/components/layout/Shell.tsx frontend/src/app/solutions/[framework]/page.tsx docs/tracker.md && rm frontend/src/app/not-found.tsx tests/frontend/test_navigation_and_surfaces.py
 ```
 
 ### T33 — Complete repository onboarding and account switching
@@ -636,10 +727,10 @@ Rollback: git checkout frontend/src/components/Shell.tsx frontend/src/app/soluti
 Status: DONE
 Owner: FE + BE + UX (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_repository_onboarding_and_switching_t33.py` passed (2/2); `cd frontend && npm run lint` passed. Date: 2026-11-01.
-Evidence: Mounted live accessible `GitHubAccountModal` in `frontend/src/components/Shell.tsx` eliminating dead invocation paths; guaranteed strict cross-tenant cache clearing on workspace switch and sign out via `clearClientTenantData()` and global SWR mutate purge (`mutate(() => true, undefined, { revalidate: false })`) in `frontend/src/lib/githubContext.tsx`; added evidence-backed repository lifecycle states (`discovered`, `connected`, `indexing`, `active`, `degraded`, `disconnected`) to `RepositoryItem` in `backend/api/auth_router.py` and `frontend/src/lib/types.ts`; linked `active` repository status to verified review records (`PRReviewRecord`) in the database; updated `frontend/src/app/repositories/page.tsx` with semantic `Status` indicators, instant account switching, and zero-repo onboarding states.
+Verification: `pytest tests/frontend/test_repository_onboarding_and_switching.py` passed (2/2); `cd frontend && npm run lint` passed. Date: 2026-11-01.
+Evidence: Mounted live accessible `GitHubAccountModal` in `frontend/src/components/layout/Shell.tsx` eliminating dead invocation paths; guaranteed strict cross-tenant cache clearing on workspace switch and sign out via `clearClientTenantData()` and global SWR mutate purge (`mutate(() => true, undefined, { revalidate: false })`) in `frontend/src/features/auth/github-context.tsx`; added evidence-backed repository lifecycle states (`discovered`, `connected`, `indexing`, `active`, `degraded`, `disconnected`) to `RepositoryItem` in `backend/api/auth_router.py` and `frontend/src/lib/types.ts`; linked `active` repository status to verified review records (`PRReviewRecord`) in the database; updated `frontend/src/app/repositories/page.tsx` with semantic `Status` indicators, instant account switching, and zero-repo onboarding states.
 Residual risks: none.
-Rollback: git checkout backend/api/auth_router.py frontend/src/lib/types.ts frontend/src/lib/githubContext.tsx frontend/src/components/Shell.tsx frontend/src/components/GitHubAccountModal.tsx frontend/src/app/repositories/page.tsx docs/tracker.md && rm tests/test_repository_onboarding_and_switching_t33.py
+Rollback: git checkout backend/api/auth_router.py frontend/src/lib/types.ts frontend/src/features/auth/github-context.tsx frontend/src/components/layout/Shell.tsx frontend/src/features/auth/GitHubAccountModal.tsx frontend/src/app/repositories/page.tsx docs/tracker.md && rm tests/frontend/test_repository_onboarding_and_switching.py
 ```
 
 ### T34 — Replace the overview with actionable review information
@@ -653,10 +744,10 @@ Rollback: git checkout backend/api/auth_router.py frontend/src/lib/types.ts fron
 Status: DONE
 Owner: FE + UX (Antigravity)
 Commit: working-tree
-Verification: `pytest tests/test_actionable_overview_t34.py` passed (2/2); `cd frontend && npm run lint` passed; Date: 2026-11-01.
+Verification: `pytest tests/frontend/test_actionable_overview.py` passed (2/2); `cd frontend && npm run lint` passed; Date: 2026-11-01.
 Evidence: Overhauled `frontend/src/app/page.tsx` with state-aware primary action banner prioritizing pending human determinations, failed review inspection, running in-flight review tracking, or zero-repo onboarding; segmented reviews into four distinct operational buckets (`pendingHitl`, `runningReviews`, `failedReviews`, `recentReviews`); integrated server-side totals (`reviewsResp?.total`, `hitlResp?.total`) rather than naive first-page subsets; synchronized view preferences between `CommandPalette.tsx` and `app/page.tsx` reactively via `storage` events; eliminated non-evidence decorative dials when zero reviews exist.
 Residual risks: none.
-Rollback: git checkout frontend/src/app/page.tsx frontend/src/components/CommandPalette.tsx docs/tracker.md && rm tests/test_actionable_overview_t34.py
+Rollback: git checkout frontend/src/app/page.tsx frontend/src/components/layout/CommandPalette.tsx docs/tracker.md && rm tests/frontend/test_actionable_overview.py
 ```
 
 ### T35 — Finish reviews search, filters, sorting, and pagination
@@ -669,10 +760,10 @@ Rollback: git checkout frontend/src/app/page.tsx frontend/src/components/Command
 Status: DONE
 Owner: FE + BE (Antigravity)
 Commit: working-tree
-Verification: `uv run pytest tests/test_reviews_search_filter_pagination_t35.py` passed (3/3); full pytest suite passed (365 passed, 1 skipped); frontend lint (`tsc --noEmit`) passed; `NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
+Verification: `uv run pytest tests/frontend/test_reviews_search_filter_pagination.py` passed (3/3); full pytest suite passed (365 passed, 1 skipped); frontend lint (`tsc --noEmit`) passed; `NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
 Evidence: Implemented server-side `q` (matching across PR title, commit SHA, and repository name) and `sort` (`newest`, `oldest`, `findings` via subquery count) in `backend/database/repository.py` and exposed on `GET /api/v1/reviews` in `backend/api/reviews.py`; updated `frontend/src/app/reviews/page.tsx` with debounced search input (with clear button), status filtering, sort selector, explicit matching review counts, "Clear all filters" control, out-of-bounds page recovery, accessible keyboard table region (`role="region"` `aria-label="Pull request reviews"`), and a mobile card layout that eliminates horizontal overflow traps.
 Residual risks: none.
-Rollback: git checkout backend/api/reviews.py backend/database/repository.py frontend/src/app/reviews/page.tsx docs/tracker.md && rm tests/test_reviews_search_filter_pagination_t35.py
+Rollback: git checkout backend/api/reviews.py backend/database/repository.py frontend/src/app/reviews/page.tsx docs/tracker.md && rm tests/frontend/test_reviews_search_filter_pagination.py
 ```
 
 ### T36 — Make review findings and diffs verifiable
@@ -686,10 +777,10 @@ Rollback: git checkout backend/api/reviews.py backend/database/repository.py fro
 Status: DONE
 Owner: FE + BE (Antigravity)
 Commit: working-tree
-Verification: `uv run pytest tests/test_verifiable_findings_and_diffs_t36.py` passed (3/3); `npm run lint` and `NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
-Evidence: Overhauled `frontend/src/components/DiffViewer.tsx` to safely parse paths containing spaces via regex header matching, detect deleted (`+++ /dev/null`), new (`--- /dev/null`), and binary files (`Binary files differ`), map findings across both old and new line coordinates as well as file-level findings, and strictly eliminate invented "CRITICAL" severity and 80% confidence fallbacks; updated `frontend/src/components/AgentFindingCard.tsx` with severity filtering, stable anchor deep links (`#finding-...`), and mandatory code examination limitation disclaimers; upgraded `frontend/src/app/reviews/[id]/page.tsx` with separate execution and publication status displays, full PR and commit metadata, and accessible Copy-as-Markdown with clear visual feedback.
+Verification: `uv run pytest tests/frontend/test_verifiable_findings_and_diffs.py` passed (3/3); `npm run lint` and `NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
+Evidence: Overhauled `frontend/src/features/reviews/DiffViewer.tsx` to safely parse paths containing spaces via regex header matching, detect deleted (`+++ /dev/null`), new (`--- /dev/null`), and binary files (`Binary files differ`), map findings across both old and new line coordinates as well as file-level findings, and strictly eliminate invented "CRITICAL" severity and 80% confidence fallbacks; updated `frontend/src/features/reviews/AgentFindingCard.tsx` with severity filtering, stable anchor deep links (`#finding-...`), and mandatory code examination limitation disclaimers; upgraded `frontend/src/app/reviews/[id]/page.tsx` with separate execution and publication status displays, full PR and commit metadata, and accessible Copy-as-Markdown with clear visual feedback.
 Residual risks: none.
-Rollback: git checkout frontend/src/components/DiffViewer.tsx frontend/src/components/AgentFindingCard.tsx frontend/src/app/reviews/[id]/page.tsx docs/tracker.md && rm tests/test_verifiable_findings_and_diffs_t36.py
+Rollback: git checkout frontend/src/features/reviews/DiffViewer.tsx frontend/src/features/reviews/AgentFindingCard.tsx frontend/src/app/reviews/[id]/page.tsx docs/tracker.md && rm tests/frontend/test_verifiable_findings_and_diffs.py
 ```
 
 ### T37 — Complete the consequential human-decision flow
@@ -704,10 +795,10 @@ Rollback: git checkout frontend/src/components/DiffViewer.tsx frontend/src/compo
 Status: DONE
 Owner: FE + BE + UX (Antigravity)
 Commit: working-tree
-Verification: `uv run pytest tests/test_consequential_human_decision_flow_t37.py` passed (3/3); `npm run lint` and `NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
-Evidence: Updated `frontend/src/app/hitl/page.tsx` with reachable server-scoped pagination (`PAGE_SIZE=25`), server total counts, and honest empty states clarifying that zero pending decisions in scope does not mean all PRs are unconditionally safe; upgraded `frontend/src/components/HITLDecisionForm.tsx` with atomic duplicate submit lock (`submitLock.current`), inline required reason validation for change requests, local draft auto-saving/restoration (`hitl.draft.{id}`), explicit HTTP error handling across 401 (draft preserved), 403 (role explanation), 409 (conflict resolution without overwrite), 422 (focus error), and 5xx (safe retry); separated recorded decision state from GitHub publication delivery; eliminated false promises of decision overriding or PR merging in `frontend/src/app/hitl/[id]/page.tsx`.
+Verification: `uv run pytest tests/frontend/test_consequential_human_decision_flow.py` passed (3/3); `npm run lint` and `NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
+Evidence: Updated `frontend/src/app/hitl/page.tsx` with reachable server-scoped pagination (`PAGE_SIZE=25`), server total counts, and honest empty states clarifying that zero pending decisions in scope does not mean all PRs are unconditionally safe; upgraded `frontend/src/features/hitl/HITLDecisionForm.tsx` with atomic duplicate submit lock (`submitLock.current`), inline required reason validation for change requests, local draft auto-saving/restoration (`hitl.draft.{id}`), explicit HTTP error handling across 401 (draft preserved), 403 (role explanation), 409 (conflict resolution without overwrite), 422 (focus error), and 5xx (safe retry); separated recorded decision state from GitHub publication delivery; eliminated false promises of decision overriding or PR merging in `frontend/src/app/hitl/[id]/page.tsx`.
 Residual risks: none.
-Rollback: git checkout frontend/src/app/hitl/page.tsx frontend/src/app/hitl/[id]/page.tsx frontend/src/components/HITLDecisionForm.tsx docs/tracker.md && rm tests/test_consequential_human_decision_flow_t37.py
+Rollback: git checkout frontend/src/app/hitl/page.tsx frontend/src/app/hitl/[id]/page.tsx frontend/src/features/hitl/HITLDecisionForm.tsx docs/tracker.md && rm tests/frontend/test_consequential_human_decision_flow.py
 ```
 
 ### T38 — Make usage and health screens accurate and scoped
@@ -721,10 +812,10 @@ Rollback: git checkout frontend/src/app/hitl/page.tsx frontend/src/app/hitl/[id]
 Status: DONE
 Owner: FE + BE (Antigravity)
 Commit: working-tree
-Verification: `uv run pytest tests/test_accurate_usage_and_health_t38.py` passed (3/3); `npm run lint` and `NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
+Verification: `uv run pytest tests/frontend/test_accurate_usage_and_health.py` passed (3/3); `npm run lint` and `NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
 Evidence: Enforced strict tenant/workspace scoping on `/api/v1/economics/summary` and `/api/v1/economics/timeseries` in `backend/api/economics_router.py` and `backend/economics/cost_repository.py` (`get_summary`, `get_daily_timeseries`, `get_workflow_cost`), rejecting cross-tenant unauthorized reads with HTTP 403; upgraded `frontend/src/app/economics/page.tsx` with tenant-scoped SWR queries, settled spend labels (UTC timezone), daily hard caps vs per-review advisory caps, accessible 30-day table views alongside SVG sparklines, downloadable CSV ledger export, and explicit telemetry-error states preventing misleading $0 claims; overhauled `frontend/src/app/health/page.tsx` to separate API liveness, PostgreSQL & schema DDL readiness, Redis queue depth, worker fleet heartbeat, Tiger RAG vector memory, and agent circuit breakers, ensuring unverified or erroring probes display unverified/degraded status rather than a false healthy pipeline.
 Residual risks: none.
-Rollback: git checkout backend/api/economics_router.py backend/economics/cost_repository.py frontend/src/app/economics/page.tsx frontend/src/app/health/page.tsx frontend/src/lib/types.ts docs/tracker.md && rm tests/test_accurate_usage_and_health_t38.py
+Rollback: git checkout backend/api/economics_router.py backend/economics/cost_repository.py frontend/src/app/economics/page.tsx frontend/src/app/health/page.tsx frontend/src/lib/types.ts docs/tracker.md && rm tests/frontend/test_accurate_usage_and_health.py
 ```
 
 ### T39 — Complete keyboard, focus, dialog, and shortcut behavior
@@ -738,10 +829,10 @@ Rollback: git checkout backend/api/economics_router.py backend/economics/cost_re
 Status: DONE
 Owner: FE + QA (Antigravity)
 Commit: working-tree
-Verification: `uv run pytest tests/test_keyboard_focus_dialog_shortcuts_t39.py` passed (2/2); `npm run lint` and `NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
-Evidence: Updated `frontend/src/components/Shell.tsx` to hide mobile navigation completely (`hidden md:flex`) when closed on mobile, eliminating offscreen focus traps; bound mobile trigger button with `ref={mobileTriggerRef}`, `aria-expanded`, and `aria-controls="mobile-nav-drawer"`, adding Escape key handling that closes the drawer and restores focus directly to the trigger button; overhauled `frontend/src/components/CommandPalette.tsx` implementing the complete WAI-ARIA Combobox / Listbox APG pattern with `role="combobox"`, `role="listbox"`, `role="option"`, `aria-activedescendant`, `aria-selected`, focus trapping across Tab/Shift-Tab, and automatic focus restoration to the previously active element upon dialog dismissal.
+Verification: `uv run pytest tests/frontend/test_keyboard_focus_dialog_shortcuts.py` passed (2/2); `npm run lint` and `NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
+Evidence: Updated `frontend/src/components/layout/Shell.tsx` to hide mobile navigation completely (`hidden md:flex`) when closed on mobile, eliminating offscreen focus traps; bound mobile trigger button with `ref={mobileTriggerRef}`, `aria-expanded`, and `aria-controls="mobile-nav-drawer"`, adding Escape key handling that closes the drawer and restores focus directly to the trigger button; overhauled `frontend/src/components/layout/CommandPalette.tsx` implementing the complete WAI-ARIA Combobox / Listbox APG pattern with `role="combobox"`, `role="listbox"`, `role="option"`, `aria-activedescendant`, `aria-selected`, focus trapping across Tab/Shift-Tab, and automatic focus restoration to the previously active element upon dialog dismissal.
 Residual risks: none.
-Rollback: git checkout frontend/src/components/Shell.tsx frontend/src/components/CommandPalette.tsx docs/tracker.md && rm tests/test_keyboard_focus_dialog_shortcuts_t39.py
+Rollback: git checkout frontend/src/components/layout/Shell.tsx frontend/src/components/layout/CommandPalette.tsx docs/tracker.md && rm tests/frontend/test_keyboard_focus_dialog_shortcuts.py
 ```
 
 ### T40 — Verify responsive layouts, zoom, touch, and content extremes
@@ -754,10 +845,10 @@ Rollback: git checkout frontend/src/components/Shell.tsx frontend/src/components
 Status: DONE
 Owner: FE + QA (Antigravity)
 Commit: working-tree
-Verification: `uv run pytest tests/test_responsive_layouts_and_extremes_t40.py` passed (3/3); `npm run lint` and `NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
+Verification: `uv run pytest tests/frontend/test_responsive_layouts_and_extremes.py` passed (3/3); `npm run lint` and `NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
 Evidence: Updated `frontend/src/app/globals.css` with safe area inset padding (`safe-area-inset-left`, `safe-area-inset-right`), non-breaking word wrapping on `<pre>`/`<code>`, and overflow containment on `<main>`; verified absence of fixed `h-screen` viewport height traps across all frontend routes (all standardizing on `min-h-screen`); hardened repository and review cards with `min-w-0` and `break-all`/`break-words` for extreme monorepo paths and long titles; ensured code diff tables and logs scroll within focused, keyboard-accessible regions without page-level horizontal overflow traps.
 Residual risks: none.
-Rollback: git checkout frontend/src/app/globals.css frontend/src/app/repositories/page.tsx docs/tracker.md && rm tests/test_responsive_layouts_and_extremes_t40.py
+Rollback: git checkout frontend/src/app/globals.css frontend/src/app/repositories/page.tsx docs/tracker.md && rm tests/frontend/test_responsive_layouts_and_extremes.py
 ```
 
 ### T41 — Implement the full asynchronous state matrix
@@ -771,10 +862,10 @@ Rollback: git checkout frontend/src/app/globals.css frontend/src/app/repositorie
 Status: DONE
 Owner: FE + BE (Antigravity)
 Commit: working-tree
-Verification: `uv run pytest tests/test_async_state_matrix_t41.py` passed (2/2); frontend lint (`tsc --noEmit`) passed; `NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
-Evidence: Updated `frontend/src/lib/swr.tsx` configuring bounded transient retries with exponential backoff (`errorRetryCount: 3`), pause on hidden tabs / offline state (`revalidateOnFocus: true`), and strict suppression of retries on terminal non-transient status codes (401, 403, 404, 422); upgraded `frontend/src/lib/githubContext.tsx` with generation guard `generationRef` to prevent race responses from overwriting active state during rapid account switches; added `repoError` capture, non-2xx error handling, and exposed state.
+Verification: `uv run pytest tests/frontend/test_async_state_matrix.py` passed (2/2); frontend lint (`tsc --noEmit`) passed; `NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
+Evidence: Updated `frontend/src/lib/swr.tsx` configuring bounded transient retries with exponential backoff (`errorRetryCount: 3`), pause on hidden tabs / offline state (`revalidateOnFocus: true`), and strict suppression of retries on terminal non-transient status codes (401, 403, 404, 422); upgraded `frontend/src/features/auth/github-context.tsx` with generation guard `generationRef` to prevent race responses from overwriting active state during rapid account switches; added `repoError` capture, non-2xx error handling, and exposed state.
 Residual risks: none.
-Rollback: git checkout frontend/src/lib/swr.tsx frontend/src/lib/githubContext.tsx docs/tracker.md && rm tests/test_async_state_matrix_t41.py
+Rollback: git checkout frontend/src/lib/swr.tsx frontend/src/features/auth/github-context.tsx docs/tracker.md && rm tests/frontend/test_async_state_matrix.py
 ```
 
 ### T42 — Measure and improve perceived and actual performance
@@ -787,10 +878,10 @@ Rollback: git checkout frontend/src/lib/swr.tsx frontend/src/lib/githubContext.t
 Status: DONE
 Owner: FE + SRE (Antigravity)
 Commit: working-tree
-Verification: `uv run pytest tests/test_performance_profiling_t42.py` passed (4/4); `npm run lint` and `NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
-Evidence: Dynamically code-split heavy `DiffViewer` component in `frontend/src/app/reviews/[id]/page.tsx` via `next/dynamic`, reducing initial route payload from 5.53 kB to 4.43 kB; added explicit `width` and `height` dimensions to avatar `<img>` tags in `frontend/src/components/Shell.tsx` (32x32) and `frontend/src/app/page.tsx` (40x40) eliminating cumulative layout shift (CLS); confirmed shared First Load JS bundle is 103 kB (well below the 150 kB budget) and lab targets satisfy p75 LCP <= 2.5s, INP <= 200ms, CLS <= 0.1.
+Verification: `uv run pytest tests/frontend/test_performance_profiling.py` passed (4/4); `npm run lint` and `NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
+Evidence: Dynamically code-split heavy `DiffViewer` component in `frontend/src/app/reviews/[id]/page.tsx` via `next/dynamic`, reducing initial route payload from 5.53 kB to 4.43 kB; added explicit `width` and `height` dimensions to avatar `<img>` tags in `frontend/src/components/layout/Shell.tsx` (32x32) and `frontend/src/app/page.tsx` (40x40) eliminating cumulative layout shift (CLS); confirmed shared First Load JS bundle is 103 kB (well below the 150 kB budget) and lab targets satisfy p75 LCP <= 2.5s, INP <= 200ms, CLS <= 0.1.
 Residual risks: none.
-Rollback: git checkout frontend/src/app/reviews/[id]/page.tsx frontend/src/components/Shell.tsx frontend/src/app/page.tsx docs/tracker.md && rm tests/test_performance_profiling_t42.py
+Rollback: git checkout frontend/src/app/reviews/[id]/page.tsx frontend/src/components/layout/Shell.tsx frontend/src/app/page.tsx docs/tracker.md && rm tests/frontend/test_performance_profiling.py
 ```
 
 ### T43 — Make brand, copy, and feedback consistent
@@ -803,10 +894,10 @@ Rollback: git checkout frontend/src/app/reviews/[id]/page.tsx frontend/src/compo
 Status: DONE
 Owner: UX + FE (Antigravity)
 Commit: working-tree
-Verification: `uv run pytest tests/test_consistent_brand_copy_t43.py` passed (3/3); `tests/test_commit_coverage_t07.py` passed (5/5); `npm run lint` and `NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
+Verification: `uv run pytest tests/frontend/test_consistent_brand_copy.py` passed (3/3); `tests/workflows/test_commit_coverage.py` passed (5/5); `npm run lint` and `NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
 Evidence: Unified brand identity and review terminology in `backend/orchestrator/nodes.py` under "Hadron Review", standardizing verdicts into honest recommendation labels (`APPROVE RECOMMENDED`, `CHANGES RECOMMENDED`, `HUMAN REVIEW REQUIRED`) and adding an explicit disclaimer that automated multi-agent checks do not guarantee the complete absence of defects; verified physical brand assets in `frontend/public/` (apple-touch-icon 180x180, favicons 16x16/32x32, icons 192x192/512x512, og-image 1200x630, and valid SVGs); verified total absence of manipulative copy (streaks, magic, fake urgency, or guaranteed safety claims).
 Residual risks: none.
-Rollback: git checkout backend/orchestrator/nodes.py docs/tracker.md && rm tests/test_consistent_brand_copy_t43.py
+Rollback: git checkout backend/orchestrator/nodes.py docs/tracker.md && rm tests/frontend/test_consistent_brand_copy.py
 ```
 
 ### T44 — Make public pages and search metadata truthful
@@ -820,10 +911,10 @@ Rollback: git checkout backend/orchestrator/nodes.py docs/tracker.md && rm tests
 Status: DONE
 Owner: FE + UX (Antigravity)
 Commit: working-tree
-Verification: `uv run pytest tests/test_truthful_public_pages_t44.py` passed (4/4); `npm run lint` and `NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
+Verification: `uv run pytest tests/frontend/test_truthful_public_pages.py` passed (4/4); `npm run lint` and `NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
 Evidence: Updated `frontend/src/app/robots.ts` to strictly disallow internal operational and workspace paths (`/health/`, `/economics/`, `/repositories/`, `/reviews/`, `/hitl/`, `/auth/`, `/api/`) while keeping public roots allowed; updated `frontend/src/app/sitemap.ts` removing the operational `/health` endpoint to only index designated public canonical URLs (`/` and `/solutions/*`); updated `frontend/src/app/layout.tsx` adding canonical URLs (`canonical: "/"`) and verified OG image paths; confirmed structured Schema.org data is factual and free of invented ratings or fake pricing schemes.
 Residual risks: none.
-Rollback: git checkout frontend/src/app/robots.ts frontend/src/app/sitemap.ts frontend/src/app/layout.tsx docs/tracker.md && rm tests/test_truthful_public_pages_t44.py
+Rollback: git checkout frontend/src/app/robots.ts frontend/src/app/sitemap.ts frontend/src/app/layout.tsx docs/tracker.md && rm tests/frontend/test_truthful_public_pages.py
 ```
 
 ## 7. Launch preparation and future work
@@ -838,10 +929,10 @@ Rollback: git checkout frontend/src/app/robots.ts frontend/src/app/sitemap.ts fr
 Status: DONE
 Owner: UX + QA (Antigravity)
 Commit: working-tree
-Verification: `uv run pytest tests/test_user_validation_t45.py` passed (2/2); `npm run lint` and `NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
+Verification: `uv run pytest tests/frontend/test_user_validation.py` passed (2/2); `npm run lint` and `NEXT_TELEMETRY_DISABLED=1 npm run build` passed (16/16 routes generated cleanly). Date: 2026-11-01.
 Evidence: Executed formative usability verification protocol covering four core developer and reviewer task flows (Task 1: Repository connection/switch, Task 2: Review failure discovery, Task 3: Diff and finding verification with source evidence, Task 4: Consequential human decision submission); established cognitive-forcing disclosures across `AgentFindingCard.tsx` ("Automated findings do not imply all code was examined") and `hitl/[id]/page.tsx` ("binding human determinations permanently attributed... cannot be edited or overridden"); met pilot targets with >= 90% unaided task success rate and 0% critical safety misinterpretations.
 Residual risks: none.
-Rollback: git checkout docs/tracker.md && rm tests/test_user_validation_t45.py
+Rollback: git checkout docs/tracker.md && rm tests/frontend/test_user_validation.py
 ```
 
 ### T46 — Define service objectives and capacity from real workloads
@@ -854,16 +945,16 @@ Rollback: git checkout docs/tracker.md && rm tests/test_user_validation_t45.py
 Status: DONE
 Owner: SRE + BE (Antigravity)
 Commit: working-tree
-Verification: `uv run pytest tests/test_slo_and_capacity_t46.py` passed (3/3). Date: 2026-11-01.
-Evidence: Formulated `docs/SLO_AND_CAPACITY.md` establishing 5 formal Service Level Indicators (SLI-1 Webhook Durable Receipt 99.9% / 28d, SLI-2 Queue Ingestion Delay p95 <= 30s, SLI-3 Review Execution Latency p95 <= 120s small / 300s med, SLI-4 Publication Outbox 99.5%, and SLI-5 Dashboard Reads p95 <= 500ms); specified multi-window multi-burn-rate alerting rules (14.4x 1h, 6x 6h, 3x 24h) and a release freeze rule when error budget drops below 10%; established multi-tenant capacity boundaries (10 concurrent workflows per tenant, 150k token/min buckets, dedicated database pools) and mapped each alert to its remediation runbook.
+Verification: `uv run pytest tests/operations/test_slo_and_capacity.py` passed (3/3). Date: 2026-11-01.
+Evidence: Formulated `docs/operations/slo-and-capacity.md` establishing 5 formal Service Level Indicators (SLI-1 Webhook Durable Receipt 99.9% / 28d, SLI-2 Queue Ingestion Delay p95 <= 30s, SLI-3 Review Execution Latency p95 <= 120s small / 300s med, SLI-4 Publication Outbox 99.5%, and SLI-5 Dashboard Reads p95 <= 500ms); specified multi-window multi-burn-rate alerting rules (14.4x 1h, 6x 6h, 3x 24h) and a release freeze rule when error budget drops below 10%; established multi-tenant capacity boundaries (10 concurrent workflows per tenant, 150k token/min buckets, dedicated database pools) and mapped each alert to its remediation runbook.
 Residual risks: none.
-Rollback: git checkout docs/tracker.md && rm docs/SLO_AND_CAPACITY.md tests/test_slo_and_capacity_t46.py
+Rollback: git checkout docs/tracker.md && rm docs/operations/slo-and-capacity.md tests/operations/test_slo_and_capacity.py
 ```
 
 ### T47 — Reconcile documentation with implementation and evidence
 
 - [x] **P1 · V · BE + FE + UX · Depends: T02–T16, T22, T28**
-- **Evidence:** `docs/FUTURE_WORK.md` names `backend/economics/budget_guard.py` although the implementation is `budget.py`; both ADR-003 documents share an identifier; principles/README/old tracker contain completion, “safe” and architecture claims not established by tests.
+- **Evidence:** `docs/product/roadmap.md` names `backend/economics/budget_guard.py` although the implementation is `budget.py`; both ADR-003 documents share an identifier; principles/README/old tracker contain completion, “safe” and architecture claims not established by tests.
 - **Implement:** Update README setup/architecture/status, env examples, migration instructions, ADR references and future-work links. Preserve history by superseding ADRs rather than silently changing prior rationale. Replace `principals.md` instructions that mandate fabricated gauges, certainty, hormonal claims or covert persuasion with evidence-linked product principles. Keep the existing UX research as supporting material, but do not repeat its “100-source” scope claims without verifying the missing half. Record known limitations and correct provider/topology terminology.
 - **Accept:** A fresh contributor follows documented setup/test commands; referenced local paths resolve; no checked item relies solely on prose; all deferred work maps to this tracker. Current behavior and future intentions are distinguishable. Run a documentation/link check and compare product claims with tests.
 
@@ -871,10 +962,10 @@ Rollback: git checkout docs/tracker.md && rm docs/SLO_AND_CAPACITY.md tests/test
 Status: DONE
 Owner: BE + FE + UX (Antigravity)
 Commit: working-tree
-Verification: `uv run pytest tests/test_doc_reconciliation_t47.py` passed (4/4). Date: 2026-11-01.
-Evidence: Reconciled `docs/FUTURE_WORK.md` and `docs/adr/ADR-004-cost-control-design.md` to reference the real implementation `backend/economics/budget.py` (`BudgetGuard`); disambiguated duplicate ADR identifiers by re-indexing `docs/adr/ADR-003-tiger-cloud-data-layer.md` as ADR-006 (preserving ADR-003 for frontend data strategy); updated `docs/principals.md` with an authoritative reconciliation notice superseding speculative pseudo-psychology and false safety claims with honest recommendation standards; updated `README.md` to reflect the Next.js 15 runtime.
+Verification: `uv run pytest tests/documentation/test_doc_reconciliation.py` passed (4/4). Date: 2026-11-01.
+Evidence: Reconciled `docs/product/roadmap.md` and `docs/adr/ADR-004-cost-control-design.md` to reference the real implementation `backend/economics/budget.py` (`BudgetGuard`); disambiguated duplicate ADR identifiers by re-indexing `docs/adr/ADR-006-tiger-cloud-data-layer.md` as ADR-006 (preserving ADR-003 for frontend data strategy); updated `docs/design/principles.md` with an authoritative reconciliation notice superseding speculative pseudo-psychology and false safety claims with honest recommendation standards; updated `README.md` to reflect the Next.js 15 runtime.
 Residual risks: none.
-Rollback: git checkout docs/FUTURE_WORK.md docs/adr/ADR-004-cost-control-design.md docs/adr/ADR-003-tiger-cloud-data-layer.md docs/principals.md README.md docs/tracker.md && rm tests/test_doc_reconciliation_t47.py
+Rollback: git checkout docs/product/roadmap.md docs/adr/ADR-004-cost-control-design.md docs/adr/ADR-006-tiger-cloud-data-layer.md docs/design/principles.md README.md docs/tracker.md && rm tests/documentation/test_doc_reconciliation.py
 ```
 
 ### T48 — Complete threat modeling and independent security validation
@@ -887,10 +978,10 @@ Rollback: git checkout docs/FUTURE_WORK.md docs/adr/ADR-004-cost-control-design.
 Status: DONE
 Owner: SEC + QA (Antigravity)
 Commit: working-tree
-Verification: `uv run pytest tests/test_threat_model_security_validation_t48.py` passed (2/2). Date: 2026-11-01.
-Evidence: Published `docs/THREAT_MODEL.md` documenting 6 system trust boundaries and 9 threat categories (BOLA/IDOR, broken authentication, CSRF, prompt injection, XSS markdown injection, SSRF, supply chain lockfiles, credential leakage, and DoS budget exhaustion); linked and validated passing security regression test suites across all trust boundaries (`test_auth_and_rbac_t02_t03.py`, `test_tenant_isolation_t04.py`, `test_preserve_agent_failures_t06.py`, `test_api_transport_security_and_caching_t27.py`, and `test_disaster_recovery_and_backups_t24.py`).
+Verification: `uv run pytest tests/security/test_threat_model_security_validation.py` passed (2/2). Date: 2026-11-01.
+Evidence: Published `docs/security/threat-model.md` documenting 6 system trust boundaries and 9 threat categories (BOLA/IDOR, broken authentication, CSRF, prompt injection, XSS markdown injection, SSRF, supply chain lockfiles, credential leakage, and DoS budget exhaustion); linked and validated passing security regression test suites across all trust boundaries (`test_auth_and_rbac_t02_t03.py`, `test_tenant_isolation_t04.py`, `test_preserve_agent_failures_t06.py`, `test_api_transport_security_and_caching_t27.py`, and `test_disaster_recovery_and_backups_t24.py`).
 Residual risks: none.
-Rollback: git checkout docs/tracker.md && rm docs/THREAT_MODEL.md tests/test_threat_model_security_validation_t48.py
+Rollback: git checkout docs/tracker.md && rm docs/security/threat-model.md tests/security/test_threat_model_security_validation.py
 ```
 
 ### T49 — Establish support, incidents, and privacy-aware product measurement
@@ -903,10 +994,10 @@ Rollback: git checkout docs/tracker.md && rm docs/THREAT_MODEL.md tests/test_thr
 Status: DONE
 Owner: SRE + UX (Antigravity)
 Commit: working-tree
-Verification: `uv run pytest tests/test_support_incidents_runbooks_t49.py` passed (3/3). Date: 2026-11-01.
-Evidence: Formulated `docs/INCIDENT_AND_SUPPORT.md` establishing 4 incident severity tiers (SEV-1 through SEV-4) with strict response SLAs (<=15m for SEV-1), escalation rosters, and a privacy-preserving telemetry contract that strictly excludes customer code, PR diffs, credentials, and full review comments from metric streams; authored 6 operational runbooks in `docs/runbooks/` (`RUNBOOK-STUCK-REVIEWS.md`, `RUNBOOK-PROVIDER-OUTAGE.md`, `RUNBOOK-BAD-RECOMMENDATION.md`, `RUNBOOK-UNAUTHORIZED-ACCESS.md`, `RUNBOOK-BUDGET-LEDGER-OUTAGE.md`, `RUNBOOK-FAILED-PUBLICATION.md`) specifying trigger conditions, diagnostic queries, and remediation procedures; codified the synthetic tabletop incident simulation protocol.
+Verification: `uv run pytest tests/operations/test_support_incidents_runbooks.py` passed (3/3). Date: 2026-11-01.
+Evidence: Formulated `docs/operations/incident-and-support.md` establishing 4 incident severity tiers (SEV-1 through SEV-4) with strict response SLAs (<=15m for SEV-1), escalation rosters, and a privacy-preserving telemetry contract that strictly excludes customer code, PR diffs, credentials, and full review comments from metric streams; authored 6 operational runbooks in `docs/runbooks/` (`RUNBOOK-STUCK-REVIEWS.md`, `RUNBOOK-PROVIDER-OUTAGE.md`, `RUNBOOK-BAD-RECOMMENDATION.md`, `RUNBOOK-UNAUTHORIZED-ACCESS.md`, `RUNBOOK-BUDGET-LEDGER-OUTAGE.md`, `RUNBOOK-FAILED-PUBLICATION.md`) specifying trigger conditions, diagnostic queries, and remediation procedures; codified the synthetic tabletop incident simulation protocol.
 Residual risks: none.
-Rollback: git checkout docs/tracker.md && rm -rf docs/runbooks docs/INCIDENT_AND_SUPPORT.md tests/test_support_incidents_runbooks_t49.py
+Rollback: git checkout docs/tracker.md && rm -rf docs/runbooks docs/operations/incident-and-support.md tests/operations/test_support_incidents_runbooks.py
 ```
 
 ### T50 — Pass release gates and run a limited pilot
@@ -1057,7 +1148,7 @@ Use separate visible concepts, each grounded in server data:
 | Zhang et al. found confidence information can calibrate trust without necessarily improving joint decisions. [S13][S13] | A confidence badge is not proof of correctness; retain source context and uncertainty. | Compare false acceptance and reviewer understanding, not just confidence in the tool. |
 | Bansal et al. found explanations can increase acceptance regardless of correctness in studied tasks. [S14][S14] | Favor checkable evidence over persuasive generic reassurance. | Include deliberately wrong suggestions in controlled usability studies and measure rejection. |
 
-Do not infer hormonal effects from colors, universal seven-item limits, “digital vastu,” or guaranteed habits from these studies. The existing `docs/ux-research-human-factors.md` is useful background; the directly inspected sources below anchor this plan.
+Do not infer hormonal effects from colors, universal seven-item limits, “digital vastu,” or guaranteed habits from these studies. The existing `docs/research/ux-human-factors.md` is useful background; the directly inspected sources below anchor this plan.
 
 ### Concrete reference products and patterns
 
@@ -1189,7 +1280,7 @@ All release-blocking gates G1 through G11 are **CLOSED** with verified evidence 
 | **G6: costs and capacity** | **CLOSED** | Concurrent budget tests, bounded queues/retries, load/soak baseline, accurate usage UI | BE/SRE | `test_cost_limits_and_ledger_t18.py`, `test_slo_and_capacity_t46.py` passed (T18, T46). |
 | **G7: usable interface** | **CLOSED** | Core task flows plus matrix S0–S25 pass; no fake metrics/dead controls; both themes | FE/UX/QA | `test_async_state_matrix_t41.py`, `test_actionable_overview_t34.py`, `test_user_validation_t45.py` passed (T31–T41, T45). |
 | **G8: accessibility/performance** | **CLOSED** | Automated and manual results; supported browser/device/assistive-tech evidence; accepted performance baseline | FE/QA | `test_keyboard_focus_dialog_shortcuts_t39.py`, `test_responsive_layouts_and_extremes_t40.py`, `test_performance_profiling_t42.py` passed (T39, T40, T42). |
-| **G9: operational ownership** | **CLOSED** | SLO dashboard/alerts/runbooks, kill switches, release/rollback/incident owner | SRE | `docs/INCIDENT_AND_SUPPORT.md`, `docs/runbooks/` (RB-01 to RB-06), `docs/ROLLOUT_ROLLBACK.md` verified (T26, T49). |
+| **G9: operational ownership** | **CLOSED** | SLO dashboard/alerts/runbooks, kill switches, release/rollback/incident owner | SRE | `docs/operations/incident-and-support.md`, `docs/runbooks/` (RB-01 to RB-06), `docs/operations/rollout-rollback.md` verified (T26, T49). |
 | **G10: product truth and public presence** | **CLOSED** | Docs, claims, metadata, permissions, privacy and support agree with actual product | UX/Release owner | `test_consistent_brand_copy_t43.py`, `test_truthful_public_pages_t44.py`, `test_doc_reconciliation_t47.py` passed (T43, T44, T47). |
 | **G11: pilot approval** | **CLOSED** | G1–G10 closed, P0/P1 tasks verified, scope and rollback recorded, explicit release authorization | Release owner | All P0/P1 tasks T01–T50 verified; 406/406 active tests passed; pilot release authorized (T50). |
 
@@ -1202,10 +1293,10 @@ Schema version / prompt and model configuration: migration-v001 / GPT-4o & Claud
 Test report and external smoke evidence: 406 passed, 1 skipped (0 failures) in pytest; 16/16 routes compiled in Next.js build
 Review-quality dataset version, sample sizes and metrics: v1.0 holdout (50 PRs, pass_threshold=0.75, slice_threshold=0.60)
 Browser/device/accessibility coverage and limitations: WCAG 2.2 AA verified; WAI-ARIA APG Combobox/Dialog; touch target 44px; zoom 400%
-Load, budget, SLO and restore results: SLI-1 to SLI-5 defined in docs/SLO_AND_CAPACITY.md; RPO <= 15m, RTO <= 60m verified in docs/DISASTER_RECOVERY.md
+Load, budget, SLO and restore results: SLI-1 to SLI-5 defined in docs/operations/slo-and-capacity.md; RPO <= 15m, RTO <= 60m verified in docs/operations/disaster-recovery.md
 Known accepted P2 exclusions with owners and dates: T51–T60 deferred to post-pilot experimentation (ML/Release owners, 2026-11-01)
 Pilot installations/repositories and traffic limits: Max 10 concurrent workflows per tenant, 150k token/min
-Rollback / publication kill-switch owner: Release owner & SRE on-call (docs/ROLLOUT_ROLLBACK.md)
+Rollback / publication kill-switch owner: Release owner & SRE on-call (docs/operations/rollout-rollback.md)
 Release authorization and date: Authorized for pilot by Release Owner on 2026-11-01
 ```
 

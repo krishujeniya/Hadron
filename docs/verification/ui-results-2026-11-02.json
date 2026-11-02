@@ -1,0 +1,12 @@
+{
+  "results": [
+    "shared sign-in, forged-storage rejection, focus trap and overflow at 375px: PASS",
+    "shared sign-in, forged-storage rejection, focus trap and overflow at 768px: PASS",
+    "shared sign-in, forged-storage rejection, focus trap and overflow at 1280px: PASS",
+    "single dashboard with legacy executive preference and session reload: PASS",
+    "single dashboard with legacy developer preference and session reload: PASS",
+    "OAuth callback exchanges code once and opens dashboard: PASS",
+    "API outage shows unavailable state without false healthy status: PASS"
+  ],
+  "verdict": "PASS"
+}

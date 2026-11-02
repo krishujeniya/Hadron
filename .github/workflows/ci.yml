@@ -57,6 +57,9 @@ jobs:
       - name: Python lint (ruff)
         run: ruff check backend/ tests/
 
+      - name: Repository structure and frontend import boundaries
+        run: python3 scripts/check_structure.py
+
       - name: Python syntax check
         run: |
           find backend tests scripts -name "*.py" | xargs python3 -m py_compile
@@ -145,6 +148,20 @@ jobs:
       - name: Build Next.js application
         run: npm run build --prefix frontend
 
+      - name: Install browser for UI regression checks
+        run: npx --prefix frontend playwright-core install --with-deps chromium
+
+      - name: Verify unified frontend in browser
+        run: |
+          npm run start --prefix frontend > /tmp/hadron-ui-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID"' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --silent --fail http://127.0.0.1:3000/ > /dev/null; then break; fi
+            sleep 1
+          done
+          npm run test:ui --prefix frontend
+
   # ---------------------------------------------------------------------------
   # JOB 4: Eval Gate (Real LLM Prompt & Verdict Regression Gate)
   # Only executes on push to main with configured secrets
@@ -190,4 +207,4 @@ jobs:
         run: uv pip install --system -e ".[dev]"
 
       - name: Run eval gate test
-        run: python3 -m pytest tests/test_eval_gate.py -v -s --timeout=120
+        run: python3 -m pytest tests/evaluation/test_eval_gate.py -v -s --timeout=120

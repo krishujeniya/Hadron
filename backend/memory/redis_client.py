@@ -106,6 +106,10 @@ class RedisClient:
             await self._pool.ping()
             logger.info("Redis connected: %s", cfg.redis_url)
         except Exception as e:
+            # A failed ping must not leave a pool marked as connected.
+            failed_pool, self._pool = self._pool, None
+            if failed_pool is not None:
+                await failed_pool.aclose()
             raise MemoryStoreError(
                 f"Could not connect to Redis at {cfg.redis_url}: {e}",
                 store="redis",
