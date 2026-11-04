@@ -219,9 +219,9 @@ export default function EconomicsPage() {
             role="region"
             aria-label="30-day daily spend table"
             tabIndex={0}
-            className="overflow-x-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="overflow-x-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent min-w-0 max-w-full"
           >
-            <table className="w-full text-xs font-mono">
+            <table className="w-full min-w-[320px] text-xs font-mono">
               <thead className="border-b border-border text-muted bg-surface/50">
                 <tr>
                   <th scope="col" className="px-4 py-2.5 text-left font-medium">Date (UTC)</th>
@@ -324,17 +324,17 @@ function Breakdown({
             return (
               <div
                 key={k}
-                className="flex items-center justify-between px-4 py-2.5 gap-3 hover:bg-surface/50 transition-colors min-w-0"
+                className="flex items-center justify-between px-3 sm:px-4 py-2.5 gap-2 sm:gap-3 hover:bg-surface/50 transition-colors min-w-0"
               >
                 <div className="font-mono text-xs text-foreground truncate min-w-0 flex-1">{k}</div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <div className="w-20 sm:w-24 h-1.5 rounded bg-surface overflow-hidden">
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                  <div className="hidden xs:block w-16 sm:w-24 h-1.5 rounded bg-surface overflow-hidden">
                     <div
                       className="h-full bg-accent"
                       style={{ width: `${Math.min(100, share * 100)}%` }}
                     />
                   </div>
-                  <div className="font-mono text-xs w-20 text-right text-foreground font-medium">
+                  <div className="font-mono text-xs w-16 sm:w-20 text-right text-foreground font-medium shrink-0">
                     {usd(v)}
                   </div>
                 </div>
@@ -369,9 +369,9 @@ function Sparkline({ points }: { points: DailyPoint[] }) {
       >
         <path d={path} strokeWidth="2" vectorEffect="non-scaling-stroke" />
       </svg>
-      <div className="flex justify-between text-[11px] text-muted font-mono">
+      <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] text-muted font-mono min-w-0">
         <span>{data[0]?.date ?? ""}</span>
-        <span>Peak: {usd(max)}/day</span>
+        <span className="font-semibold text-foreground">Peak: {usd(max)}/day</span>
         <span>{data[data.length - 1]?.date ?? ""}</span>
       </div>
     </div>

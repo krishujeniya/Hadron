@@ -212,12 +212,12 @@ export function DiffViewer({ diff, findings = [] }: DiffViewerProps) {
   const currentFileLevelFindings = fileLevelFindingsMap.get(activeFilePath) || [];
 
   return (
-    <div className="rounded-xl border border-border bg-panel overflow-hidden">
+    <div className="rounded-xl border border-border bg-panel overflow-hidden min-w-0 max-w-full">
       {/* File Navigation Bar */}
       <div
         role="tablist"
         aria-label="Diff file selector"
-        className="flex items-center gap-2 px-4 py-3 bg-surface/60 border-b border-border overflow-x-auto text-xs"
+        className="flex items-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-surface/60 border-b border-border overflow-x-auto text-xs min-w-0 max-w-full scrollbar-none"
       >
         <span className="text-muted font-medium mr-1 shrink-0">Changed files:</span>
         {files.map((file, idx) => {
@@ -233,30 +233,30 @@ export function DiffViewer({ diff, findings = [] }: DiffViewerProps) {
               role="tab"
               aria-selected={isSelected}
               onClick={() => setSelectedFileIdx(idx)}
-              className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-all duration-150 active:scale-[0.98] shrink-0 flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+              className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-all duration-150 active:scale-[0.98] shrink-0 max-w-[200px] sm:max-w-xs flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                 isSelected
                   ? "bg-primary-action text-white dark:text-black font-semibold shadow-sm"
                   : "bg-surface text-muted hover:text-foreground border border-border hover:bg-panel"
               }`}
             >
-              <span>{filePath}</span>
+              <span className="truncate">{filePath}</span>
               {file.isDeleted && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] bg-err/20 text-err font-medium">
+                <span className="px-1.5 py-0.5 rounded text-[10px] bg-err/20 text-err font-medium shrink-0">
                   deleted
                 </span>
               )}
               {file.isNew && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] bg-ok/20 text-ok font-medium">
+                <span className="px-1.5 py-0.5 rounded text-[10px] bg-ok/20 text-ok font-medium shrink-0">
                   new
                 </span>
               )}
               {file.isBinary && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] bg-warn/20 text-warn font-medium">
+                <span className="px-1.5 py-0.5 rounded text-[10px] bg-warn/20 text-warn font-medium shrink-0">
                   binary
                 </span>
               )}
               {fileFindings.length > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-err/20 text-err font-bold">
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-err/20 text-err font-bold shrink-0">
                   {fileFindings.length}
                 </span>
               )}
@@ -294,7 +294,7 @@ export function DiffViewer({ diff, findings = [] }: DiffViewerProps) {
                   </div>
                   <p className="font-medium text-foreground">{f.summary}</p>
                   {f.suggestion && (
-                    <pre className="mt-2 text-xs bg-bg border border-border rounded p-2 text-muted font-mono whitespace-pre-wrap">
+                    <pre className="mt-2 text-xs bg-bg border border-border rounded p-2 text-muted font-mono whitespace-pre-wrap break-all min-w-0 max-w-full overflow-x-auto">
                       {f.suggestion}
                     </pre>
                   )}
@@ -308,7 +308,7 @@ export function DiffViewer({ diff, findings = [] }: DiffViewerProps) {
             role="region"
             aria-label={`Diff for ${activeFilePath}`}
             tabIndex={0}
-            className="overflow-x-auto font-mono text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="overflow-x-auto font-mono text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent min-w-0 max-w-full"
           >
             <table className="w-full border-collapse">
               <tbody>
@@ -412,7 +412,7 @@ export function DiffViewer({ diff, findings = [] }: DiffViewerProps) {
                                 {finding.summary}
                               </div>
                               {finding.suggestion && (
-                                <div className="mt-2 text-xs bg-panel border border-border rounded p-2.5 text-foreground font-mono whitespace-pre-wrap">
+                                <div className="mt-2 text-xs bg-panel border border-border rounded p-2.5 text-foreground font-mono whitespace-pre-wrap break-all min-w-0 max-w-full overflow-x-auto">
                                   <div className="text-muted text-[10px] uppercase tracking-wider mb-1">
                                     Suggested change:
                                   </div>

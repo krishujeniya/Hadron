@@ -113,26 +113,26 @@ function HITLQueueContent() {
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="border border-border rounded-2xl bg-surface divide-y divide-border overflow-hidden shadow-sm">
+          <div className="border border-border rounded-2xl bg-surface divide-y divide-border overflow-hidden shadow-sm min-w-0 max-w-full">
             {pending.map((h) => (
               <Link
                 key={h.id}
                 href={`/hitl/${encodeURIComponent(h.id)}`}
-                className="flex flex-col sm:flex-row sm:items-start justify-between px-5 py-4 hover:bg-panel transition-all gap-4 group"
+                className="flex flex-col sm:flex-row sm:items-start justify-between px-4 sm:px-5 py-3.5 sm:py-4 hover:bg-panel transition-all gap-3 sm:gap-4 group min-w-0 max-w-full overflow-hidden"
               >
                 <div className="min-w-0 flex-1 space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-sm font-semibold text-foreground group-hover:text-accent group-hover:underline">
+                  <div className="flex flex-wrap items-center gap-2 min-w-0">
+                    <span className="font-mono text-sm font-semibold text-foreground group-hover:text-accent group-hover:underline truncate">
                       {h.repo_full_name} #{h.pr_number}
                     </span>
-                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-warn/10 text-warn border border-warn/30">
+                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-warn/10 text-warn border border-warn/30 shrink-0">
                       Needs sign-off
                     </span>
                   </div>
                   <div className="text-sm text-foreground/90 leading-snug break-words">
                     {h.escalation_reason}
                   </div>
-                  <div className="text-xs text-muted font-mono flex flex-wrap items-center gap-2">
+                  <div className="text-xs text-muted font-mono flex flex-wrap items-center gap-2 min-w-0">
                     <span>
                       Model confidence:{" "}
                       {Number.isFinite(h.overall_confidence)
@@ -146,7 +146,7 @@ function HITLQueueContent() {
                   </div>
                 </div>
 
-                <div className="shrink-0 flex items-center gap-3 pt-1 sm:pt-0">
+                <div className="shrink-0 flex flex-wrap items-center gap-2 sm:gap-3 pt-1 sm:pt-0 min-w-0">
                   <VerdictChip verdict={h.agent_verdict} />
                   <span className="text-xs font-medium text-accent group-hover:translate-x-0.5 transition-transform">
                     Inspect and decide →

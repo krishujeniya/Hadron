@@ -327,42 +327,42 @@ export default async function SolutionDetailPage({
   };
 
   return (
-    <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6 space-y-12">
+    <div className="max-w-5xl mx-auto py-8 px-3 sm:px-6 space-y-10 sm:space-y-12 min-w-0 max-w-full">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       {/* Breadcrumb / Top Tag */}
-      <div className="flex items-center gap-2 text-xs text-muted font-mono">
+      <div className="flex flex-wrap items-center gap-2 text-xs text-muted font-mono min-w-0">
         <Link href="/" className="hover:text-foreground">Home</Link>
         <span>/</span>
         <span className="text-muted/60">Solutions</span>
         <span>/</span>
-        <span className="text-foreground font-medium">{solution.slug}</span>
+        <span className="text-foreground font-medium truncate">{solution.slug}</span>
       </div>
 
       {/* Hero Header */}
-      <div className="space-y-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-panel text-foreground border border-border font-mono">
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent" aria-hidden="true" />
-          <span>{solution.badge}</span>
+      <div className="space-y-4 min-w-0">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-panel text-foreground border border-border font-mono max-w-full truncate">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent shrink-0" aria-hidden="true" />
+          <span className="truncate">{solution.badge}</span>
         </div>
-        <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-foreground font-mono">
+        <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold tracking-tight text-foreground font-mono break-words">
           {solution.title}
         </h1>
-        <p className="text-lg md:text-xl text-muted max-w-3xl leading-relaxed">
+        <p className="text-base sm:text-lg md:text-xl text-muted max-w-3xl leading-relaxed break-words">
           {solution.subtitle}
         </p>
-        <div className="pt-2 flex flex-wrap items-center gap-4">
+        <div className="pt-2 flex flex-wrap items-center gap-3 sm:gap-4">
           <Link
             href="/"
-            className="px-6 py-3 rounded-xl bg-primary-action hover:opacity-90 text-white dark:text-black font-semibold text-sm transition shadow-sm"
+            className="w-full sm:w-auto inline-flex min-h-[44px] items-center justify-center px-6 py-3 rounded-xl bg-primary-action hover:opacity-90 text-white dark:text-black font-semibold text-sm transition shadow-sm text-center"
           >
             Deploy Hadron on GitHub free →
           </Link>
           <Link
             href="/reviews"
-            className="px-6 py-3 rounded-xl bg-panel hover:bg-surface border border-border text-foreground font-semibold text-sm transition"
+            className="w-full sm:w-auto inline-flex min-h-[44px] items-center justify-center px-6 py-3 rounded-xl bg-panel hover:bg-surface border border-border text-foreground font-semibold text-sm transition text-center"
           >
             Explore live reviews
           </Link>
@@ -370,23 +370,23 @@ export default async function SolutionDetailPage({
       </div>
 
       {/* Architecture Highlights */}
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold tracking-tight text-foreground border-b border-separator pb-3 font-mono">
+      <div className="space-y-6 min-w-0">
+        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground border-b border-separator pb-3 font-mono break-words">
           Specialist agent capabilities
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 min-w-0">
           {solution.features.map((feat, idx) => (
             <div
               key={idx}
-              className="p-5 rounded-xl border border-border bg-surface hover:border-muted/50 transition-colors space-y-2 shadow-sm"
+              className="p-4 sm:p-5 rounded-xl border border-border bg-surface hover:border-muted/50 transition-colors space-y-2 shadow-sm min-w-0"
             >
-              <div className="text-[11px] font-mono text-accent uppercase tracking-wider font-semibold">
+              <div className="text-[11px] font-mono text-accent uppercase tracking-wider font-semibold truncate">
                 {feat.agent}
               </div>
-              <h3 className="text-base font-semibold text-foreground">
+              <h3 className="text-base font-semibold text-foreground break-words">
                 {feat.title}
               </h3>
-              <p className="text-xs text-muted leading-relaxed">
+              <p className="text-xs text-muted leading-relaxed break-words">
                 {feat.desc}
               </p>
             </div>
@@ -395,22 +395,22 @@ export default async function SolutionDetailPage({
       </div>
 
       {/* Real-World Diff Finding Example */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold tracking-tight text-foreground border-b border-separator pb-3 font-mono">
+      <div className="space-y-4 min-w-0 max-w-full">
+        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground border-b border-separator pb-3 font-mono break-words">
           Automated finding detection preview
         </h2>
-        <div className="rounded-xl border border-border bg-surface overflow-hidden shadow-sm">
-          <div className="px-4 py-2 bg-panel border-b border-border flex items-center justify-between text-xs font-mono">
-            <span className="text-muted">{solution.exampleDiff.filename}</span>
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-err/10 text-err border border-err/30">
+        <div className="rounded-xl border border-border bg-surface overflow-hidden shadow-sm min-w-0 max-w-full">
+          <div className="px-4 py-2 bg-panel border-b border-border flex flex-wrap items-center justify-between gap-2 text-xs font-mono min-w-0">
+            <span className="text-muted truncate">{solution.exampleDiff.filename}</span>
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-err/10 text-err border border-err/30 shrink-0">
               {solution.exampleDiff.severity}
             </span>
           </div>
-          <div className="p-4 font-mono text-xs overflow-x-auto bg-panel text-foreground">
-            <pre className="whitespace-pre-wrap">{solution.exampleDiff.code}</pre>
+          <div className="p-3.5 sm:p-4 font-mono text-xs overflow-x-auto bg-panel text-foreground min-w-0 max-w-full">
+            <pre className="whitespace-pre-wrap break-all min-w-0 max-w-full">{solution.exampleDiff.code}</pre>
           </div>
-          <div className="p-4 bg-err/5 border-t border-border space-y-2">
-            <div className="text-xs font-bold text-err flex items-center gap-1.5">
+          <div className="p-3.5 sm:p-4 bg-err/5 border-t border-border space-y-2 min-w-0">
+            <div className="text-xs font-bold text-err flex items-center gap-1.5 break-words">
               <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
                 <line x1="12" y1="9" x2="12" y2="13" />
@@ -418,8 +418,8 @@ export default async function SolutionDetailPage({
               </svg>
               <span>{solution.exampleDiff.finding}</span>
             </div>
-            <div className="text-xs text-foreground/90 font-medium flex items-center gap-1.5">
-              <span className="font-semibold text-accent">Recommendation:</span>
+            <div className="text-xs text-foreground/90 font-medium flex flex-wrap items-center gap-1.5 break-words">
+              <span className="font-semibold text-accent shrink-0">Recommendation:</span>
               <span>{solution.exampleDiff.recommendation}</span>
             </div>
           </div>

@@ -112,8 +112,8 @@ function ReviewsContent() {
       />
 
       {/* Controls & Filter Bar */}
-      <div className="flex flex-col gap-4 rounded-xl border border-border bg-panel p-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
+      <div className="flex flex-col gap-4 rounded-xl border border-border bg-panel p-3.5 sm:p-4 sm:flex-row sm:items-end sm:justify-between min-w-0 max-w-full">
+        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end min-w-0">
           {/* Search box with clear button */}
           <div className="w-full sm:max-w-xs">
             <label htmlFor="review-search" className="mb-1.5 block text-xs font-medium text-muted">
@@ -389,14 +389,14 @@ function ReviewsContent() {
           </div>
 
           {/* Mobile Card View (Shown only on small screens, no horizontal overflow) */}
-          <div className="sm:hidden space-y-3">
+          <div className="sm:hidden space-y-3 min-w-0 max-w-full">
             {items.map((review) => (
               <div
                 key={review.id}
-                className="rounded-xl border border-border bg-panel p-4 space-y-3"
+                className="rounded-xl border border-border bg-panel p-3.5 sm:p-4 space-y-3 min-w-0 max-w-full overflow-hidden"
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
+                <div className="flex items-start justify-between gap-2 min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-xs font-mono text-muted break-all">
                       {review.repo_full_name} #{review.pr_number}
                     </p>
@@ -409,16 +409,16 @@ function ReviewsContent() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border">
+                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border min-w-0">
                   <ReviewStatusBadge status={review.status} />
                   <VerdictChip verdict={review.verdict} />
-                  <span className="text-xs text-muted tabular-nums ml-auto">
+                  <span className="text-xs text-muted tabular-nums ml-auto shrink-0">
                     {review.finding_count} {review.finding_count === 1 ? "finding" : "findings"}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-muted pt-2 border-t border-border">
-                  <time dateTime={review.created_at}>
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted pt-2 border-t border-border min-w-0">
+                  <time dateTime={review.created_at} className="shrink-0">
                     {new Date(review.created_at).toLocaleDateString(undefined, {
                       month: "short",
                       day: "numeric",
@@ -426,7 +426,7 @@ function ReviewsContent() {
                   </time>
                   <Link
                     href={`/reviews/${encodeURIComponent(review.id)}`}
-                    className="min-h-[44px] inline-flex items-center font-medium text-accent hover:underline underline-offset-4"
+                    className="min-h-[44px] inline-flex items-center font-medium text-accent hover:underline underline-offset-4 shrink-0"
                   >
                     Inspect review →
                   </Link>
@@ -441,7 +441,7 @@ function ReviewsContent() {
       {data && !error && totalReviews > 0 && (totalPages > 1 || page > 1) && (
         <nav
           aria-label="Review pagination"
-          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-panel p-4 text-sm"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-panel p-3.5 sm:p-4 text-sm min-w-0 max-w-full"
         >
           <span className="text-xs text-muted">
             Page <span className="font-semibold text-foreground">{page}</span> of{" "}

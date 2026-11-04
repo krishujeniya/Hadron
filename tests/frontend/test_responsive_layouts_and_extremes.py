@@ -51,3 +51,24 @@ def test_content_extremes_resilience():
     assert "sm:hidden" in reviews_content
     assert "break-words" in reviews_content
     assert "break-all" in reviews_content
+
+
+def test_mobile_overflow_prevention_guards():
+    """Verify key components enforce horizontal containment and safe truncation."""
+    diff_viewer_path = pathlib.Path("frontend/src/features/reviews/DiffViewer.tsx")
+    assert diff_viewer_path.exists()
+    diff_content = diff_viewer_path.read_text(encoding="utf-8")
+    assert "min-w-0 max-w-full" in diff_content
+    assert "truncate" in diff_content
+
+    shell_path = pathlib.Path("frontend/src/components/layout/Shell.tsx")
+    assert shell_path.exists()
+    shell_content = shell_path.read_text(encoding="utf-8")
+    assert "min-w-0 max-w-full" in shell_content
+    assert "overflow-x-hidden" in shell_content
+
+    landing_path = pathlib.Path("frontend/src/features/marketing/PublicLandingPage.tsx")
+    assert landing_path.exists()
+    landing_content = landing_path.read_text(encoding="utf-8")
+    assert "min-w-0 max-w-full" in landing_content
+    assert "break-words" in landing_content

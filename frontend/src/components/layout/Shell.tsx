@@ -135,8 +135,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
           Skip to main content
         </a>
 
-        <header className="border-b border-border bg-surface/85 px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-40 backdrop-blur-xl">
-          <div className="flex items-center gap-6">
+        <header className="border-b border-border bg-surface/85 px-3 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-40 backdrop-blur-xl min-w-0 max-w-full">
+          <div className="flex items-center gap-3 sm:gap-6 min-w-0">
             <HadronLogo size="sm" animated={false} />
             <nav className="hidden md:flex items-center gap-5 text-xs font-mono text-muted" aria-label="Public sections">
               <a href="/#demo" className="hover:text-foreground transition-colors py-1">Live demo</a>
@@ -146,19 +146,21 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <a href="/#faq" className="hover:text-foreground transition-colors py-1">FAQ</a>
             </nav>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <ThemeToggle />
             <button
               type="button"
               onClick={openAccountModal}
-              className="inline-flex min-h-[44px] items-center px-4 py-2 bg-primary-action text-white dark:text-black hover:opacity-90 text-xs font-semibold rounded-xl transition shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.98]"
+              aria-label="Sign In to App"
+              className="inline-flex min-h-[44px] items-center px-2.5 sm:px-4 py-2 bg-primary-action text-white dark:text-black hover:opacity-90 text-xs font-semibold rounded-xl transition shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.98] shrink-0"
             >
-              Sign In to App →
+              <span className="hidden sm:inline">Sign In to App →</span>
+              <span className="sm:hidden">Sign In →</span>
             </button>
           </div>
         </header>
 
-        <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
+        <main id="main-content" tabIndex={-1} className="flex-1 min-w-0 max-w-full overflow-x-hidden focus:outline-none">
           {isSolutionsRoute || isPublicHome || isPublicHealth ? children : (
             <section className="max-w-lg mx-auto px-6 py-20 space-y-4">
               <h1 className="text-2xl font-semibold">Sign in to your workspace</h1>
@@ -430,14 +432,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <main id="main-content" tabIndex={-1} className="flex-1 px-4 py-4 md:px-8 md:py-6 pb-20 md:pb-6 overflow-x-hidden min-w-0 focus:outline-none">
+      <main id="main-content" tabIndex={-1} className="flex-1 px-3 sm:px-6 md:px-8 py-4 md:py-6 pb-24 md:pb-6 overflow-x-hidden min-w-0 max-w-full focus:outline-none">
         {children}
       </main>
 
       {/* Mobile Ergonomic Bottom Navigation Dock */}
       <nav
         aria-label="Mobile Bottom Navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-panel/90 backdrop-blur-xl border-t border-border/80 px-2 py-1 flex items-center justify-around safe-area-pb shadow-lg"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-panel/90 backdrop-blur-xl border-t border-border/80 px-1.5 py-1 flex items-center justify-around safe-area-pb shadow-lg max-w-full overflow-hidden"
       >
         {PRIMARY_NAV.map((item) => {
           const active =

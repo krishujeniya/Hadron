@@ -184,18 +184,18 @@ ${currentDiff.findings
       {/* ------------------------------------------------------------------ */}
       {/* SECTION 1: HERO                                                    */}
       {/* ------------------------------------------------------------------ */}
-      <section className="pt-8 md:pt-14 px-4 sm:px-6 max-w-6xl mx-auto">
-        <div className="text-center max-w-3xl mx-auto space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-surface text-xs font-mono text-muted">
-            <span className="w-2 h-2 rounded-full bg-accent animate-pulse" aria-hidden="true" />
-            <span>Autonomous code review for GitHub pull requests</span>
+      <section className="pt-8 md:pt-14 px-3 sm:px-6 max-w-6xl mx-auto min-w-0 max-w-full overflow-hidden">
+        <div className="text-center max-w-3xl mx-auto space-y-6 min-w-0">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-surface text-xs font-mono text-muted max-w-full">
+            <span className="w-2 h-2 rounded-full bg-accent animate-pulse shrink-0" aria-hidden="true" />
+            <span className="truncate">Autonomous code review for GitHub pull requests</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-b from-white via-zinc-100 to-zinc-400 dark:from-white dark:via-zinc-100 dark:to-zinc-400 bg-clip-text text-transparent leading-[1.12]">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-b from-white via-zinc-100 to-zinc-400 dark:from-white dark:via-zinc-100 dark:to-zinc-400 bg-clip-text text-transparent leading-[1.12] break-words">
             Autonomous code reviews that catch critical vulnerabilities, logic flaws, and test gaps before you merge.
           </h1>
 
-          <p className="text-base sm:text-lg text-muted leading-relaxed max-w-2xl mx-auto font-sans">
+          <p className="text-base sm:text-lg text-muted leading-relaxed max-w-2xl mx-auto font-sans break-words">
             Four specialized review agents inspect your pull request diffs in parallel, analyzing syntax trees and test suites to post deterministic, actionable reviews directly to GitHub.
           </p>
 
@@ -205,10 +205,10 @@ ${currentDiff.findings
               onClick={openAccountModal}
               className="w-full sm:w-auto inline-flex min-h-[44px] items-center justify-center px-6 py-3 rounded-xl bg-primary-action text-white dark:text-black font-semibold text-sm hover:opacity-90 active:scale-[0.98] transition-transform duration-150 ease-out shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
-              <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <svg className="w-4 h-4 mr-2 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
               </svg>
-              Install GitHub App
+              <span>Install GitHub App</span>
             </button>
 
             <a
@@ -225,79 +225,81 @@ ${currentDiff.findings
         </div>
 
         {/* Real Review Sample Card on PR #142 */}
-        <div className="mt-12 max-w-4xl mx-auto rounded-2xl border border-border bg-surface overflow-hidden shadow-2xl">
+        <div className="mt-12 max-w-4xl mx-auto rounded-2xl border border-border bg-surface overflow-hidden shadow-2xl min-w-0 max-w-full">
           {/* GitHub PR Simulated Header */}
-          <div className="bg-panel/70 border-b border-border px-4 py-3 flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-ok" aria-hidden="true" />
-              <span className="text-muted">octocat / auth-service</span>
-              <span className="text-muted">·</span>
-              <span className="font-semibold text-foreground">PR #142</span>
+          <div className="bg-panel/70 border-b border-border px-3 sm:px-4 py-3 flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 font-mono text-xs min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-ok shrink-0" aria-hidden="true" />
+              <span className="text-muted truncate">octocat / auth-service</span>
+              <span className="text-muted shrink-0">·</span>
+              <span className="font-semibold text-foreground shrink-0">PR #142</span>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-muted">12 files changed (+340 -82)</span>
-              <span className="px-2 py-0.5 rounded bg-err/20 text-err text-[11px] font-semibold border border-err/30">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
+              <span className="text-muted text-[11px] sm:text-xs">12 files changed (+340 -82)</span>
+              <span className="px-2 py-0.5 rounded bg-err/20 text-err text-[10px] sm:text-[11px] font-semibold border border-err/30">
                 CHANGES RECOMMENDED
               </span>
             </div>
           </div>
 
           {/* GitHub Review Body */}
-          <div className="p-5 sm:p-6 space-y-5">
+          <div className="p-3.5 sm:p-6 space-y-4 sm:space-y-5 min-w-0 max-w-full overflow-hidden">
             <div className="flex items-start gap-3">
-              <HadronIcon size={32} animated={false} />
+              <div className="shrink-0">
+                <HadronIcon size={32} animated={false} />
+              </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-1">
                   <div>
                     <span className="font-semibold text-sm text-foreground font-mono">Hadron Bot</span>
                     <span className="text-xs text-muted ml-2">commented on PR #142</span>
                   </div>
                   <span className="text-[11px] font-mono text-muted">automated review</span>
                 </div>
-                <p className="text-xs text-muted mt-1">
+                <p className="text-xs text-muted mt-1 break-words">
                   Evaluated security, code quality, test coverage, and documentation contracts across modified files.
                 </p>
               </div>
             </div>
 
             {/* Finding Item: Security */}
-            <div className="rounded-xl border border-err/30 bg-err/5 p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded bg-err/20 text-err text-[10px] font-mono font-bold uppercase tracking-wider">
+            <div className="rounded-xl border border-err/30 bg-err/5 p-3.5 sm:p-4 space-y-2.5 sm:space-y-3 min-w-0 max-w-full overflow-hidden">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="px-2 py-0.5 rounded bg-err/20 text-err text-[10px] font-mono font-bold uppercase tracking-wider shrink-0">
                     Security Agent
                   </span>
-                  <span className="font-semibold text-xs text-foreground font-mono">backend/auth/token.py:84</span>
+                  <span className="font-semibold text-xs text-foreground font-mono truncate">backend/auth/token.py:84</span>
                 </div>
-                <span className="text-[11px] font-mono text-muted">94% confidence</span>
+                <span className="text-[11px] font-mono text-muted shrink-0">94% confidence</span>
               </div>
-              <p className="text-xs text-foreground font-medium">
+              <p className="text-xs text-foreground font-medium break-words">
                 Potential race condition in session invalidation check under multi-replica deployments.
               </p>
-              <div className="rounded-lg bg-bg p-3 font-mono text-xs overflow-x-auto border border-border/80">
-                <div className="text-err/90">- if token in in_memory_revocations: return False</div>
-                <div className="text-ok/90">+ if await redis.sismember(&quot;revoked_tokens&quot;, token): return False</div>
+              <div className="rounded-lg bg-bg p-3 font-mono text-xs overflow-x-auto border border-border/80 min-w-0 max-w-full">
+                <div className="text-err/90 whitespace-pre">- if token in in_memory_revocations: return False</div>
+                <div className="text-ok/90 whitespace-pre">+ if await redis.sismember(&quot;revoked_tokens&quot;, token): return False</div>
               </div>
-              <p className="text-[11px] text-muted">
+              <p className="text-[11px] text-muted break-words">
                 Rule: SEC-AUTH-004 · In-memory cache is not synchronized between stateless API instances. Use distributed Redis set.
               </p>
             </div>
 
             {/* Finding Item: Test Coverage */}
-            <div className="rounded-xl border border-warn/30 bg-warn/5 p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded bg-warn/20 text-warn text-[10px] font-mono font-bold uppercase tracking-wider">
+            <div className="rounded-xl border border-warn/30 bg-warn/5 p-3.5 sm:p-4 space-y-2.5 sm:space-y-3 min-w-0 max-w-full overflow-hidden">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="px-2 py-0.5 rounded bg-warn/20 text-warn text-[10px] font-mono font-bold uppercase tracking-wider shrink-0">
                     Test Agent
                   </span>
-                  <span className="font-semibold text-xs text-foreground font-mono">tests/test_auth.py:112</span>
+                  <span className="font-semibold text-xs text-foreground font-mono truncate">tests/test_auth.py:112</span>
                 </div>
-                <span className="text-[11px] font-mono text-muted">91% confidence</span>
+                <span className="text-[11px] font-mono text-muted shrink-0">91% confidence</span>
               </div>
-              <p className="text-xs text-foreground font-medium">
+              <p className="text-xs text-foreground font-medium break-words">
                 Missing unit test for empty or malformed token string edge cases.
               </p>
-              <p className="text-[11px] text-muted font-mono">
+              <p className="text-[11px] text-muted font-mono break-words">
                 Suggestion: Add test_revocation_empty_token_returns_401 to ensure early exit before Redis query.
               </p>
             </div>
@@ -308,27 +310,27 @@ ${currentDiff.findings
       {/* ------------------------------------------------------------------ */}
       {/* SECTION 2: PROOF METRICS                                           */}
       {/* ------------------------------------------------------------------ */}
-      <section className="px-4 sm:px-6 max-w-6xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="rounded-2xl border border-border bg-surface p-5 text-center">
-            <div className="text-3xl sm:text-4xl font-extrabold font-mono text-foreground">4</div>
-            <div className="text-xs font-mono font-semibold text-accent uppercase tracking-wider mt-1">Specialist agents</div>
-            <p className="text-[11px] text-muted mt-2">Security, Quality, Test, and Docs evaluate in parallel.</p>
+      <section className="px-3 sm:px-6 max-w-6xl mx-auto min-w-0 max-w-full">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4">
+          <div className="rounded-2xl border border-border bg-surface p-3.5 sm:p-5 text-center min-w-0">
+            <div className="text-2xl sm:text-4xl font-extrabold font-mono text-foreground">4</div>
+            <div className="text-[11px] sm:text-xs font-mono font-semibold text-accent uppercase tracking-wider mt-1 truncate">Specialist agents</div>
+            <p className="text-[10px] sm:text-[11px] text-muted mt-2">Security, Quality, Test, Docs parallel.</p>
           </div>
-          <div className="rounded-2xl border border-border bg-surface p-5 text-center">
-            <div className="text-3xl sm:text-4xl font-extrabold font-mono text-foreground">&lt;18s</div>
-            <div className="text-xs font-mono font-semibold text-accent uppercase tracking-wider mt-1">Review latency</div>
-            <p className="text-[11px] text-muted mt-2">Average time from webhook receipt to GitHub comment.</p>
+          <div className="rounded-2xl border border-border bg-surface p-3.5 sm:p-5 text-center min-w-0">
+            <div className="text-2xl sm:text-4xl font-extrabold font-mono text-foreground">&lt;18s</div>
+            <div className="text-[11px] sm:text-xs font-mono font-semibold text-accent uppercase tracking-wider mt-1 truncate">Review latency</div>
+            <p className="text-[10px] sm:text-[11px] text-muted mt-2">Webhook receipt to GitHub comment.</p>
           </div>
-          <div className="rounded-2xl border border-border bg-surface p-5 text-center">
-            <div className="text-3xl sm:text-4xl font-extrabold font-mono text-foreground">100%</div>
-            <div className="text-xs font-mono font-semibold text-accent uppercase tracking-wider mt-1">Verifiable citations</div>
-            <p className="text-[11px] text-muted mt-2">Every issue pinned to exact file and line ranges.</p>
+          <div className="rounded-2xl border border-border bg-surface p-3.5 sm:p-5 text-center min-w-0">
+            <div className="text-2xl sm:text-4xl font-extrabold font-mono text-foreground">100%</div>
+            <div className="text-[11px] sm:text-xs font-mono font-semibold text-accent uppercase tracking-wider mt-1 truncate">Verifiable citations</div>
+            <p className="text-[10px] sm:text-[11px] text-muted mt-2">Exact file and line ranges pinned.</p>
           </div>
-          <div className="rounded-2xl border border-border bg-surface p-5 text-center">
-            <div className="text-3xl sm:text-4xl font-extrabold font-mono text-foreground">0</div>
-            <div className="text-xs font-mono font-semibold text-accent uppercase tracking-wider mt-1">Hallucinated rules</div>
-            <p className="text-[11px] text-muted mt-2">Grounded in concrete syntax tree checks, not loose chat.</p>
+          <div className="rounded-2xl border border-border bg-surface p-3.5 sm:p-5 text-center min-w-0">
+            <div className="text-2xl sm:text-4xl font-extrabold font-mono text-foreground">0</div>
+            <div className="text-[11px] sm:text-xs font-mono font-semibold text-accent uppercase tracking-wider mt-1 truncate">Hallucinated rules</div>
+            <p className="text-[10px] sm:text-[11px] text-muted mt-2">Concrete syntax tree checks.</p>
           </div>
         </div>
       </section>
@@ -336,20 +338,20 @@ ${currentDiff.findings
       {/* ------------------------------------------------------------------ */}
       {/* SECTION 3: LIVE REVIEW DEMO (TRY WITHOUT SIGNUP)                    */}
       {/* ------------------------------------------------------------------ */}
-      <section id="demo" className="px-4 sm:px-6 max-w-6xl mx-auto scroll-mt-24">
-        <div className="rounded-3xl border border-border bg-surface p-6 sm:p-8 space-y-6 shadow-xl">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6">
-            <div>
-              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-accent/10 text-accent text-xs font-mono font-semibold mb-2">
+      <section id="demo" className="px-3 sm:px-6 max-w-6xl mx-auto scroll-mt-24 min-w-0 max-w-full overflow-hidden">
+        <div className="rounded-3xl border border-border bg-surface p-4 sm:p-8 space-y-6 shadow-xl min-w-0 max-w-full overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6 min-w-0">
+            <div className="min-w-0">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-accent/10 text-accent text-xs font-mono font-semibold mb-2 max-w-full truncate">
                 Interactive playground · No sign-up required
               </div>
-              <h2 className="text-2xl font-bold font-mono text-foreground">Test a real pull request review</h2>
-              <p className="text-xs text-muted mt-1">
+              <h2 className="text-xl sm:text-2xl font-bold font-mono text-foreground break-words">Test a real pull request review</h2>
+              <p className="text-xs text-muted mt-1 break-words">
                 Select a code sample or review the simulated output from our four parallel specialist agents.
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={handleRunReview}
@@ -362,7 +364,7 @@ ${currentDiff.findings
           </div>
 
           {/* Sample Preset Tabs */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 min-w-0">
             {SAMPLE_DIFFS.map((diff) => (
               <button
                 key={diff.id}
@@ -371,7 +373,7 @@ ${currentDiff.findings
                   setSelectedDiffId(diff.id);
                   setHasRun(true);
                 }}
-                className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-mono transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent border ${
+                className={`min-h-[44px] px-3 sm:px-3.5 py-2 rounded-xl text-xs font-mono transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent border max-w-full truncate ${
                   selectedDiffId === diff.id
                     ? "bg-panel text-foreground font-semibold border-border shadow-xs"
                     : "text-muted hover:text-foreground border-transparent hover:bg-panel/40"
@@ -383,31 +385,31 @@ ${currentDiff.findings
           </div>
 
           {/* Diff Viewer & Live Findings Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-w-0 max-w-full">
             {/* Input Diff */}
-            <div className="rounded-2xl border border-border bg-bg p-4 flex flex-col">
-              <div className="flex items-center justify-between pb-3 border-b border-border/80 text-xs font-mono text-muted">
-                <span>{currentDiff.repo} · Pull request diff</span>
-                <span className="text-[11px]">{currentDiff.language}</span>
+            <div className="rounded-2xl border border-border bg-bg p-3.5 sm:p-4 flex flex-col min-w-0 max-w-full overflow-hidden">
+              <div className="flex items-center justify-between pb-3 border-b border-border/80 text-xs font-mono text-muted min-w-0">
+                <span className="truncate mr-2">{currentDiff.repo} · Diff</span>
+                <span className="text-[11px] shrink-0">{currentDiff.language}</span>
               </div>
-              <pre className="mt-3 text-xs font-mono text-foreground overflow-x-auto leading-relaxed flex-1">
+              <pre className="mt-3 text-xs font-mono text-foreground overflow-x-auto leading-relaxed flex-1 min-w-0 max-w-full">
                 <code>{currentDiff.diff}</code>
               </pre>
             </div>
 
             {/* Generated Review Findings */}
-            <div className="rounded-2xl border border-border bg-panel/40 p-4 flex flex-col space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-border text-xs font-mono">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-foreground">Hadron Verdict:</span>
-                  <span className="px-2 py-0.5 rounded bg-err/20 text-err text-[11px] font-bold border border-err/30">
+            <div className="rounded-2xl border border-border bg-panel/40 p-3.5 sm:p-4 flex flex-col space-y-4 min-w-0 max-w-full overflow-hidden">
+              <div className="flex items-center justify-between pb-3 border-b border-border text-xs font-mono min-w-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="font-semibold text-foreground shrink-0">Verdict:</span>
+                  <span className="px-2 py-0.5 rounded bg-err/20 text-err text-[11px] font-bold border border-err/30 truncate">
                     {currentDiff.verdict}
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={handleCopyMarkdown}
-                  className="min-h-[36px] px-2.5 py-1 text-[11px] rounded-lg border border-border bg-surface text-muted hover:text-foreground transition-colors"
+                  className="min-h-[36px] px-2.5 py-1 text-[11px] rounded-lg border border-border bg-surface text-muted hover:text-foreground transition-colors shrink-0"
                 >
                   {copied ? "Copied markdown!" : "Copy markdown"}
                 </button>
@@ -419,20 +421,20 @@ ${currentDiff.findings
                   <span>Parallel agents checking syntax tree...</span>
                 </div>
               ) : (
-                <div className="space-y-3 flex-1 overflow-y-auto">
+                <div className="space-y-3 flex-1 overflow-y-auto min-w-0">
                   {currentDiff.findings.map((f, i) => (
                     <div
                       key={i}
-                      className="rounded-xl border border-border bg-surface p-3.5 space-y-2 text-xs"
+                      className="rounded-xl border border-border bg-surface p-3.5 space-y-2 text-xs min-w-0"
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono font-bold text-foreground">{f.title}</span>
-                        <span className="px-1.5 py-0.5 rounded bg-panel font-mono text-[10px] text-muted uppercase">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-mono font-bold text-foreground break-words min-w-0 flex-1">{f.title}</span>
+                        <span className="px-1.5 py-0.5 rounded bg-panel font-mono text-[10px] text-muted uppercase shrink-0">
                           {f.agent}
                         </span>
                       </div>
-                      <p className="text-muted leading-relaxed">{f.description}</p>
-                      <div className="text-[11px] font-mono text-muted/80 bg-bg px-2.5 py-1.5 rounded-lg border border-border/60">
+                      <p className="text-muted leading-relaxed break-words">{f.description}</p>
+                      <div className="text-[11px] font-mono text-muted/80 bg-bg px-2.5 py-1.5 rounded-lg border border-border/60 break-all min-w-0">
                         {f.file}:{f.line}
                       </div>
                     </div>
@@ -447,51 +449,51 @@ ${currentDiff.findings
       {/* ------------------------------------------------------------------ */}
       {/* SECTION 4: HOW IT WORKS                                            */}
       {/* ------------------------------------------------------------------ */}
-      <section id="how-it-works" className="px-4 sm:px-6 max-w-6xl mx-auto scroll-mt-24 space-y-12">
-        <div className="text-center max-w-2xl mx-auto space-y-3">
-          <h2 className="text-3xl font-extrabold font-mono text-foreground">How Hadron works</h2>
-          <p className="text-sm text-muted">
+      <section id="how-it-works" className="px-3 sm:px-6 max-w-6xl mx-auto scroll-mt-24 space-y-10 sm:space-y-12 min-w-0 max-w-full">
+        <div className="text-center max-w-2xl mx-auto space-y-3 min-w-0">
+          <h2 className="text-2xl sm:text-3xl font-extrabold font-mono text-foreground break-words">How Hadron works</h2>
+          <p className="text-xs sm:text-sm text-muted break-words">
             From webhook receipt to GitHub comment, every pull request passes through an isolated, multi-stage pipeline.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="rounded-2xl border border-border bg-surface p-6 space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 sm:gap-6 min-w-0">
+          <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6 space-y-3 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-panel border border-border flex items-center justify-center font-mono font-bold text-xs text-accent">
               01
             </div>
-            <h3 className="font-bold text-sm font-mono text-foreground">Webhook ingestion</h3>
-            <p className="text-xs text-muted leading-relaxed">
+            <h3 className="font-bold text-sm font-mono text-foreground break-words">Webhook ingestion</h3>
+            <p className="text-xs text-muted leading-relaxed break-words">
               GitHub sends a pull request webhook. Hadron verifies the HMAC-SHA256 signature, enforces idempotency, and queues the review job.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-border bg-surface p-6 space-y-3">
+          <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6 space-y-3 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-panel border border-border flex items-center justify-center font-mono font-bold text-xs text-accent">
               02
             </div>
-            <h3 className="font-bold text-sm font-mono text-foreground">AST & context extraction</h3>
-            <p className="text-xs text-muted leading-relaxed">
+            <h3 className="font-bold text-sm font-mono text-foreground break-words">AST & context extraction</h3>
+            <p className="text-xs text-muted leading-relaxed break-words">
               We extract git diff hunks and parse the Abstract Syntax Tree. Caller graphs and touched types are resolved before invoking models.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-border bg-surface p-6 space-y-3">
+          <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6 space-y-3 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-panel border border-border flex items-center justify-center font-mono font-bold text-xs text-accent">
               03
             </div>
-            <h3 className="font-bold text-sm font-mono text-foreground">Four parallel agents</h3>
-            <p className="text-xs text-muted leading-relaxed">
+            <h3 className="font-bold text-sm font-mono text-foreground break-words">Four parallel agents</h3>
+            <p className="text-xs text-muted leading-relaxed break-words">
               Security, Code Quality, Test Coverage, and Documentation agents analyze the diff concurrently in isolated, sandboxed environments.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-border bg-surface p-6 space-y-3">
+          <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6 space-y-3 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-panel border border-border flex items-center justify-center font-mono font-bold text-xs text-accent">
               04
             </div>
-            <h3 className="font-bold text-sm font-mono text-foreground">Aggregated verdict</h3>
-            <p className="text-xs text-muted leading-relaxed">
+            <h3 className="font-bold text-sm font-mono text-foreground break-words">Aggregated verdict</h3>
+            <p className="text-xs text-muted leading-relaxed break-words">
               A judge node deduplicates findings, scores overall confidence, posts actionable inline comments to GitHub, or routes to human review.
             </p>
           </div>
@@ -501,35 +503,35 @@ ${currentDiff.findings
       {/* ------------------------------------------------------------------ */}
       {/* SECTION 5: INTEGRATIONS                                            */}
       {/* ------------------------------------------------------------------ */}
-      <section id="integrations" className="px-4 sm:px-6 max-w-6xl mx-auto scroll-mt-24 space-y-8">
-        <div className="text-center max-w-2xl mx-auto space-y-3">
-          <h2 className="text-3xl font-extrabold font-mono text-foreground">Works with your developer stack</h2>
-          <p className="text-sm text-muted">
+      <section id="integrations" className="px-3 sm:px-6 max-w-6xl mx-auto scroll-mt-24 space-y-8 min-w-0 max-w-full">
+        <div className="text-center max-w-2xl mx-auto space-y-3 min-w-0">
+          <h2 className="text-2xl sm:text-3xl font-extrabold font-mono text-foreground break-words">Works with your developer stack</h2>
+          <p className="text-xs sm:text-sm text-muted break-words">
             Connects directly to your GitHub pull requests with zero changes to existing CI workflows.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div className="rounded-2xl border border-border bg-surface p-6 space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 min-w-0">
+          <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6 space-y-3 min-w-0">
             <div className="font-mono text-xs font-semibold text-accent uppercase">Native App</div>
-            <h3 className="font-bold text-base font-mono text-foreground">GitHub App</h3>
-            <p className="text-xs text-muted leading-relaxed">
+            <h3 className="font-bold text-base font-mono text-foreground break-words">GitHub App</h3>
+            <p className="text-xs text-muted leading-relaxed break-words">
               One-click installation on individual repositories or entire organizations. Delivers inline review comments and status checks.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-border bg-surface p-6 space-y-3">
+          <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6 space-y-3 min-w-0">
             <div className="font-mono text-xs font-semibold text-accent uppercase">CI Pipeline</div>
-            <h3 className="font-bold text-base font-mono text-foreground">GitHub Actions</h3>
-            <p className="text-xs text-muted leading-relaxed">
+            <h3 className="font-bold text-base font-mono text-foreground break-words">GitHub Actions</h3>
+            <p className="text-xs text-muted leading-relaxed break-words">
               Trigger reviews inside your existing CI workflow. Enforce blocking gates before deployment pipelines execute.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-border bg-surface p-6 space-y-3">
+          <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6 space-y-3 min-w-0">
             <div className="font-mono text-xs font-semibold text-accent uppercase">REST & Webhooks</div>
-            <h3 className="font-bold text-base font-mono text-foreground">Custom Webhooks</h3>
-            <p className="text-xs text-muted leading-relaxed">
+            <h3 className="font-bold text-base font-mono text-foreground break-words">Custom Webhooks</h3>
+            <p className="text-xs text-muted leading-relaxed break-words">
               RESTful APIs and webhook subscriptions allow engineering platforms to stream review telemetry into internal dashboards.
             </p>
           </div>
@@ -539,18 +541,18 @@ ${currentDiff.findings
       {/* ------------------------------------------------------------------ */}
       {/* SECTION 5B: SPECIALIZED SOLUTIONS BY STACK                          */}
       {/* ------------------------------------------------------------------ */}
-      <section id="solutions" className="px-4 sm:px-6 max-w-6xl mx-auto scroll-mt-24 space-y-8">
-        <div className="text-center max-w-2xl mx-auto space-y-3">
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-accent/10 text-accent text-xs font-mono font-semibold">
+      <section id="solutions" className="px-3 sm:px-6 max-w-6xl mx-auto scroll-mt-24 space-y-8 min-w-0 max-w-full">
+        <div className="text-center max-w-2xl mx-auto space-y-3 min-w-0">
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-accent/10 text-accent text-xs font-mono font-semibold max-w-full truncate">
             Dedicated framework analyzers
           </div>
-          <h2 className="text-3xl font-extrabold font-mono text-foreground">Specialized solutions by stack</h2>
-          <p className="text-sm text-muted">
+          <h2 className="text-2xl sm:text-3xl font-extrabold font-mono text-foreground break-words">Specialized solutions by stack</h2>
+          <p className="text-xs sm:text-sm text-muted break-words">
             Static analysis rules crafted for your specific runtime, framework conventions, and concurrency models.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 min-w-0">
           <Link
             href="/solutions/python-security-audit"
             className="group rounded-2xl border border-border bg-surface p-6 flex flex-col justify-between space-y-4 hover:border-accent/40 transition-colors shadow-sm"
@@ -628,36 +630,36 @@ ${currentDiff.findings
       {/* ------------------------------------------------------------------ */}
       {/* SECTION 6: SECURITY & PERMISSIONS (PLAIN WORDS)                    */}
       {/* ------------------------------------------------------------------ */}
-      <section id="security" className="px-4 sm:px-6 max-w-6xl mx-auto scroll-mt-24">
-        <div className="rounded-3xl border border-border bg-surface p-8 sm:p-10 space-y-8">
-          <div className="max-w-2xl space-y-3">
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-accent/10 text-accent text-xs font-mono font-semibold">
+      <section id="security" className="px-3 sm:px-6 max-w-6xl mx-auto scroll-mt-24 min-w-0 max-w-full">
+        <div className="rounded-3xl border border-border bg-surface p-4 sm:p-8 md:p-10 space-y-8 min-w-0 max-w-full">
+          <div className="max-w-2xl space-y-3 min-w-0">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-accent/10 text-accent text-xs font-mono font-semibold max-w-full truncate">
               Data protection & privacy
             </div>
-            <h2 className="text-3xl font-extrabold font-mono text-foreground">Security in plain English</h2>
-            <p className="text-sm text-muted">
+            <h2 className="text-2xl sm:text-3xl font-extrabold font-mono text-foreground break-words">Security in plain English</h2>
+            <p className="text-xs sm:text-sm text-muted break-words">
               Because an automated review engine reads pull requests, our security and privacy model is transparent and strictly bounded.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <h3 className="font-bold text-sm font-mono text-foreground">Read-only PR diff access</h3>
-              <p className="text-xs text-muted leading-relaxed">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 min-w-0">
+            <div className="space-y-2 min-w-0">
+              <h3 className="font-bold text-sm font-mono text-foreground break-words">Read-only PR diff access</h3>
+              <p className="text-xs text-muted leading-relaxed break-words">
                 We only read the pull request diff and touched files necessary to complete the review. We never clone untouched repositories or access unpushed local code.
               </p>
             </div>
 
-            <div className="space-y-2">
-              <h3 className="font-bold text-sm font-mono text-foreground">Zero model training</h3>
-              <p className="text-xs text-muted leading-relaxed">
+            <div className="space-y-2 min-w-0">
+              <h3 className="font-bold text-sm font-mono text-foreground break-words">Zero model training</h3>
+              <p className="text-xs text-muted leading-relaxed break-words">
                 Your private code is never stored for training or used to train public or proprietary machine learning models. Code in transit is protected with TLS 1.3.
               </p>
             </div>
 
-            <div className="space-y-2">
-              <h3 className="font-bold text-sm font-mono text-foreground">Isolated ephemeral execution</h3>
-              <p className="text-xs text-muted leading-relaxed">
+            <div className="space-y-2 min-w-0">
+              <h3 className="font-bold text-sm font-mono text-foreground break-words">Isolated ephemeral execution</h3>
+              <p className="text-xs text-muted leading-relaxed break-words">
                 Every AST parse and syntax check executes in memory-isolated sandboxes with network egress completely blocked, terminating immediately after review.
               </p>
             </div>
@@ -668,21 +670,21 @@ ${currentDiff.findings
       {/* ------------------------------------------------------------------ */}
       {/* SECTION 7: PRICING & ACCESS                                        */}
       {/* ------------------------------------------------------------------ */}
-      <section id="pricing" className="px-4 sm:px-6 max-w-6xl mx-auto scroll-mt-24 space-y-8">
-        <div className="text-center max-w-2xl mx-auto space-y-3">
-          <h2 className="text-3xl font-extrabold font-mono text-foreground">Developer-first pricing</h2>
-          <p className="text-sm text-muted">Transparent access tiers for open source developers and engineering organizations.</p>
+      <section id="pricing" className="px-3 sm:px-6 max-w-6xl mx-auto scroll-mt-24 space-y-8 min-w-0 max-w-full">
+        <div className="text-center max-w-2xl mx-auto space-y-3 min-w-0">
+          <h2 className="text-2xl sm:text-3xl font-extrabold font-mono text-foreground break-words">Developer-first pricing</h2>
+          <p className="text-xs sm:text-sm text-muted break-words">Transparent access tiers for open source developers and engineering organizations.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 min-w-0">
           {/* Community */}
-          <div className="rounded-2xl border border-border bg-surface p-6 flex flex-col justify-between space-y-6">
-            <div className="space-y-4">
+          <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6 flex flex-col justify-between space-y-6 min-w-0">
+            <div className="space-y-4 min-w-0">
               <div>
                 <h3 className="font-bold text-base font-mono text-foreground">Community</h3>
                 <p className="text-xs text-muted mt-1">For individual developers and open source projects.</p>
               </div>
-              <div className="text-3xl font-extrabold font-mono text-foreground">Free</div>
+              <div className="text-2xl sm:text-3xl font-extrabold font-mono text-foreground">Free</div>
               <ul className="text-xs text-muted space-y-2 font-mono">
                 <li className="flex items-center gap-2">✓ Unlimited public repositories</li>
                 <li className="flex items-center gap-2">✓ 4 parallel specialist agents</li>
@@ -700,16 +702,16 @@ ${currentDiff.findings
           </div>
 
           {/* Team */}
-          <div className="rounded-2xl border-2 border-accent bg-surface p-6 flex flex-col justify-between space-y-6 relative shadow-xl">
-            <div className="absolute -top-3 right-6 px-3 py-0.5 rounded-full bg-accent text-bg text-[10px] font-mono font-bold uppercase tracking-wider">
+          <div className="rounded-2xl border-2 border-accent bg-surface p-4 sm:p-6 flex flex-col justify-between space-y-6 relative shadow-xl min-w-0">
+            <div className="absolute -top-3 right-4 sm:right-6 px-3 py-0.5 rounded-full bg-accent text-bg text-[10px] font-mono font-bold uppercase tracking-wider">
               Most Popular
             </div>
-            <div className="space-y-4">
+            <div className="space-y-4 min-w-0">
               <div>
                 <h3 className="font-bold text-base font-mono text-foreground">Team</h3>
                 <p className="text-xs text-muted mt-1">For growing teams shipping production software.</p>
               </div>
-              <div className="text-3xl font-extrabold font-mono text-foreground">
+              <div className="text-2xl sm:text-3xl font-extrabold font-mono text-foreground">
                 $29 <span className="text-xs font-normal text-muted">/ dev / month</span>
               </div>
               <ul className="text-xs text-foreground space-y-2 font-mono">
@@ -730,13 +732,13 @@ ${currentDiff.findings
           </div>
 
           {/* Enterprise */}
-          <div className="rounded-2xl border border-border bg-surface p-6 flex flex-col justify-between space-y-6">
-            <div className="space-y-4">
+          <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6 flex flex-col justify-between space-y-6 min-w-0">
+            <div className="space-y-4 min-w-0">
               <div>
                 <h3 className="font-bold text-base font-mono text-foreground">Enterprise</h3>
                 <p className="text-xs text-muted mt-1">For security-sensitive or regulated engineering teams.</p>
               </div>
-              <div className="text-3xl font-extrabold font-mono text-foreground">Custom</div>
+              <div className="text-2xl sm:text-3xl font-extrabold font-mono text-foreground">Custom</div>
               <ul className="text-xs text-muted space-y-2 font-mono">
                 <li className="flex items-center gap-2">✓ Self-hosted VPC deployment</li>
                 <li className="flex items-center gap-2">✓ Bring your own LLM API keys</li>
@@ -757,13 +759,13 @@ ${currentDiff.findings
       {/* ------------------------------------------------------------------ */}
       {/* SECTION 8: SHORT FAQ (4-6 QUESTIONS)                               */}
       {/* ------------------------------------------------------------------ */}
-      <section id="faq" className="px-4 sm:px-6 max-w-4xl mx-auto scroll-mt-24 space-y-8">
-        <div className="text-center space-y-3">
-          <h2 className="text-3xl font-extrabold font-mono text-foreground">Frequently asked questions</h2>
-          <p className="text-sm text-muted">Direct answers to technical and operational questions.</p>
+      <section id="faq" className="px-3 sm:px-6 max-w-4xl mx-auto scroll-mt-24 space-y-8 min-w-0 max-w-full">
+        <div className="text-center space-y-3 min-w-0">
+          <h2 className="text-2xl sm:text-3xl font-extrabold font-mono text-foreground break-words">Frequently asked questions</h2>
+          <p className="text-xs sm:text-sm text-muted break-words">Direct answers to technical and operational questions.</p>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 min-w-0">
           {[
             {
               q: "How does Hadron prevent hallucinations common in AI chatbots?",
@@ -786,18 +788,18 @@ ${currentDiff.findings
               a: "No. Your source code is processed ephemerally in memory-isolated sandboxes with network egress blocked. Code is never used to train public or proprietary machine learning models.",
             },
           ].map((item, idx) => (
-            <div key={idx} className="rounded-2xl border border-border bg-surface overflow-hidden">
+            <div key={idx} className="rounded-2xl border border-border bg-surface overflow-hidden min-w-0">
               <button
                 type="button"
                 onClick={() => setActiveFaq(activeFaq === idx ? null : idx)}
-                className="w-full min-h-[44px] p-5 text-left flex items-center justify-between gap-4 text-sm font-mono font-semibold text-foreground hover:bg-panel/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                className="w-full min-h-[44px] p-4 sm:p-5 text-left flex items-start sm:items-center justify-between gap-3 text-xs sm:text-sm font-mono font-semibold text-foreground hover:bg-panel/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent min-w-0"
                 aria-expanded={activeFaq === idx}
               >
-                <span>{item.q}</span>
-                <span className="text-muted shrink-0 text-base">{activeFaq === idx ? "−" : "+"}</span>
+                <span className="break-words min-w-0 flex-1">{item.q}</span>
+                <span className="text-muted shrink-0 text-base ml-2">{activeFaq === idx ? "−" : "+"}</span>
               </button>
               {activeFaq === idx && (
-                <div className="px-5 pb-5 pt-1 text-xs text-muted leading-relaxed font-sans border-t border-border/40">
+                <div className="px-4 sm:px-5 pb-4 sm:pb-5 pt-1 text-xs text-muted leading-relaxed font-sans border-t border-border/40 break-words min-w-0">
                   {item.a}
                 </div>
               )}
@@ -809,12 +811,12 @@ ${currentDiff.findings
       {/* ------------------------------------------------------------------ */}
       {/* SECTION 9: CLOSING ACTION                                          */}
       {/* ------------------------------------------------------------------ */}
-      <section className="px-4 sm:px-6 max-w-4xl mx-auto text-center">
-        <div className="rounded-3xl border border-border bg-surface p-8 sm:p-12 space-y-6 shadow-2xl relative overflow-hidden">
-          <h2 className="text-3xl sm:text-4xl font-extrabold font-mono text-foreground tracking-tight">
+      <section className="px-3 sm:px-6 max-w-4xl mx-auto text-center min-w-0 max-w-full">
+        <div className="rounded-3xl border border-border bg-surface p-5 sm:p-8 md:p-12 space-y-6 shadow-2xl relative overflow-hidden min-w-0 max-w-full">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold font-mono text-foreground tracking-tight break-words">
             Stop letting security bugs slip into main.
           </h2>
-          <p className="text-sm text-muted max-w-xl mx-auto leading-relaxed">
+          <p className="text-xs sm:text-sm text-muted max-w-xl mx-auto leading-relaxed break-words">
             Install the Hadron GitHub App in two minutes. Your next pull request will be autonomously evaluated across security, code quality, test coverage, and documentation.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
@@ -841,8 +843,8 @@ ${currentDiff.findings
       {/* ------------------------------------------------------------------ */}
       {/* SECTION 10: HUMAN-FIRST DEVELOPER FOOTER & TOPICAL SITEMAP         */}
       {/* ------------------------------------------------------------------ */}
-      <footer className="border-t border-border pt-12 pb-6 px-4 sm:px-6 max-w-6xl mx-auto text-xs font-mono text-muted space-y-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+      <footer className="border-t border-border pt-12 pb-6 px-3 sm:px-6 max-w-6xl mx-auto text-xs font-mono text-muted space-y-8 min-w-0 max-w-full">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 min-w-0">
           <div className="space-y-3">
             <div className="font-bold text-foreground uppercase tracking-wider text-[11px]">Solutions</div>
             <ul className="space-y-2">

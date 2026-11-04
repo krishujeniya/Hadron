@@ -93,11 +93,11 @@ export default function RepositoriesPage() {
             : `No repositories found for @${currentAccount.login}.`}
         </Empty>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 min-w-0">
           {filtered.map((repo) => (
             <div
               key={repo.id}
-              className="border border-border rounded-xl bg-surface p-4 flex flex-col justify-between hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150 shadow-sm"
+              className="border border-border rounded-xl bg-surface p-3.5 sm:p-4 flex flex-col justify-between hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150 shadow-sm min-w-0 max-w-full overflow-hidden"
             >
               <div>
                 <div className="flex items-start justify-between gap-2">
@@ -138,8 +138,8 @@ export default function RepositoriesPage() {
                 </p>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-separator flex items-center justify-between text-xs text-muted">
-                <div className="flex items-center gap-3 font-mono text-[11px]">
+              <div className="mt-4 pt-3 border-t border-separator flex flex-wrap items-center justify-between gap-2 text-xs text-muted min-w-0">
+                <div className="flex flex-wrap items-center gap-3 font-mono text-[11px] min-w-0">
                   <span title="Stars" className="flex items-center gap-1">
                     <svg className="w-3 h-3 text-muted" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />

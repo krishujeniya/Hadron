@@ -24,16 +24,16 @@ export default function HealthPage() {
   );
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto p-4 sm:p-6">
+    <div className="space-y-6 max-w-5xl mx-auto min-w-0 max-w-full">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">System Health & Capability</h1>
-          <p className="text-sm text-muted">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-4 min-w-0">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight break-words">System Health & Capability</h1>
+          <p className="text-xs sm:text-sm text-muted break-words mt-1">
             Live telemetry distinguishing HTTP process availability from operational review execution capability.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs px-2.5 py-1 rounded-full border border-border bg-panel text-muted font-mono">
             {readyData?.env || "production"}
           </span>
@@ -41,7 +41,7 @@ export default function HealthPage() {
       </div>
 
       {/* Main Operational Capability Banner */}
-      <div className="border border-border rounded-xl bg-panel p-5">
+      <div className="border border-border rounded-xl bg-panel p-4 sm:p-5 min-w-0 max-w-full">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <div className="text-xs uppercase tracking-wider text-muted font-semibold mb-1">

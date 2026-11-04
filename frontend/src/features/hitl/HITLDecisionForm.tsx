@@ -248,15 +248,15 @@ export function HITLDecisionForm({ hitlId, onResolved }: HITLDecisionFormProps) 
   }
 
   return (
-    <form onSubmit={onSubmit} className="rounded-xl border border-border bg-panel p-5 space-y-5">
-      <fieldset disabled={confirming || submitting} className="space-y-4 disabled:opacity-75">
+    <form onSubmit={onSubmit} className="rounded-xl border border-border bg-panel p-3.5 sm:p-5 space-y-4 sm:space-y-5 min-w-0 max-w-full overflow-hidden">
+      <fieldset disabled={confirming || submitting} className="space-y-4 disabled:opacity-75 min-w-0">
         <legend className="text-sm font-semibold text-foreground">Select determination</legend>
 
-        <div className="space-y-2.5">
+        <div className="space-y-2.5 min-w-0">
           {ACTIONS.map((item) => (
             <label
               key={item.value}
-              className={`flex cursor-pointer items-start gap-3 min-h-[48px] rounded-xl border p-3 transition-all duration-150 active:scale-[0.98] ${
+              className={`flex cursor-pointer items-start gap-2.5 sm:gap-3 min-h-[48px] rounded-xl border p-2.5 sm:p-3 transition-all duration-150 active:scale-[0.98] min-w-0 max-w-full ${
                 action === item.value
                   ? "border-accent bg-accent/10 shadow-xs"
                   : "border-border bg-surface hover:bg-panel"
@@ -269,11 +269,11 @@ export function HITLDecisionForm({ hitlId, onResolved }: HITLDecisionFormProps) 
                 checked={action === item.value}
                 onChange={() => setAction(item.value)}
                 required
-                className="mt-0.5 accent-[rgb(var(--accent))]"
+                className="mt-0.5 accent-[rgb(var(--accent))] shrink-0"
               />
-              <span className="text-xs">
-                <span className="block font-semibold text-foreground">{item.label}</span>
-                <span className="mt-0.5 block text-muted">{item.description}</span>
+              <span className="text-xs min-w-0 flex-1">
+                <span className="block font-semibold text-foreground break-words">{item.label}</span>
+                <span className="mt-0.5 block text-muted break-words">{item.description}</span>
               </span>
             </label>
           ))}

@@ -153,11 +153,11 @@ export default function ReviewDetailPage() {
       </nav>
 
       {/* Detail Header */}
-      <header className="space-y-4 rounded-xl border border-border bg-panel p-5 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div className="min-w-0 space-y-1">
-            <div className="flex flex-wrap items-center gap-2 font-mono text-xs text-muted">
-              <span className="font-medium text-foreground">{review.repo_full_name}</span>
+      <header className="space-y-4 rounded-xl border border-border bg-panel p-4 sm:p-6 min-w-0 max-w-full overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 min-w-0">
+          <div className="min-w-0 space-y-1 flex-1">
+            <div className="flex flex-wrap items-center gap-2 font-mono text-xs text-muted min-w-0">
+              <span className="font-medium text-foreground truncate">{review.repo_full_name}</span>
               <span>#{review.pr_number}</span>
               <span>•</span>
               <span title="Head commit SHA">{review.head_commit_sha.slice(0, 8)}</span>
@@ -167,15 +167,15 @@ export default function ReviewDetailPage() {
             </h1>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <ReviewStatusBadge status={review.status} />
             <VerdictChip verdict={review.verdict} />
           </div>
         </div>
 
         {/* Status Indicators & Metadata */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border text-xs">
-          <div className="flex flex-wrap items-center gap-4 text-muted">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border text-xs min-w-0">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-muted min-w-0">
             <span>
               Execution: <strong className="text-foreground font-mono">{executionState}</strong>
             </span>
@@ -198,7 +198,7 @@ export default function ReviewDetailPage() {
             </time>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <a
               href={`https://github.com/${review.repo_full_name}/pull/${review.pr_number}`}
               target="_blank"
@@ -214,7 +214,7 @@ export default function ReviewDetailPage() {
         </div>
 
         {copyStatus && (
-          <p role="status" className="text-xs text-accent transition-opacity">
+          <p role="status" className="text-xs text-accent transition-opacity break-words">
             {copyStatus}
           </p>
         )}

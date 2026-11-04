@@ -137,7 +137,7 @@ export function BangMotionPipeline() {
   return (
     <div
       ref={containerRef}
-      className="relative overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-b from-panel/90 via-surface to-surface p-4 sm:p-6 shadow-md"
+      className="relative overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-b from-panel/90 via-surface to-surface p-3.5 sm:p-6 shadow-md min-w-0 max-w-full"
       aria-label="Cinematic multi-agent PR review pipeline visualizer"
     >
       {/* Background Ambient Depth Grid & Camera Horizon */}
@@ -197,9 +197,9 @@ export function BangMotionPipeline() {
       </div>
 
       {/* Kinetic Typography Stage — Bang Motion Rule: Punchy, sentence-case, no fluff */}
-      <div className="relative z-10 my-4 sm:my-6 min-h-[52px] sm:min-h-[64px] flex items-center">
-        <div ref={headlineRef} className="w-full">
-          <h2 className="text-base sm:text-xl md:text-2xl font-bold tracking-tight text-foreground font-mono leading-tight">
+      <div className="relative z-10 my-4 sm:my-6 min-h-[52px] sm:min-h-[64px] flex items-center min-w-0">
+        <div ref={headlineRef} className="w-full min-w-0">
+          <h2 className="text-sm sm:text-xl md:text-2xl font-bold tracking-tight text-foreground font-mono leading-snug break-words">
             <span>{currentPhrase.lead} </span>
             <span className="relative inline-block px-1.5 py-0.5 text-accent mx-0.5">
               <span
@@ -286,14 +286,14 @@ export function BangMotionPipeline() {
       </div>
 
       {/* Pipeline Status Summary Bar */}
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-muted">
-        <div className="flex items-center gap-2">
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-ok" />
+      <div className="mt-3 flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2 text-[11px] font-mono text-muted min-w-0">
+        <div className="flex flex-wrap items-center gap-2 min-w-0">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-ok shrink-0" />
           <span>PostgreSQL ledger synced</span>
           <span className="text-separator">•</span>
           <span>Redis cache live</span>
         </div>
-        <div className="text-right">
+        <div className="text-left xs:text-right shrink-0">
           <span>Target latency: &lt; 3.5s per commit</span>
         </div>
       </div>

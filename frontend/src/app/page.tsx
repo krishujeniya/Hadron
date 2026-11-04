@@ -88,8 +88,8 @@ export default function DashboardPage() {
 
       {/* Account Context Banner */}
       {currentAccount ? (
-        <div className="border border-border rounded-2xl bg-surface p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
-          <div className="flex items-center gap-3">
+        <div className="border border-border rounded-2xl bg-surface p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm min-w-0 max-w-full">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             {currentAccount.avatar_url ? (
               <img
                 src={currentAccount.avatar_url}
@@ -103,18 +103,18 @@ export default function DashboardPage() {
                 {currentAccount.login.slice(0, 2).toUpperCase()}
               </div>
             )}
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-foreground">Workspace:</span>
-                <span className="font-mono text-foreground font-medium">@{currentAccount.login}</span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="font-semibold text-foreground shrink-0">Workspace:</span>
+                <span className="font-mono text-foreground font-medium truncate">@{currentAccount.login}</span>
                 <Status variant="info" label="Scoped" showDot={false} />
               </div>
-              <p className="text-muted text-xs mt-0.5">
+              <p className="text-muted text-xs mt-0.5 truncate">
                 Monitoring {repositories.length} repositories. Data is isolated to @{currentAccount.login}.
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 shrink-0 min-w-0">
             <Link href="/repositories">
               <Button variant="secondary" size="sm">
                 Repositories ({repositories.length})
@@ -129,7 +129,7 @@ export default function DashboardPage() {
 
       {/* State-Aware Action Banner (T34) */}
       <div
-        className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm transition-all ${
+        className={`p-3.5 sm:p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm transition-all min-w-0 max-w-full ${
           actionTone === "warning"
             ? "border-warn/40 bg-warn/10 text-foreground"
             : actionTone === "error"
@@ -139,15 +139,15 @@ export default function DashboardPage() {
             : "border-border bg-surface text-foreground"
         }`}
       >
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-base font-mono">{actionTitle}</span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-bold text-base font-mono break-words">{actionTitle}</span>
             {actionTone === "warning" && <Status variant="warning" label="Action Required" />}
             {actionTone === "error" && <Status variant="error" label="Attention Needed" />}
           </div>
-          <p className="text-xs text-muted mt-1 max-w-xl">{actionDescription}</p>
+          <p className="text-xs text-muted mt-1 max-w-xl break-words">{actionDescription}</p>
         </div>
-        <Link href={actionLink}>
+        <Link href={actionLink} className="shrink-0">
           <Button variant={actionTone === "warning" ? "danger" : "primary"} size="sm">
             {actionLabel}
           </Button>
@@ -328,8 +328,8 @@ function StatCard({
       : "text-foreground";
 
   return (
-    <div className="border border-border rounded-xl bg-surface px-4 py-3.5 hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150 shadow-sm">
-      <div className="text-xs uppercase tracking-wider font-mono text-muted">{label}</div>
+    <div className="border border-border rounded-xl bg-surface px-3.5 sm:px-4 py-3.5 hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150 shadow-sm min-w-0">
+      <div className="text-xs uppercase tracking-wider font-mono text-muted truncate">{label}</div>
       <div className={`text-2xl font-mono font-bold mt-1.5 ${toneColor}`}>
         {err ? "N/A" : value ?? "…"}
       </div>

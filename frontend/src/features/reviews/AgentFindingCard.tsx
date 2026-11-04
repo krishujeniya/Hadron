@@ -22,9 +22,9 @@ export function FindingCard({ finding, index }: { finding: Finding; index?: numb
   return (
     <article
       id={anchorId}
-      className="px-4 py-5 sm:px-5 space-y-3 scroll-mt-24 transition-colors hover:bg-surface/30"
+      className="px-3 sm:px-5 py-4 sm:py-5 space-y-3 scroll-mt-24 transition-colors hover:bg-surface/30 min-w-0 max-w-full overflow-hidden"
     >
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 min-w-0">
         <SeverityChip severity={finding.severity} />
         <span className="text-xs font-medium text-accent">
           {AGENTS[finding.agent_type] ?? finding.agent_type.replaceAll("_", " ")}
@@ -34,12 +34,12 @@ export function FindingCard({ finding, index }: { finding: Finding; index?: numb
         </span>
       </div>
 
-      <h3 className="text-sm font-medium leading-relaxed break-words text-foreground">
+      <h3 className="text-sm font-medium leading-relaxed break-words text-foreground min-w-0">
         {finding.summary}
       </h3>
 
       {finding.file_path && (
-        <p className="break-all text-xs font-mono text-muted">
+        <p className="break-all text-xs font-mono text-muted min-w-0">
           <span className="font-semibold text-foreground/80">{finding.file_path}</span>
           {finding.line_start ? (
             <span>
@@ -55,11 +55,11 @@ export function FindingCard({ finding, index }: { finding: Finding; index?: numb
       )}
 
       {finding.suggestion && (
-        <details className="rounded-lg border border-border bg-surface/50">
+        <details className="rounded-lg border border-border bg-surface/50 min-w-0 max-w-full overflow-hidden">
           <summary className="cursor-pointer px-3 py-2.5 text-xs font-medium text-foreground hover:bg-raised transition-colors">
             Suggested change
           </summary>
-          <pre className="overflow-x-auto whitespace-pre-wrap break-words border-t border-border p-3 font-mono text-xs leading-relaxed text-foreground bg-panel">
+          <pre className="overflow-x-auto whitespace-pre-wrap break-all border-t border-border p-3 font-mono text-xs leading-relaxed text-foreground bg-panel min-w-0 max-w-full">
             {finding.suggestion}
           </pre>
         </details>
@@ -103,9 +103,9 @@ export function FindingsByAgent({ findings }: { findings: Finding[] }) {
   return (
     <div className="space-y-4">
       {/* Findings Filter Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-panel px-4 py-3 text-xs">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-muted font-medium mr-1">Filter severity:</span>
+      <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-lg border border-border bg-panel px-3 sm:px-4 py-2.5 sm:py-3 text-xs min-w-0 max-w-full">
+        <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+          <span className="text-muted font-medium mr-1 shrink-0">Filter severity:</span>
           {(["all", "critical", "high", "medium", "low"] as const).map((sev) => {
             const count = severityCounts[sev];
             const isSelected = severityFilter === sev;
@@ -136,13 +136,13 @@ export function FindingsByAgent({ findings }: { findings: Finding[] }) {
           No findings match the selected severity filter ({severityFilter}).
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-4 min-w-0">
           {[...groups.entries()].map(([agent, list]) => (
             <section
               key={agent}
-              className="overflow-hidden rounded-xl border border-border bg-panel"
+              className="overflow-hidden rounded-xl border border-border bg-panel min-w-0 max-w-full"
             >
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-surface/50 px-5 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-surface/50 px-4 sm:px-5 py-3.5 sm:py-4 min-w-0">
                 <h2 className="text-sm font-semibold text-foreground">
                   {AGENTS[agent] ?? agent.replaceAll("_", " ")}
                 </h2>
