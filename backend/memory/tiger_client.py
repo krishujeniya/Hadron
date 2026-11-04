@@ -673,7 +673,7 @@ class TigerMemoryClient:
         Delete any chunks with chunk_index >= min_index for a file.
         Used when a file shrinks in size to cleanly purge obsolete old chunk tails.
         """
-        if self._in_memory:
+        if self._in_memory or self._pool is None or getattr(self._pool, "_closed", False):
             initial = len(self._in_memory_chunks)
             self._in_memory_chunks = [
                 c for c in self._in_memory_chunks

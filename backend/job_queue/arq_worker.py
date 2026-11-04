@@ -222,14 +222,17 @@ async def run_pr_review(
         repo_full_name = input_data.get("repo_full_name", "")  # flat key set by webhook router
         if repo_full_name:
             try:
-                # Build settings inline — WorkerSettings is defined later in this
-                # file, so we can't reference it here without a forward reference.
-                arq_redis = await create_pool(RedisSettings.from_dsn(get_settings().redis_url))
+                arq_redis = ctx.get("redis")
+                should_close = False
+                if arq_redis is None:
+                    arq_redis = await create_pool(RedisSettings.from_dsn(get_settings().redis_url))
+                    should_close = True
                 await arq_redis.enqueue_job(
                     "ingest_repository_job",
                     repo_full_name,
                 )
-                await arq_redis.aclose()
+                if should_close:
+                    await arq_redis.aclose()
                 logger.info(
                     "ingestion_enqueued | repo=%s workflow_id=%s",
                     repo_full_name, workflow_id,

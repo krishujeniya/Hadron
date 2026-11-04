@@ -563,53 +563,65 @@ async def init_tiger_schema() -> None:
         / "scripts" / "migrations" / "2026-06-tiger-init.sql"
     )
     if migration_path.exists():
-        sql = migration_path.read_text()
-        statements = parse_sql_script(sql)
         async with _tiger_pool.acquire() as conn:
-            for stmt in statements:
+            # Serverless / cold-start fast path: skip heavy DDL if schema already exists
+            schema_ready = False
+            if is_serverless:
                 try:
-                    await conn.execute(stmt)
-                except Exception as exc:  # noqa: BLE001
-                    # Graceful fallback: standard pgvector (Supabase/Neon) uses HNSW instead of Timescale diskann
-                    if "USING DISKANN" in stmt.upper() and "diskann" in str(exc).lower():
-                        logger.info("diskann access method not available; falling back to pgvector HNSW index.")
-                        hnsw_stmt = re.sub(r"USING\s+diskann", "USING hnsw", stmt, flags=re.IGNORECASE)
-                        try:
-                            await conn.execute(hnsw_stmt)
-                            continue
-                        except Exception as hnsw_exc:
-                            logger.warning("HNSW fallback index warning: %s", hnsw_exc)
-                            continue
-
-                    is_optional = any(
-                        opt in stmt.upper()
-                        for opt in (
-                            "CREATE EXTENSION",
-                            "HYPERTABLE",
-                            "CONTINUOUS",
-                            "TIMESCALEDB",
-                            "ADD_JOB",
-                            "TIME_BUCKET",
-                            "PERCENTILE_AGG",
-                            "POLICY",
-                        )
+                    schema_ready = await conn.fetchval(
+                        "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'code_chunks')"
                     )
-                    if is_optional:
-                        logger.warning("Tiger migration optional stmt warning (non-fatal): %s", exc)
-                    else:
-                        logger.error("Tiger migration critical DDL failed: %s | sql=%s", exc, stmt)
-                        raise MigrationError(f"Required DDL statement failed: {stmt} -> {exc}") from exc
-        logger.info("Tiger Cloud schema migration applied (%d statements) | path=%s", len(statements), migration_path)
+                except Exception as check_exc:
+                    logger.debug("Schema existence check: %s", check_exc)
+
+            if schema_ready is True:
+                logger.debug("Tiger Cloud schema already initialized; skipping DDL migration loop.")
+            else:
+                sql = migration_path.read_text()
+                statements = parse_sql_script(sql)
+                for stmt in statements:
+                    try:
+                        await conn.execute(stmt)
+                    except Exception as exc:  # noqa: BLE001
+                        # Graceful fallback: standard pgvector (Supabase/Neon) uses HNSW instead of Timescale diskann
+                        if "USING DISKANN" in stmt.upper() and "diskann" in str(exc).lower():
+                            logger.info("diskann access method not available; falling back to pgvector HNSW index.")
+                            hnsw_stmt = re.sub(r"USING\s+diskann", "USING hnsw", stmt, flags=re.IGNORECASE)
+                            try:
+                                await conn.execute(hnsw_stmt)
+                                continue
+                            except Exception as hnsw_exc:
+                                logger.warning("HNSW fallback index warning: %s", hnsw_exc)
+                                continue
+
+                        is_optional = any(
+                            opt in stmt.upper()
+                            for opt in (
+                                "CREATE EXTENSION",
+                                "HYPERTABLE",
+                                "CONTINUOUS",
+                                "TIMESCALEDB",
+                                "ADD_JOB",
+                                "TIME_BUCKET",
+                                "PERCENTILE_AGG",
+                                "POLICY",
+                            )
+                        )
+                        if is_optional:
+                            logger.warning("Tiger migration optional stmt warning (non-fatal): %s", exc)
+                        else:
+                            logger.error("Tiger migration critical DDL failed: %s | sql=%s", exc, stmt)
+                            raise MigrationError(f"Required DDL statement failed: {stmt} -> {exc}") from exc
+                logger.info("Tiger Cloud schema migration applied (%d statements) | path=%s", len(statements), migration_path)
     else:
         logger.warning("Tiger migration file not found at %s — skipping DDL", migration_path)
 
     # Wire the singleton into tiger_client module so get_tiger_memory() works.
     try:
         from backend.memory import tiger_client as _tc
-        if _tc.tiger_memory is None:
-            from backend.memory.tiger_client import TigerMemoryClient
-            _tc.tiger_memory = TigerMemoryClient(_tiger_pool)
-            logger.info("TigerMemoryClient singleton initialized.")
+        from backend.memory.tiger_client import TigerMemoryClient
+        _tc.tiger_memory = TigerMemoryClient(_tiger_pool)
+        logger.info("TigerMemoryClient singleton initialized.")
     except Exception as exc:  # noqa: BLE001
         logger.warning("TigerMemoryClient init warning: %s", exc)
 
@@ -631,6 +643,11 @@ async def close_tiger_pool() -> None:
             logger.warning("Error closing Tiger Cloud pool: %s", exc)
         finally:
             _tiger_pool = None
+            try:
+                from backend.memory import tiger_client as _tc
+                _tc.tiger_memory = None
+            except Exception:
+                pass
 
 
 async def close_db() -> None:

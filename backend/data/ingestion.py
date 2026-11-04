@@ -724,7 +724,13 @@ async def ingest_repository(repo_full_name: str) -> dict[str, int]:
             await upsert_code_chunks(file_chunks)
 
             # Purge surplus chunks if file shrank (removes old tail chunks)
-            await tiger.delete_surplus_chunks(repo_full_name, file_path, min_index=len(file_chunks))
+            try:
+                await tiger.delete_surplus_chunks(repo_full_name, file_path, min_index=len(file_chunks))
+            except Exception as exc:
+                logger.warning(
+                    "ingest_repository | delete_surplus_chunks_failed | repo=%s path=%s error=%s",
+                    repo_full_name, file_path, exc,
+                )
 
             # Stage 4d: record freshness only after all chunk writes succeed
             async with session_factory() as session:

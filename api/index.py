@@ -14,11 +14,11 @@ _started = False
 async def app(scope, receive, send):
     global _started
     if not _started and scope["type"] == "http":
-        _started = True
         try:
             from backend.lifecycle import startup_process
             from backend.main import APP_VERSION
             await startup_process(service_name="hadron-vercel-api", app_version=APP_VERSION)
+            _started = True
         except Exception as exc:
             import logging
             logging.getLogger(__name__).warning("Vercel lazy startup warning: %s", exc)

@@ -62,6 +62,23 @@ _PROVIDER_SEMAPHORES: dict[str, asyncio.Semaphore] = {
     "anthropic": asyncio.Semaphore(10),
     "nvidia": asyncio.Semaphore(10),
 }
+_OPENAI_CLIENT_CACHE: dict[tuple[str | None, str | None], openai.AsyncOpenAI] = {}
+_ANTHROPIC_CLIENT_CACHE: dict[str | None, anthropic.AsyncAnthropic] = {}
+
+
+def get_openai_client(api_key: str | None, base_url: str | None = None) -> openai.AsyncOpenAI:
+    """Returns or creates a cached AsyncOpenAI client with connection keep-alive pooling."""
+    cache_key = (api_key, base_url)
+    if cache_key not in _OPENAI_CLIENT_CACHE:
+        _OPENAI_CLIENT_CACHE[cache_key] = openai.AsyncOpenAI(api_key=api_key, base_url=base_url)
+    return _OPENAI_CLIENT_CACHE[cache_key]
+
+
+def get_anthropic_client(api_key: str | None) -> anthropic.AsyncAnthropic:
+    """Returns or creates a cached AsyncAnthropic client with connection keep-alive pooling."""
+    if api_key not in _ANTHROPIC_CLIENT_CACHE:
+        _ANTHROPIC_CLIENT_CACHE[api_key] = anthropic.AsyncAnthropic(api_key=api_key)
+    return _ANTHROPIC_CLIENT_CACHE[api_key]
 
 
 def get_provider_semaphore(provider: str) -> asyncio.Semaphore:
@@ -324,7 +341,7 @@ class LLMClient:
         # Reasoning models generate chain-of-thought before output, so ensure adequate tokens
         req_max_tokens = max(max_tokens, 4096) if "gpt-oss" in target_model else max_tokens
 
-        client = openai.AsyncOpenAI(api_key=key, base_url=base_url)
+        client = get_openai_client(api_key=key, base_url=base_url)
 
         # Build the full messages list: system first, then user messages
         full_messages = [{"role": "system", "content": system_prompt}] + messages
@@ -493,7 +510,7 @@ class LLMClient:
             )
         key = api_key or cfg.anthropic_api_key
 
-        client = anthropic.AsyncAnthropic(api_key=key)
+        client = get_anthropic_client(api_key=key)
         provider_sem = get_provider_semaphore("anthropic")
 
         # Add JSON instruction to system prompt for Anthropic
