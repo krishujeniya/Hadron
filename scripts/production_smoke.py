@@ -8,7 +8,7 @@ from urllib.request import urlopen
 
 def probe(url: str) -> tuple[int, dict]:
     try:
-        with urlopen(url, timeout=12) as response:
+        with urlopen(url, timeout=30) as response:
             raw = response.read(1_000_000)
             try:
                 body = json.loads(raw)
