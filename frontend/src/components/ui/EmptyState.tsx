@@ -30,9 +30,9 @@ export function EmptyState({
           {icon}
         </div>
       )}
-      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+      <h3 className="text-sm font-semibold text-foreground break-words">{title}</h3>
       {description && (
-        <p className="mt-1.5 max-w-sm text-xs text-muted leading-relaxed">
+        <p className="mt-1.5 max-w-sm text-xs text-muted leading-relaxed break-words">
           {description}
         </p>
       )}

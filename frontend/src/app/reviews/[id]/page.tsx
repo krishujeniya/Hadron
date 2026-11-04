@@ -157,7 +157,7 @@ export default function ReviewDetailPage() {
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 min-w-0">
           <div className="min-w-0 space-y-1 flex-1">
             <div className="flex flex-wrap items-center gap-2 font-mono text-xs text-muted min-w-0">
-              <span className="font-medium text-foreground truncate">{review.repo_full_name}</span>
+              <span className="font-medium text-foreground break-all">{review.repo_full_name}</span>
               <span>#{review.pr_number}</span>
               <span>•</span>
               <span title="Head commit SHA">{review.head_commit_sha.slice(0, 8)}</span>
@@ -291,7 +291,7 @@ export default function ReviewDetailPage() {
           </div>
           <div>
             <dt className="text-muted">GitHub Review ID</dt>
-            <dd className="mt-1 font-mono text-foreground">
+            <dd className="mt-1 font-mono text-foreground break-all">
               {review.github_review_id ?? "Not posted to GitHub"}
             </dd>
           </div>

@@ -243,11 +243,11 @@ export function BangMotionPipeline() {
                     <span className="font-mono text-xs font-bold text-foreground">
                       0{idx + 1}
                     </span>
-                    <h3 className="font-mono text-xs font-semibold text-foreground truncate">
+                    <h3 className="font-mono text-xs font-semibold text-foreground break-words">
                       {agent.name}
                     </h3>
                   </div>
-                  <p className="text-[11px] text-muted line-clamp-1 mt-0.5">
+                  <p className="text-[11px] text-muted line-clamp-2 break-words mt-0.5">
                     {agent.domain}
                   </p>
                 </div>

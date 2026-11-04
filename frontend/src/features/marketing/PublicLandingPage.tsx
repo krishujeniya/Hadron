@@ -188,7 +188,7 @@ ${currentDiff.findings
         <div className="text-center max-w-3xl mx-auto space-y-6 min-w-0">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-surface text-xs font-mono text-muted max-w-full">
             <span className="w-2 h-2 rounded-full bg-accent animate-pulse shrink-0" aria-hidden="true" />
-            <span className="truncate">Autonomous code review for GitHub pull requests</span>
+            <span className="break-words">Autonomous code review for GitHub pull requests</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-b from-white via-zinc-100 to-zinc-400 dark:from-white dark:via-zinc-100 dark:to-zinc-400 bg-clip-text text-transparent leading-[1.12] break-words">
@@ -230,7 +230,7 @@ ${currentDiff.findings
           <div className="bg-panel/70 border-b border-border px-3 sm:px-4 py-3 flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 font-mono text-xs min-w-0">
             <div className="flex items-center gap-2 min-w-0">
               <span className="w-2.5 h-2.5 rounded-full bg-ok shrink-0" aria-hidden="true" />
-              <span className="text-muted truncate">octocat / auth-service</span>
+              <span className="text-muted break-all">octocat / auth-service</span>
               <span className="text-muted shrink-0">·</span>
               <span className="font-semibold text-foreground shrink-0">PR #142</span>
             </div>
@@ -269,7 +269,7 @@ ${currentDiff.findings
                   <span className="px-2 py-0.5 rounded bg-err/20 text-err text-[10px] font-mono font-bold uppercase tracking-wider shrink-0">
                     Security Agent
                   </span>
-                  <span className="font-semibold text-xs text-foreground font-mono truncate">backend/auth/token.py:84</span>
+                  <span className="font-semibold text-xs text-foreground font-mono break-all">backend/auth/token.py:84</span>
                 </div>
                 <span className="text-[11px] font-mono text-muted shrink-0">94% confidence</span>
               </div>
@@ -292,7 +292,7 @@ ${currentDiff.findings
                   <span className="px-2 py-0.5 rounded bg-warn/20 text-warn text-[10px] font-mono font-bold uppercase tracking-wider shrink-0">
                     Test Agent
                   </span>
-                  <span className="font-semibold text-xs text-foreground font-mono truncate">tests/test_auth.py:112</span>
+                  <span className="font-semibold text-xs text-foreground font-mono break-all">tests/test_auth.py:112</span>
                 </div>
                 <span className="text-[11px] font-mono text-muted shrink-0">91% confidence</span>
               </div>
@@ -314,22 +314,22 @@ ${currentDiff.findings
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4">
           <div className="rounded-2xl border border-border bg-surface p-3.5 sm:p-5 text-center min-w-0">
             <div className="text-2xl sm:text-4xl font-extrabold font-mono text-foreground">4</div>
-            <div className="text-[11px] sm:text-xs font-mono font-semibold text-accent uppercase tracking-wider mt-1 truncate">Specialist agents</div>
+            <div className="text-[11px] sm:text-xs font-mono font-semibold text-accent uppercase tracking-wider mt-1 break-words">Specialist agents</div>
             <p className="text-[10px] sm:text-[11px] text-muted mt-2">Security, Quality, Test, Docs parallel.</p>
           </div>
           <div className="rounded-2xl border border-border bg-surface p-3.5 sm:p-5 text-center min-w-0">
             <div className="text-2xl sm:text-4xl font-extrabold font-mono text-foreground">&lt;18s</div>
-            <div className="text-[11px] sm:text-xs font-mono font-semibold text-accent uppercase tracking-wider mt-1 truncate">Review latency</div>
+            <div className="text-[11px] sm:text-xs font-mono font-semibold text-accent uppercase tracking-wider mt-1 break-words">Review latency</div>
             <p className="text-[10px] sm:text-[11px] text-muted mt-2">Webhook receipt to GitHub comment.</p>
           </div>
           <div className="rounded-2xl border border-border bg-surface p-3.5 sm:p-5 text-center min-w-0">
             <div className="text-2xl sm:text-4xl font-extrabold font-mono text-foreground">100%</div>
-            <div className="text-[11px] sm:text-xs font-mono font-semibold text-accent uppercase tracking-wider mt-1 truncate">Verifiable citations</div>
+            <div className="text-[11px] sm:text-xs font-mono font-semibold text-accent uppercase tracking-wider mt-1 break-words">Verifiable citations</div>
             <p className="text-[10px] sm:text-[11px] text-muted mt-2">Exact file and line ranges pinned.</p>
           </div>
           <div className="rounded-2xl border border-border bg-surface p-3.5 sm:p-5 text-center min-w-0">
             <div className="text-2xl sm:text-4xl font-extrabold font-mono text-foreground">0</div>
-            <div className="text-[11px] sm:text-xs font-mono font-semibold text-accent uppercase tracking-wider mt-1 truncate">Hallucinated rules</div>
+            <div className="text-[11px] sm:text-xs font-mono font-semibold text-accent uppercase tracking-wider mt-1 break-words">Hallucinated rules</div>
             <p className="text-[10px] sm:text-[11px] text-muted mt-2">Concrete syntax tree checks.</p>
           </div>
         </div>
@@ -342,7 +342,7 @@ ${currentDiff.findings
         <div className="rounded-3xl border border-border bg-surface p-4 sm:p-8 space-y-6 shadow-xl min-w-0 max-w-full overflow-hidden">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6 min-w-0">
             <div className="min-w-0">
-              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-accent/10 text-accent text-xs font-mono font-semibold mb-2 max-w-full truncate">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-accent/10 text-accent text-xs font-mono font-semibold mb-2 max-w-full break-words">
                 Interactive playground · No sign-up required
               </div>
               <h2 className="text-xl sm:text-2xl font-bold font-mono text-foreground break-words">Test a real pull request review</h2>
@@ -389,7 +389,7 @@ ${currentDiff.findings
             {/* Input Diff */}
             <div className="rounded-2xl border border-border bg-bg p-3.5 sm:p-4 flex flex-col min-w-0 max-w-full overflow-hidden">
               <div className="flex items-center justify-between pb-3 border-b border-border/80 text-xs font-mono text-muted min-w-0">
-                <span className="truncate mr-2">{currentDiff.repo} · Diff</span>
+                <span className="break-all mr-2">{currentDiff.repo} · Diff</span>
                 <span className="text-[11px] shrink-0">{currentDiff.language}</span>
               </div>
               <pre className="mt-3 text-xs font-mono text-foreground overflow-x-auto leading-relaxed flex-1 min-w-0 max-w-full">
@@ -402,7 +402,7 @@ ${currentDiff.findings
               <div className="flex items-center justify-between pb-3 border-b border-border text-xs font-mono min-w-0">
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="font-semibold text-foreground shrink-0">Verdict:</span>
-                  <span className="px-2 py-0.5 rounded bg-err/20 text-err text-[11px] font-bold border border-err/30 truncate">
+                  <span className="px-2 py-0.5 rounded bg-err/20 text-err text-[11px] font-bold border border-err/30 break-words">
                     {currentDiff.verdict}
                   </span>
                 </div>
@@ -543,7 +543,7 @@ ${currentDiff.findings
       {/* ------------------------------------------------------------------ */}
       <section id="solutions" className="px-3 sm:px-6 max-w-6xl mx-auto scroll-mt-24 space-y-8 min-w-0 max-w-full">
         <div className="text-center max-w-2xl mx-auto space-y-3 min-w-0">
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-accent/10 text-accent text-xs font-mono font-semibold max-w-full truncate">
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-accent/10 text-accent text-xs font-mono font-semibold max-w-full break-words">
             Dedicated framework analyzers
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold font-mono text-foreground break-words">Specialized solutions by stack</h2>
@@ -633,7 +633,7 @@ ${currentDiff.findings
       <section id="security" className="px-3 sm:px-6 max-w-6xl mx-auto scroll-mt-24 min-w-0 max-w-full">
         <div className="rounded-3xl border border-border bg-surface p-4 sm:p-8 md:p-10 space-y-8 min-w-0 max-w-full">
           <div className="max-w-2xl space-y-3 min-w-0">
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-accent/10 text-accent text-xs font-mono font-semibold max-w-full truncate">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-accent/10 text-accent text-xs font-mono font-semibold max-w-full break-words">
               Data protection & privacy
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold font-mono text-foreground break-words">Security in plain English</h2>

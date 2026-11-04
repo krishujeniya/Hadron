@@ -14,28 +14,28 @@ export function NonTechReviewCard({ review }: NonTechReviewCardProps) {
 
   return (
     <div className="rounded-xl border border-border bg-surface p-4 hover:border-muted/50 transition-all shadow-xs space-y-3">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-muted bg-panel px-2 py-0.5 rounded border border-border">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 min-w-0">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2 min-w-0">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-muted bg-panel px-2 py-0.5 rounded border border-border shrink-0">
               PR #{review.pr_number}
             </span>
-            <span className="text-xs font-mono text-muted truncate">
+            <span className="text-xs font-mono text-muted break-all min-w-0">
               {review.repo_full_name}
             </span>
           </div>
-          <h4 className="text-sm font-semibold text-foreground mt-1 truncate">
+          <h4 className="text-sm font-semibold text-foreground mt-1 line-clamp-2 break-words">
             {review.pr_title || "Untitled pull request"}
           </h4>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <VerdictChip verdict={review.verdict} />
           <ReviewStatusBadge status={review.status} />
         </div>
       </div>
 
-      <p className="text-xs text-foreground/90 leading-relaxed bg-panel p-2.5 rounded-lg border border-border">
+      <p className="text-xs text-foreground/90 leading-relaxed bg-panel p-2.5 rounded-lg border border-border break-words">
         <span className="text-muted font-medium">Review status: </span>
         {summary.impact}
       </p>

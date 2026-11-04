@@ -80,8 +80,8 @@ export function Alert({
       </div>
 
       <div className="flex-1 min-w-0">
-        <h4 className={clsx("font-semibold text-sm leading-tight", current.title)}>{title}</h4>
-        {description && <div className="mt-1 text-xs text-muted leading-relaxed">{description}</div>}
+        <h4 className={clsx("font-semibold text-sm leading-tight break-words", current.title)}>{title}</h4>
+        {description && <div className="mt-1 text-xs text-muted leading-relaxed break-words">{description}</div>}
         {action && <div className="mt-3">{action}</div>}
       </div>
 

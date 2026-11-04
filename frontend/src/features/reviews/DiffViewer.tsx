@@ -402,13 +402,13 @@ export function DiffViewer({ diff, findings = [] }: DiffViewerProps) {
                                     : "Confidence: Unknown"}
                                 </span>
                                 {finding.file_path && (
-                                  <span className="text-[10px] text-muted font-mono">
+                                  <span className="text-[10px] text-muted font-mono break-all">
                                     {finding.file_path}
                                     {finding.line_start ? `:${finding.line_start}` : ""}
                                   </span>
                                 )}
                               </div>
-                              <div className="text-xs font-medium text-foreground">
+                              <div className="text-xs font-medium text-foreground break-words">
                                 {finding.summary}
                               </div>
                               {finding.suggestion && (

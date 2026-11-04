@@ -99,13 +99,13 @@ export function Dialog({
           className
         )}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-separator pb-4 mb-4">
-          <div>
-            <h2 id="dialog-title" className="text-lg font-semibold text-foreground">
+        <div className="flex items-start justify-between gap-4 border-b border-separator pb-4 mb-4 min-w-0">
+          <div className="min-w-0 flex-1">
+            <h2 id="dialog-title" className="text-lg font-semibold text-foreground break-words">
               {title}
             </h2>
             {description && (
-              <p id="dialog-description" className="mt-1 text-xs text-muted">
+              <p id="dialog-description" className="mt-1 text-xs text-muted break-words">
                 {description}
               </p>
             )}

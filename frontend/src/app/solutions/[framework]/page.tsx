@@ -338,14 +338,14 @@ export default async function SolutionDetailPage({
         <span>/</span>
         <span className="text-muted/60">Solutions</span>
         <span>/</span>
-        <span className="text-foreground font-medium truncate">{solution.slug}</span>
+        <span className="text-foreground font-medium break-all">{solution.slug}</span>
       </div>
 
       {/* Hero Header */}
       <div className="space-y-4 min-w-0">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-panel text-foreground border border-border font-mono max-w-full truncate">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-panel text-foreground border border-border font-mono max-w-full">
           <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent shrink-0" aria-hidden="true" />
-          <span className="truncate">{solution.badge}</span>
+          <span className="break-words">{solution.badge}</span>
         </div>
         <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold tracking-tight text-foreground font-mono break-words">
           {solution.title}
@@ -380,7 +380,7 @@ export default async function SolutionDetailPage({
               key={idx}
               className="p-4 sm:p-5 rounded-xl border border-border bg-surface hover:border-muted/50 transition-colors space-y-2 shadow-sm min-w-0"
             >
-              <div className="text-[11px] font-mono text-accent uppercase tracking-wider font-semibold truncate">
+              <div className="text-[11px] font-mono text-accent uppercase tracking-wider font-semibold break-words">
                 {feat.agent}
               </div>
               <h3 className="text-base font-semibold text-foreground break-words">
@@ -401,7 +401,7 @@ export default async function SolutionDetailPage({
         </h2>
         <div className="rounded-xl border border-border bg-surface overflow-hidden shadow-sm min-w-0 max-w-full">
           <div className="px-4 py-2 bg-panel border-b border-border flex flex-wrap items-center justify-between gap-2 text-xs font-mono min-w-0">
-            <span className="text-muted truncate">{solution.exampleDiff.filename}</span>
+            <span className="text-muted break-all">{solution.exampleDiff.filename}</span>
             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-err/10 text-err border border-err/30 shrink-0">
               {solution.exampleDiff.severity}
             </span>

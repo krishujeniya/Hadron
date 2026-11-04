@@ -72,3 +72,33 @@ def test_mobile_overflow_prevention_guards():
     landing_content = landing_path.read_text(encoding="utf-8")
     assert "min-w-0 max-w-full" in landing_content
     assert "break-words" in landing_content
+
+
+def test_text_overflow_containment_and_wrapping_resilience():
+    """Verify text overflow guards, anywhere wrapping, and resilient chips/badges."""
+    css_path = pathlib.Path("frontend/src/app/globals.css")
+    assert css_path.exists()
+    css_content = css_path.read_text(encoding="utf-8")
+    assert "overflow-wrap: anywhere" in css_content
+
+    non_tech_path = pathlib.Path("frontend/src/features/reviews/NonTechReviewCard.tsx")
+    assert non_tech_path.exists()
+    non_tech_content = non_tech_path.read_text(encoding="utf-8")
+    assert "line-clamp-2 break-words" in non_tech_content
+    assert "break-all" in non_tech_content
+
+    hitl_detail_path = pathlib.Path("frontend/src/app/hitl/[id]/page.tsx")
+    assert hitl_detail_path.exists()
+    hitl_detail_content = hitl_detail_path.read_text(encoding="utf-8")
+    assert "break-all" in hitl_detail_content
+    assert "break-words" in hitl_detail_content
+
+    verdict_chip_path = pathlib.Path("frontend/src/features/reviews/VerdictChip.tsx")
+    assert verdict_chip_path.exists()
+    verdict_content = verdict_chip_path.read_text(encoding="utf-8")
+    assert "shrink-0" in verdict_content
+
+    status_badge_path = pathlib.Path("frontend/src/features/reviews/ReviewStatusBadge.tsx")
+    assert status_badge_path.exists()
+    status_content = status_badge_path.read_text(encoding="utf-8")
+    assert "shrink-0" in status_content

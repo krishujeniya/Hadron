@@ -75,9 +75,9 @@ export function ExecutiveHealthScore({
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm relative overflow-hidden">
-      <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-6 border-b border-separator">
+      <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-6 border-b border-separator min-w-0 max-w-full">
         {/* Left: Score Gauge */}
-        <div className="flex items-center gap-5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5 min-w-0 max-w-full">
           <div className="relative flex items-center justify-center w-28 h-28 shrink-0">
             <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 100 100" aria-hidden="true">
               {/* Background ring */}
@@ -115,22 +115,22 @@ export function ExecutiveHealthScore({
             </div>
           </div>
 
-          <div>
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-panel border border-border text-foreground shadow-xs">
-              <span className={`w-2 h-2 rounded-full ${scoreNumber > 0 ? "bg-ok animate-pulse" : "bg-muted"}`} />
-              <span className={statusTone}>{status}</span>
+          <div className="min-w-0 flex-1">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-panel border border-border text-foreground shadow-xs max-w-full">
+              <span className={`w-2 h-2 rounded-full shrink-0 ${scoreNumber > 0 ? "bg-ok animate-pulse" : "bg-muted"}`} />
+              <span className={`${statusTone} break-words`}>{status}</span>
             </div>
-            <h2 className="text-xl font-bold tracking-tight text-foreground mt-2 font-mono">
+            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground mt-2 font-mono break-words">
               PR review health &amp; escalation telemetry
             </h2>
-            <p className="text-xs text-muted mt-1 max-w-lg leading-relaxed">
+            <p className="text-xs text-muted mt-1 max-w-lg leading-relaxed break-words">
               Measured operational metrics from automated specialist agents and human-in-the-loop dispute workflows.
             </p>
           </div>
         </div>
 
         {/* Right: Operational Counts */}
-        <div className="grid grid-cols-3 gap-3 w-full lg:w-auto shrink-0">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full lg:w-auto shrink-0 min-w-0">
           <div className="p-3 rounded-xl border border-border bg-panel text-center">
             <div className="text-[10px] uppercase font-mono tracking-wider text-muted">Total PRs</div>
             <div className="text-lg font-bold text-foreground mt-0.5">{metrics.totalReviews}</div>

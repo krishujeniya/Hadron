@@ -27,7 +27,7 @@ export function PageHeader({
     >
       <div className="min-w-0 flex-1">
         {tag && (
-          <p className="text-xs font-mono font-medium uppercase tracking-wider text-muted mb-1 truncate">
+          <p className="text-xs font-mono font-medium uppercase tracking-wider text-muted mb-1 break-all">
             {tag}
           </p>
         )}

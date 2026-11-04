@@ -104,12 +104,12 @@ export default function DashboardPage() {
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 min-w-0">
+              <div className="flex flex-wrap items-center gap-2 min-w-0">
                 <span className="font-semibold text-foreground shrink-0">Workspace:</span>
-                <span className="font-mono text-foreground font-medium truncate">@{currentAccount.login}</span>
+                <span className="font-mono text-foreground font-medium break-all">@{currentAccount.login}</span>
                 <Status variant="info" label="Scoped" showDot={false} />
               </div>
-              <p className="text-muted text-xs mt-0.5 truncate">
+              <p className="text-muted text-xs mt-0.5 break-words">
                 Monitoring {repositories.length} repositories. Data is isolated to @{currentAccount.login}.
               </p>
             </div>
@@ -196,17 +196,17 @@ export default function DashboardPage() {
                   <Link
                     key={h.id}
                     href={`/hitl/${encodeURIComponent(h.id)}`}
-                    className="flex items-center justify-between min-h-[44px] px-4 py-3 hover:bg-panel transition-all duration-150 active:scale-[0.99] gap-3"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between min-h-[44px] px-4 py-3 hover:bg-panel transition-all duration-150 active:scale-[0.99] gap-3 min-w-0"
                   >
-                    <div className="min-w-0">
-                      <div className="font-mono text-sm font-semibold text-foreground">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-mono text-sm font-semibold text-foreground break-all">
                         {h.repo_full_name} #{h.pr_number}
                       </div>
-                      <div className="text-xs text-muted truncate mt-0.5">
+                      <div className="text-xs text-muted line-clamp-2 break-words mt-0.5">
                         {h.escalation_reason}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
                       <VerdictChip verdict={h.agent_verdict} />
                       <span className="text-xs font-medium text-accent">Decide →</span>
                     </div>
@@ -235,17 +235,19 @@ export default function DashboardPage() {
                   <Link
                     key={r.id}
                     href={`/reviews/${encodeURIComponent(r.id)}`}
-                    className="flex items-center justify-between min-h-[44px] px-4 py-3 hover:bg-panel transition-all duration-150 active:scale-[0.99] gap-3"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between min-h-[44px] px-4 py-3 hover:bg-panel transition-all duration-150 active:scale-[0.99] gap-3 min-w-0"
                   >
-                    <div className="min-w-0">
-                      <div className="font-mono text-sm font-semibold text-foreground">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-mono text-sm font-semibold text-foreground break-all">
                         {r.repo_full_name} #{r.pr_number}
                       </div>
-                      <div className="text-xs text-muted truncate mt-0.5">
+                      <div className="text-xs text-muted line-clamp-2 break-words mt-0.5">
                         {r.pr_title || "Review in progress..."}
                       </div>
                     </div>
-                    <ReviewStatusBadge status={r.status} />
+                    <div className="shrink-0">
+                      <ReviewStatusBadge status={r.status} />
+                    </div>
                   </Link>
                 ))}
               </div>
@@ -281,17 +283,17 @@ export default function DashboardPage() {
                   <Link
                     key={r.id}
                     href={`/reviews/${encodeURIComponent(r.id)}`}
-                    className="flex items-center justify-between min-h-[44px] px-4 py-3 hover:bg-panel transition-all duration-150 active:scale-[0.99] gap-3"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between min-h-[44px] px-4 py-3 hover:bg-panel transition-all duration-150 active:scale-[0.99] gap-3 min-w-0"
                   >
-                    <div className="min-w-0">
-                      <div className="font-mono text-sm font-semibold text-foreground">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-mono text-sm font-semibold text-foreground break-all">
                         {r.repo_full_name} #{r.pr_number}
                       </div>
-                      <div className="text-xs text-muted truncate mt-0.5">
+                      <div className="text-xs text-muted line-clamp-2 break-words mt-0.5">
                         {r.pr_title || `Pull request #${r.pr_number}`}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
                       <VerdictChip verdict={r.verdict} />
                       <ReviewStatusBadge status={r.status} />
                     </div>
@@ -329,7 +331,7 @@ function StatCard({
 
   return (
     <div className="border border-border rounded-xl bg-surface px-3.5 sm:px-4 py-3.5 hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150 shadow-sm min-w-0">
-      <div className="text-xs uppercase tracking-wider font-mono text-muted truncate">{label}</div>
+      <div className="text-xs uppercase tracking-wider font-mono text-muted break-words">{label}</div>
       <div className={`text-2xl font-mono font-bold mt-1.5 ${toneColor}`}>
         {err ? "N/A" : value ?? "…"}
       </div>

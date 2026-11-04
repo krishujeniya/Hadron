@@ -122,7 +122,7 @@ function HITLQueueContent() {
               >
                 <div className="min-w-0 flex-1 space-y-1.5">
                   <div className="flex flex-wrap items-center gap-2 min-w-0">
-                    <span className="font-mono text-sm font-semibold text-foreground group-hover:text-accent group-hover:underline truncate">
+                    <span className="font-mono text-sm font-semibold text-foreground group-hover:text-accent group-hover:underline break-all">
                       {h.repo_full_name} #{h.pr_number}
                     </span>
                     <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-warn/10 text-warn border border-warn/30 shrink-0">

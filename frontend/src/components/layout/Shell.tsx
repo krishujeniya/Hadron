@@ -297,13 +297,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-mono text-xs font-semibold text-foreground truncate">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="font-mono text-xs font-semibold text-foreground break-all">
                     @{currentAccount.login}
                   </span>
                   <span className="w-1.5 h-1.5 rounded-full bg-ok shrink-0" title="Connected" />
                 </div>
-                <div className="text-[10px] text-muted truncate">
+                <div className="text-[10px] text-muted break-words">
                   {currentAccount.name || "GitHub Account"}
                 </div>
               </div>

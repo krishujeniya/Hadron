@@ -263,14 +263,14 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                       : "text-foreground hover:bg-panel border border-transparent"
                   }`}
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="text-base" aria-hidden="true">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <span className="text-base shrink-0" aria-hidden="true">
                       {item.icon}
                     </span>
-                    <span className="truncate">{item.label}</span>
+                    <span className="truncate break-words">{item.label}</span>
                   </div>
                   <span
-                    className={`text-[10px] font-mono uppercase tracking-wider shrink-0 px-1.5 py-0.5 rounded border ${
+                    className={`text-[10px] font-mono uppercase tracking-wider shrink-0 px-1.5 py-0.5 rounded border ml-2 ${
                       isSelected
                         ? "border-accent/40 text-accent font-medium bg-surface"
                         : "border-border text-muted bg-panel"
@@ -285,7 +285,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         </div>
 
         {/* Footer shortcuts helper */}
-        <div className="flex items-center justify-between pt-2 border-t border-border text-[10px] text-muted font-mono">
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border text-[10px] text-muted font-mono">
           <div className="flex items-center gap-3">
             <span>↑↓ Move</span>
             <span>↵ Select</span>

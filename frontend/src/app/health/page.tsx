@@ -266,7 +266,7 @@ export default function HealthPage() {
                 key={b.name}
                 className="border border-border rounded-lg p-3 bg-background flex flex-col justify-between"
               >
-                <div className="font-mono text-xs font-semibold text-foreground truncate">
+                <div className="font-mono text-xs font-semibold text-foreground break-all">
                   {b.name}
                 </div>
                 <div className="flex items-center justify-between mt-2 text-xs font-mono">

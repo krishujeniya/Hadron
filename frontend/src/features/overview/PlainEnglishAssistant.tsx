@@ -110,30 +110,30 @@ export function PlainEnglishAssistant({ recentReviews, accountName }: PlainEngli
       </div>
 
       {/* Content Area */}
-      <div className="p-4 rounded-xl border border-border bg-panel text-xs text-foreground/90 leading-relaxed min-h-[90px] flex items-center">
+      <div className="p-4 rounded-xl border border-border bg-panel text-xs text-foreground/90 leading-relaxed min-h-[90px] flex items-center break-words min-w-0 max-w-full">
         {customResponse ? (
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="font-semibold text-accent mb-1 font-mono uppercase tracking-wider text-[10px]">
               Query Result:
             </div>
-            <p>{customResponse}</p>
+            <p className="break-words">{customResponse}</p>
           </div>
         ) : activeTab === "summary" ? (
-          <div>
+          <div className="min-w-0 flex-1 break-words">
             <span className="font-semibold text-foreground">Activity Summary: </span>
             {totalCount === 0
               ? `No reviews run yet in this workspace. Pull requests opened on watched repositories will show automated findings here.`
               : `${totalCount} pull request reviews recorded in this window. ${approvedCount} approved without blocking findings, ${changesCount} have requested changes, and ${hitlCount} require human review.`}
           </div>
         ) : activeTab === "security" ? (
-          <div>
+          <div className="min-w-0 flex-1 break-words">
             <span className="font-semibold text-foreground">Security Posture: </span>
             {totalCount === 0
               ? `Awaiting pull requests to run automated security analysis.`
               : `Security agent scans diffs for hardcoded credentials, injection vulnerabilities, and dangerous dependency changes.`}
           </div>
         ) : (
-          <div>
+          <div className="min-w-0 flex-1 break-words">
             <span className="font-semibold text-foreground">Human Approvals: </span>
             {hitlCount === 0
               ? `No reviews currently require human-in-the-loop sign-off. The queue is clear.`
@@ -143,18 +143,18 @@ export function PlainEnglishAssistant({ recentReviews, accountName }: PlainEngli
       </div>
 
       {/* Interactive Query Input */}
-      <form onSubmit={handleCustomSubmit} className="flex gap-2">
+      <form onSubmit={handleCustomSubmit} className="flex flex-col sm:flex-row gap-2 min-w-0">
         <input
           type="text"
           value={customInput}
           onChange={(e) => setCustomInput(e.target.value)}
           placeholder="Ask an operational question (e.g. 'Are any security issues blocking release?')..."
-          className="flex-1 bg-panel border border-border rounded-xl px-3.5 py-2 text-xs text-foreground placeholder:text-muted/60 focus:outline-none focus:border-accent"
+          className="flex-1 bg-panel border border-border rounded-xl px-3.5 py-2 min-h-[44px] text-xs text-foreground placeholder:text-muted/60 focus:outline-none focus:border-accent min-w-0"
         />
         <button
           type="submit"
           disabled={isThinking || !customInput.trim()}
-          className="px-4 py-2 bg-primary-action text-white dark:text-black font-semibold text-xs rounded-xl transition hover:opacity-90 disabled:opacity-50 shrink-0 shadow-sm"
+          className="min-h-[44px] px-4 py-2 bg-primary-action text-white dark:text-black font-semibold text-xs rounded-xl transition hover:opacity-90 disabled:opacity-50 shrink-0 shadow-sm"
         >
           {isThinking ? "Analyzing..." : "Ask Assistant"}
         </button>
