@@ -38,4 +38,4 @@ def test_dashboard_has_one_layout_regardless_of_saved_mode():
     assert "hadron_view_mode" not in palette + page
     assert "viewMode" not in page
     assert "Review overview" in page
-    assert "Plain-language guidance" in page
+    assert "Operational overview" in page

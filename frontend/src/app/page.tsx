@@ -8,7 +8,6 @@ import { VerdictChip } from "@/features/reviews/VerdictChip";
 import { Empty } from "@/components/ui/Empty";
 import { Status } from "@/components/ui/Status";
 import { Button } from "@/components/ui/Button";
-import { PlainEnglishAssistant } from "@/features/overview/PlainEnglishAssistant";
 import { PublicLandingPage } from "@/features/marketing/PublicLandingPage";
 import type { HITLItem, Paginated, ReviewSummary } from "@/lib/types";
 
@@ -159,10 +158,6 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Review overview</h1>
         <p className="text-muted text-sm mt-1">Pending decisions, running reviews, and recent findings for your workspace.</p>
       </header>
-      <details className="rounded-xl border border-border bg-surface p-4">
-        <summary className="cursor-pointer font-medium text-foreground">Plain-language guidance</summary>
-        <div className="mt-4"><PlainEnglishAssistant recentReviews={reviews} accountName={currentAccount.login} /></div>
-      </details>
       <div className="space-y-8">
           {/* Operational Metrics Cards */}
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
