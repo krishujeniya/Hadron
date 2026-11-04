@@ -542,6 +542,11 @@ async def init_tiger_schema() -> None:
             logger.debug("session timeout configuration skipped: %s", exc)
 
     is_serverless = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
+    is_tx_pooler = ":6543" in dsn or "pgbouncer=true" in dsn.lower()
+    pool_kwargs = {}
+    if is_tx_pooler:
+        pool_kwargs["statement_cache_size"] = 0
+
     _tiger_pool = await _asyncpg.create_pool(
         dsn=dsn,
         ssl=ssl_arg,
@@ -549,6 +554,7 @@ async def init_tiger_schema() -> None:
         max_size=2 if is_serverless else 10,
         command_timeout=60,
         init=_init_conn,
+        **pool_kwargs,
     )
 
     # Run the idempotent migration SQL using robust comment-aware parsing.
@@ -564,9 +570,29 @@ async def init_tiger_schema() -> None:
                 try:
                     await conn.execute(stmt)
                 except Exception as exc:  # noqa: BLE001
+                    # Graceful fallback: standard pgvector (Supabase/Neon) uses HNSW instead of Timescale diskann
+                    if "USING DISKANN" in stmt.upper() and "diskann" in str(exc).lower():
+                        logger.info("diskann access method not available; falling back to pgvector HNSW index.")
+                        hnsw_stmt = re.sub(r"USING\s+diskann", "USING hnsw", stmt, flags=re.IGNORECASE)
+                        try:
+                            await conn.execute(hnsw_stmt)
+                            continue
+                        except Exception as hnsw_exc:
+                            logger.warning("HNSW fallback index warning: %s", hnsw_exc)
+                            continue
+
                     is_optional = any(
                         opt in stmt.upper()
-                        for opt in ("CREATE EXTENSION", "HYPERTABLE", "CONTINUOUS AGGREGATE", "ADD_JOB")
+                        for opt in (
+                            "CREATE EXTENSION",
+                            "HYPERTABLE",
+                            "CONTINUOUS",
+                            "TIMESCALEDB",
+                            "ADD_JOB",
+                            "TIME_BUCKET",
+                            "PERCENTILE_AGG",
+                            "POLICY",
+                        )
                     )
                     if is_optional:
                         logger.warning("Tiger migration optional stmt warning (non-fatal): %s", exc)
