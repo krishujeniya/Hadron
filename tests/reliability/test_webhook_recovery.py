@@ -64,6 +64,9 @@ def pr_payload():
 
 
 class TestT09WebhookRecovery:
+    def teardown_method(self):
+        app.dependency_overrides.pop(get_settings, None)
+
     def test_unsupported_content_type_returns_415(self, test_settings):
         """Unsupported content-type is rejected with HTTP 415."""
         app.dependency_overrides[get_settings] = lambda: test_settings

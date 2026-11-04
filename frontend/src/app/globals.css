@@ -16,6 +16,11 @@
   --ok: 244 244 245;            /* #F4F4F5 Silver White */
   --warn: 212 212 216;          /* #D4D4D8 Zinc-300 Silver */
   --err: 255 255 255;           /* #FFFFFF Crisp White */
+
+  /* Apple & Emil Kowalski Design Engineering Curves */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-apple: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 html.light {
@@ -38,6 +43,12 @@ html, body {
   background-color: rgb(var(--bg));
   color: rgb(var(--foreground));
   color-scheme: dark;
+  overflow-x: hidden;
+  max-width: 100vw;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html.light, html.light body {
@@ -45,7 +56,7 @@ html.light, html.light body {
 }
 
 body {
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   min-height: 100vh;
 }
 
@@ -87,4 +98,32 @@ pre, code {
 main {
   min-width: 0;
   overflow-wrap: break-word;
+}
+
+/* Apple-style subtle scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(120, 120, 128, 0.24);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 120, 128, 0.4);
+}
+
+/* Safe area padding utilities for iOS devices */
+.safe-area-pb {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+.safe-area-pt {
+  padding-top: max(0.5rem, env(safe-area-inset-top));
 }

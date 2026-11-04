@@ -233,10 +233,10 @@ export function DiffViewer({ diff, findings = [] }: DiffViewerProps) {
               role="tab"
               aria-selected={isSelected}
               onClick={() => setSelectedFileIdx(idx)}
-              className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-colors shrink-0 flex items-center gap-2 ${
+              className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-all duration-150 active:scale-[0.98] shrink-0 flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                 isSelected
-                  ? "bg-primary-action text-foreground font-semibold shadow-sm"
-                  : "bg-surface text-muted hover:text-foreground border border-border hover:bg-raised"
+                  ? "bg-primary-action text-white dark:text-black font-semibold shadow-sm"
+                  : "bg-surface text-muted hover:text-foreground border border-border hover:bg-panel"
               }`}
             >
               <span>{filePath}</span>

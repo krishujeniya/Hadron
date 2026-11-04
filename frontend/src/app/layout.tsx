@@ -25,13 +25,13 @@ export const metadata: Metadata = {
     title: "Hadron | Autonomous PR Review Engine",
     description: "Automate code reviews on GitHub pull requests. Four parallel specialist agents inspect diffs across security, code quality, test coverage, and documentation before merge.",
     url: "https://hadron.vercel.app",
-    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Hadron Autonomous PR Review Engine" }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Hadron Autonomous PR Review Engine" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Hadron | Autonomous PR Review Engine",
     description: "Automate code reviews on GitHub pull requests. Four parallel specialist agents inspect diffs across security, code quality, test coverage, and documentation before merge.",
-    images: ["/twitter-image"],
+    images: ["/og-image.png"],
   },
 };
 
@@ -46,11 +46,6 @@ const schemaOrgData = {
       description:
         "Autonomous multi-agent pull request review engine that coordinates Security, Quality, Test, and Documentation agents in parallel.",
       url: "https://hadron.vercel.app",
-      offers: {
-        "@type": "Offer",
-        price: "0",
-        priceCurrency: "USD",
-      },
     },
     {
       "@type": "Organization",

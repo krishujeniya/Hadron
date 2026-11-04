@@ -27,25 +27,25 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   ref
 ) {
   const baseStyles =
-    "inline-flex items-center justify-center font-medium rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed select-none";
+    "inline-flex items-center justify-center font-medium transition-all duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed select-none";
 
   const sizeStyles = {
-    sm: "px-2.5 py-1 text-xs min-h-[32px] gap-1.5",
-    md: "px-4 py-2 text-sm min-h-[40px] gap-2",
-    lg: "px-5 py-2.5 text-base min-h-[44px] gap-2.5",
+    sm: "px-3 py-1.5 text-xs min-h-[36px] rounded-lg gap-1.5",
+    md: "px-4 py-2 text-sm min-h-[44px] rounded-xl gap-2",
+    lg: "px-5 py-2.5 text-base min-h-[48px] rounded-xl gap-2.5",
   };
 
   const variantStyles = {
     primary:
-      "bg-primary-action text-white dark:text-black font-semibold hover:opacity-90 shadow-sm border border-border/40 active:scale-[0.99]",
+      "bg-primary-action text-white dark:text-black font-semibold hover:opacity-90 shadow-sm border border-border/40",
     secondary:
-      "bg-panel text-foreground border border-border hover:bg-surface hover:text-foreground active:scale-[0.99]",
+      "bg-panel text-foreground border border-border hover:bg-surface hover:text-foreground shadow-xs",
     outline:
-      "border border-border bg-transparent text-foreground hover:bg-surface active:scale-[0.99]",
+      "border border-border bg-transparent text-foreground hover:bg-surface",
     ghost:
-      "bg-transparent text-muted hover:text-foreground hover:bg-surface/70 active:scale-[0.99]",
+      "bg-transparent text-muted hover:text-foreground hover:bg-surface/70",
     danger:
-      "bg-err/10 text-err border border-err/30 hover:bg-err/20 active:scale-[0.99]",
+      "bg-err/10 text-err border border-err/30 hover:bg-err/20",
   };
 
   return (

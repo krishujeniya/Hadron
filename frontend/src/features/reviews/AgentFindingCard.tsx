@@ -114,10 +114,10 @@ export function FindingsByAgent({ findings }: { findings: Finding[] }) {
                 key={sev}
                 type="button"
                 onClick={() => setSeverityFilter(sev)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                className={`px-2.5 py-1 min-h-[32px] rounded-lg text-xs font-medium transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                   isSelected
                     ? "bg-accent/20 text-accent border border-accent/40 font-semibold"
-                    : "bg-surface text-muted hover:text-foreground border border-border"
+                    : "bg-surface text-muted hover:text-foreground border border-border hover:bg-panel"
                 }`}
               >
                 {sev.charAt(0).toUpperCase() + sev.slice(1)} ({count})

@@ -107,7 +107,7 @@ export default async function Image() {
               letterSpacing: "1px",
             }}
           >
-            <span>v0.1.0 PRODUCTION</span>
+            <span>PRODUCTION</span>
           </div>
         </div>
 

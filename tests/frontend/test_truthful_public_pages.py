@@ -18,7 +18,15 @@ def test_robots_configuration_protects_internal_routes():
     assert robots_file.exists(), "robots.ts must exist"
     content = robots_file.read_text(encoding="utf-8")
 
-    assert 'allow: ["/", "/solutions/"]' in content or "allow: ['/', '/solutions/']" in content
+    assert any(
+        allow_pat in content
+        for allow_pat in [
+            'allow: ["/", "/solutions/"]',
+            "allow: ['/', '/solutions/']",
+            'allow: ["/", "/solutions/", "/llms.txt"]',
+            "allow: ['/', '/solutions/', '/llms.txt']",
+        ]
+    )
     # Disallowed internal/operational paths
     assert '"/health/"' in content or "'/health/'" in content
     assert '"/economics/"' in content or "'/economics/'" in content

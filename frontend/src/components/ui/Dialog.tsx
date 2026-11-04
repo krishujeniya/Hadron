@@ -78,10 +78,10 @@ export function Dialog({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity duration-200"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -95,7 +95,7 @@ export function Dialog({
         aria-describedby={description ? "dialog-description" : undefined}
         tabIndex={-1}
         className={clsx(
-          "relative z-10 w-full max-w-lg rounded-2xl border border-border bg-surface p-6 shadow-2xl transition-all focus:outline-none max-h-[90vh] overflow-y-auto",
+          "relative z-10 w-full max-w-lg rounded-2xl border border-border bg-surface p-5 sm:p-6 shadow-2xl transition-all duration-200 ease-out focus:outline-none max-h-[90vh] overflow-y-auto",
           className
         )}
       >
@@ -114,7 +114,7 @@ export function Dialog({
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="rounded-lg p-1.5 text-muted hover:text-foreground hover:bg-panel transition-colors"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-muted hover:text-foreground hover:bg-panel transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />

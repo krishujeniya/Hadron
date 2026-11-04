@@ -35,9 +35,6 @@ export default function HealthPage() {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs px-2.5 py-1 rounded-full border border-border bg-panel text-muted font-mono">
-            v{readyData?.version || liveData?.version || "0.13.0"}
-          </span>
-          <span className="text-xs px-2.5 py-1 rounded-full border border-border bg-panel text-muted font-mono">
             {readyData?.env || "production"}
           </span>
         </div>
@@ -94,7 +91,7 @@ export default function HealthPage() {
       {/* Subsystem Health Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* API Server */}
-        <div className="border border-border rounded-lg bg-panel p-4 flex flex-col justify-between">
+        <div className="border border-border rounded-xl bg-panel p-4 flex flex-col justify-between hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150 shadow-sm">
           <div>
             <div className="text-xs text-muted font-semibold uppercase tracking-wider mb-2">
               API Server (Liveness)
@@ -113,7 +110,7 @@ export default function HealthPage() {
         </div>
 
         {/* Database & Schema */}
-        <div className="border border-border rounded-lg bg-panel p-4 flex flex-col justify-between">
+        <div className="border border-border rounded-xl bg-panel p-4 flex flex-col justify-between hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150 shadow-sm">
           <div>
             <div className="text-xs text-muted font-semibold uppercase tracking-wider mb-2">
               PostgreSQL & Schema
@@ -147,7 +144,7 @@ export default function HealthPage() {
         </div>
 
         {/* Redis & Job Queue */}
-        <div className="border border-border rounded-lg bg-panel p-4 flex flex-col justify-between">
+        <div className="border border-border rounded-xl bg-panel p-4 flex flex-col justify-between hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150 shadow-sm">
           <div>
             <div className="text-xs text-muted font-semibold uppercase tracking-wider mb-2">
               Redis Queue & State
@@ -177,7 +174,7 @@ export default function HealthPage() {
         </div>
 
         {/* Worker Fleet Capability */}
-        <div className="border border-border rounded-lg bg-panel p-4 flex flex-col justify-between">
+        <div className="border border-border rounded-xl bg-panel p-4 flex flex-col justify-between hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150 shadow-sm">
           <div>
             <div className="text-xs text-muted font-semibold uppercase tracking-wider mb-2">
               Review Worker Fleet
@@ -207,7 +204,7 @@ export default function HealthPage() {
         </div>
 
         {/* Queue Latency / Oldest Job */}
-        <div className="border border-border rounded-lg bg-panel p-4 flex flex-col justify-between">
+        <div className="border border-border rounded-xl bg-panel p-4 flex flex-col justify-between hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150 shadow-sm">
           <div>
             <div className="text-xs text-muted font-semibold uppercase tracking-wider mb-2">
               Oldest Accepted Job
@@ -231,7 +228,7 @@ export default function HealthPage() {
         </div>
 
         {/* Tiger Cloud / Vector Memory */}
-        <div className="border border-border rounded-lg bg-panel p-4 flex flex-col justify-between">
+        <div className="border border-border rounded-xl bg-panel p-4 flex flex-col justify-between hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150 shadow-sm">
           <div>
             <div className="text-xs text-muted font-semibold uppercase tracking-wider mb-2">
               Tiger Memory (RAG)

@@ -198,7 +198,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         role="dialog"
         aria-modal="true"
         aria-label="Command palette"
-        className="w-full max-w-xl rounded-2xl border border-border bg-surface p-4 shadow-2xl space-y-3 relative overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        className="w-full max-w-xl rounded-2xl border border-border bg-surface p-4 shadow-2xl space-y-3 relative overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input Bar (Combobox Semantics) */}

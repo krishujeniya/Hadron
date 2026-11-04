@@ -70,13 +70,13 @@ export default function RepositoriesPage() {
       />
 
       {/* Search Bar */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Filter repositories by name or description..."
-          className="bg-surface border border-border rounded-xl px-3.5 py-2 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-accent w-full max-w-md font-mono"
+          className="bg-surface border border-border rounded-xl px-3.5 py-2 min-h-[44px] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-accent w-full max-w-md font-mono"
         />
         <span className="text-xs text-muted">
           {filtered.length} of {repositories.length} repos
@@ -97,7 +97,7 @@ export default function RepositoriesPage() {
           {filtered.map((repo) => (
             <div
               key={repo.id}
-              className="border border-border rounded-xl bg-surface p-4 flex flex-col justify-between hover:border-muted/50 transition-all shadow-sm"
+              className="border border-border rounded-xl bg-surface p-4 flex flex-col justify-between hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150 shadow-sm"
             >
               <div>
                 <div className="flex items-start justify-between gap-2">
@@ -162,7 +162,7 @@ export default function RepositoriesPage() {
                 <div className="flex items-center gap-2">
                   <Link
                     href={`/reviews?repo=${encodeURIComponent(repo.full_name)}`}
-                    className="text-xs text-accent hover:underline font-mono"
+                    className="min-h-[44px] inline-flex items-center text-xs text-accent hover:underline font-mono active:scale-[0.98] transition-transform duration-150"
                   >
                     Reviews →
                   </Link>

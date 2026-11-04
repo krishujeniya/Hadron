@@ -256,10 +256,10 @@ export function HITLDecisionForm({ hitlId, onResolved }: HITLDecisionFormProps) 
           {ACTIONS.map((item) => (
             <label
               key={item.value}
-              className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
+              className={`flex cursor-pointer items-start gap-3 min-h-[48px] rounded-xl border p-3 transition-all duration-150 active:scale-[0.98] ${
                 action === item.value
-                  ? "border-accent bg-accent/10"
-                  : "border-border bg-surface hover:bg-raised"
+                  ? "border-accent bg-accent/10 shadow-xs"
+                  : "border-border bg-surface hover:bg-panel"
               }`}
             >
               <input

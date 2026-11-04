@@ -7,7 +7,11 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright-core')
 const base = process.env.FRONTEND_URL || 'http://127.0.0.1:3000';
 const output = process.env.UI_EVIDENCE_DIR || '/tmp/hadron-ui-evidence';
 await mkdir(output, { recursive: true });
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({
+  headless: true,
+  executablePath: process.env.PLAYWRIGHT_CHROME_PATH || undefined,
+  args: ['--no-sandbox', '--disable-setuid-sandbox'],
+});
 const results = [];
 const profile = { login: 'alice', name: 'Alice', authenticated: true, auth_method: 'session', public_repos: 1 };
 async function setup({ signedIn = false, mode = 'executive', width = 1280, failReviews = false, theme = 'light' } = {}) {

@@ -10,6 +10,7 @@
 *.key
 *.cert
 *.crt
+!backend/database/certs/supabase-root.crt
 credentials.json
 service_account.json
 

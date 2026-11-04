@@ -201,7 +201,7 @@ export default function DashboardPage() {
                   <Link
                     key={h.id}
                     href={`/hitl/${encodeURIComponent(h.id)}`}
-                    className="flex items-center justify-between px-4 py-3 hover:bg-panel transition-colors gap-3"
+                    className="flex items-center justify-between min-h-[44px] px-4 py-3 hover:bg-panel transition-all duration-150 active:scale-[0.99] gap-3"
                   >
                     <div className="min-w-0">
                       <div className="font-mono text-sm font-semibold text-foreground">
@@ -240,7 +240,7 @@ export default function DashboardPage() {
                   <Link
                     key={r.id}
                     href={`/reviews/${encodeURIComponent(r.id)}`}
-                    className="flex items-center justify-between px-4 py-3 hover:bg-panel transition-colors gap-3"
+                    className="flex items-center justify-between min-h-[44px] px-4 py-3 hover:bg-panel transition-all duration-150 active:scale-[0.99] gap-3"
                   >
                     <div className="min-w-0">
                       <div className="font-mono text-sm font-semibold text-foreground">
@@ -286,7 +286,7 @@ export default function DashboardPage() {
                   <Link
                     key={r.id}
                     href={`/reviews/${encodeURIComponent(r.id)}`}
-                    className="flex items-center justify-between px-4 py-3 hover:bg-panel transition-colors gap-3"
+                    className="flex items-center justify-between min-h-[44px] px-4 py-3 hover:bg-panel transition-all duration-150 active:scale-[0.99] gap-3"
                   >
                     <div className="min-w-0">
                       <div className="font-mono text-sm font-semibold text-foreground">
@@ -333,7 +333,7 @@ function StatCard({
       : "text-foreground";
 
   return (
-    <div className="border border-border rounded-xl bg-surface px-4 py-3.5 hover:border-muted/50 transition-all shadow-sm">
+    <div className="border border-border rounded-xl bg-surface px-4 py-3.5 hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150 shadow-sm">
       <div className="text-xs uppercase tracking-wider font-mono text-muted">{label}</div>
       <div className={`text-2xl font-mono font-bold mt-1.5 ${toneColor}`}>
         {err ? "N/A" : value ?? "…"}

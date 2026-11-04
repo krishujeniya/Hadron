@@ -28,7 +28,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       onClick={cycleTheme}
       aria-label={label}
       title={label}
-      className={`w-7 h-7 rounded-lg border border-border bg-panel hover:bg-surface text-muted hover:text-foreground flex items-center justify-center transition-colors focus:outline-none focus:ring-1 focus:ring-accent ${className}`}
+      className={`w-8 h-8 rounded-lg border border-border bg-panel hover:bg-surface text-muted hover:text-foreground flex items-center justify-center transition-all duration-150 active:scale-[0.98] focus:outline-none focus:ring-1 focus:ring-accent ${className}`}
     >
       {theme === "system" ? (
         // Monitor / System Icon

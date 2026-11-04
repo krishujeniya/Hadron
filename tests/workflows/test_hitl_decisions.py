@@ -148,43 +148,47 @@ class TestT12HITLHumanDecisions:
         app.dependency_overrides[get_current_principal] = lambda: reviewer_principal
         app.dependency_overrides[require_auth] = lambda: reviewer_principal
 
-        now = datetime.now(timezone.utc)
-        mock_item1 = MagicMock(
-            id="h1",
-            review_id="acme/service:1:sha1",
-            repo_full_name="acme/service",
-            pr_number=1,
-            agent_verdict="needs_human_review",
-            human_verdict=None,
-            status="pending",
-            escalation_reason="Low confidence",
-            overall_confidence=0.5,
-            posted_to_github=False,
-            created_at=now,
-            resolved_at=None,
-        )
-        mock_item2 = MagicMock(
-            id="h2",
-            review_id="acme/service:2:sha2",
-            repo_full_name="acme/service",
-            pr_number=2,
-            agent_verdict="needs_human_review",
-            human_verdict=None,
-            status="pending",
-            escalation_reason="Low confidence",
-            overall_confidence=0.5,
-            posted_to_github=False,
-            created_at=now,
-            resolved_at=None,
-        )
+        try:
+            now = datetime.now(timezone.utc)
+            mock_item1 = MagicMock(
+                id="h1",
+                review_id="acme/service:1:sha1",
+                repo_full_name="acme/service",
+                pr_number=1,
+                agent_verdict="needs_human_review",
+                human_verdict=None,
+                status="pending",
+                escalation_reason="Low confidence",
+                overall_confidence=0.5,
+                posted_to_github=False,
+                created_at=now,
+                resolved_at=None,
+            )
+            mock_item2 = MagicMock(
+                id="h2",
+                review_id="acme/service:2:sha2",
+                repo_full_name="acme/service",
+                pr_number=2,
+                agent_verdict="needs_human_review",
+                human_verdict=None,
+                status="pending",
+                escalation_reason="Low confidence",
+                overall_confidence=0.5,
+                posted_to_github=False,
+                created_at=now,
+                resolved_at=None,
+            )
 
-        with patch("backend.api.hitl_router.count_pending_queue", new=AsyncMock(return_value=42)), \
-             patch("backend.api.hitl_router.get_pending_queue", new=AsyncMock(return_value=[mock_item1, mock_item2])):
-            client = TestClient(app)
-            resp = client.get("/api/v1/hitl/queue?limit=2&offset=0")
-            assert resp.status_code == 200
-            data = resp.json()
-            assert len(data["items"]) == 2
-            # Total must be truthful database total count (42), NOT page slice len (2)
-            assert data["total"] == 42
-            assert data["limit"] == 2
+            with patch("backend.api.hitl_router.count_pending_queue", new=AsyncMock(return_value=42)), \
+                 patch("backend.api.hitl_router.get_pending_queue", new=AsyncMock(return_value=[mock_item1, mock_item2])):
+                client = TestClient(app)
+                resp = client.get("/api/v1/hitl/queue?limit=2&offset=0")
+                assert resp.status_code == 200
+                data = resp.json()
+                assert len(data["items"]) == 2
+                # Total must be truthful database total count (42), NOT page slice len (2)
+                assert data["total"] == 42
+                assert data["limit"] == 2
+        finally:
+            app.dependency_overrides.pop(get_current_principal, None)
+            app.dependency_overrides.pop(require_auth, None)

@@ -282,7 +282,7 @@ function Stat({
   loading?: boolean;
 }) {
   return (
-    <div className="border border-border rounded-xl bg-panel px-4 py-3 shadow-sm">
+    <div className="border border-border rounded-xl bg-panel px-4 py-3 shadow-sm hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150">
       <div className="text-xs uppercase tracking-wide text-muted font-mono">{label}</div>
       <div className="text-2xl font-mono font-bold mt-1 text-foreground">
         {err ? "Telemetry error" : loading ? "…" : value ?? "$0.00"}
@@ -324,11 +324,11 @@ function Breakdown({
             return (
               <div
                 key={k}
-                className="flex items-center justify-between px-4 py-2.5 gap-3 hover:bg-surface/50 transition-colors"
+                className="flex items-center justify-between px-4 py-2.5 gap-3 hover:bg-surface/50 transition-colors min-w-0"
               >
-                <div className="font-mono text-xs text-foreground truncate">{k}</div>
+                <div className="font-mono text-xs text-foreground truncate min-w-0 flex-1">{k}</div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <div className="w-24 h-1.5 rounded bg-surface overflow-hidden">
+                  <div className="w-20 sm:w-24 h-1.5 rounded bg-surface overflow-hidden">
                     <div
                       className="h-full bg-accent"
                       style={{ width: `${Math.min(100, share * 100)}%` }}

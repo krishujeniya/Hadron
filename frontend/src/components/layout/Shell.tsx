@@ -135,7 +135,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           Skip to main content
         </a>
 
-        <header className="border-b border-border bg-surface/90 px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-40 backdrop-blur-md">
+        <header className="border-b border-border bg-surface/85 px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-40 backdrop-blur-xl">
           <div className="flex items-center gap-6">
             <HadronLogo size="sm" animated={false} />
             <nav className="hidden md:flex items-center gap-5 text-xs font-mono text-muted" aria-label="Public sections">
@@ -151,7 +151,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={openAccountModal}
-              className="inline-flex min-h-[44px] items-center px-4 py-2 bg-primary-action text-white dark:text-black hover:opacity-90 text-xs font-semibold rounded-xl transition shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="inline-flex min-h-[44px] items-center px-4 py-2 bg-primary-action text-white dark:text-black hover:opacity-90 text-xs font-semibold rounded-xl transition shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.98]"
             >
               Sign In to App →
             </button>
@@ -214,7 +214,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             onClick={() => setPaletteOpen(true)}
-            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl border border-border text-muted hover:text-foreground bg-surface text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-95 transition-transform"
+            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl border border-border text-muted hover:text-foreground bg-surface text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.98] transition-transform duration-150"
             aria-label="Open command palette"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -229,7 +229,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             ref={mobileTriggerRef}
             type="button"
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl border border-border text-muted hover:text-foreground bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-95 transition-transform"
+            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl border border-border text-muted hover:text-foreground bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:scale-[0.98] transition-transform duration-150"
             aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
             aria-expanded={mobileOpen}
             aria-controls="mobile-nav-drawer"
@@ -274,11 +274,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
       >
         <div className="flex flex-col flex-1 overflow-y-auto">
           {/* Hadron Logo & Header */}
-          <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+          <div className="px-5 py-4 border-b border-border flex items-center">
             <HadronLogo size="sm" animated={true} />
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-surface text-foreground border border-border">
-              v0.1.0
-            </span>
           </div>
 
           {/* Authenticated GitHub Account Card */}
@@ -440,7 +437,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       {/* Mobile Ergonomic Bottom Navigation Dock */}
       <nav
         aria-label="Mobile Bottom Navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-panel/95 backdrop-blur-md border-t border-border px-2 py-1.5 flex items-center justify-around safe-area-pb shadow-lg"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-panel/90 backdrop-blur-xl border-t border-border/80 px-2 py-1 flex items-center justify-around safe-area-pb shadow-lg"
       >
         {PRIMARY_NAV.map((item) => {
           const active =
@@ -452,7 +449,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               key={`mob-${item.href}`}
               href={item.href}
               className={clsx(
-                "flex flex-col items-center justify-center min-w-[54px] min-h-[44px] py-1 px-2 rounded-xl text-[10px] font-mono transition-colors active:scale-95",
+                "flex flex-col items-center justify-center min-w-[54px] min-h-[48px] py-1 px-2 rounded-xl text-[10px] font-mono transition-transform duration-150 active:scale-[0.98]",
                 active
                   ? "text-accent font-semibold"
                   : "text-muted hover:text-foreground"

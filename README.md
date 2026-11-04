@@ -10,6 +10,7 @@
   <img src="https://img.shields.io/badge/Next.js-15-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js 15" />
   <img src="https://img.shields.io/badge/FastAPI-0.100%2B-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/LangGraph-Stateful_Orchestration-1C3C3C?style=for-the-badge" alt="LangGraph" />
+  <img src="https://img.shields.io/badge/Docker-Multi--Stage_Containers-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
   <img src="https://img.shields.io/badge/PostgreSQL-pgvector-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL pgvector" />
   <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License" />
 </p>
@@ -23,9 +24,10 @@
 - **Multi-agent parallel review.** Four autonomous specialist agents inspect pull requests simultaneously across security, code quality, test coverage, and documentation.
 - **Repository context retrieval.** Evaluates diffs alongside architecture records, existing utilities, and previous review comments using vector search.
 - **Deduplication and scoring.** Merges overlapping findings, deduplicates repeated critiques, and scores confidence before posting comments.
-- **Human approval queue.** Routes lower-confidence observations to a triage dashboard for engineering lead review.
+- **Human approval queue.** Routes lower-confidence observations to a triage dashboard for engineering lead determination.
 - **Token accounting and limits.** Tracks token spend per review, enforces daily budget quotas, and isolates external provider failures with circuit breakers.
-- **Full-stack architecture.** FastAPI backend with LangGraph state machines and a Next.js 15 web dashboard.
+- **Production container topology.** Fully decoupled multi-stage Docker containers with non-root service execution and automated health monitoring.
+- **Mobile-friendly dashboard.** Next.js 15 web dashboard built on Apple Design principles with zero horizontal screen overflow.
 
 ---
 
@@ -56,10 +58,10 @@ flowchart TD
         ContextNode["BuildContext Node"]
         
         subgraph Agents ["Parallel Specialist Swarm"]
-            SecAgent["🛡️ Security Specialist\n(OWASP, Secrets, Injection)"]
-            QualAgent["⚡ Quality Specialist\n(Complexity, Smells, Design)"]
-            TestAgent["🧪 Test Specialist\n(Assertions, Coverage, Regressions)"]
-            DocAgent["📚 Documentation Specialist\n(APIs, Specs, Breaking Changes)"]
+            SecAgent["Security Specialist\n(OWASP, Secrets, Injection)"]
+            QualAgent["Quality Specialist\n(Complexity, Smells, Design)"]
+            TestAgent["Test Specialist\n(Assertions, Coverage, Regressions)"]
+            DocAgent["Documentation Specialist\n(APIs, Specs, Breaking Changes)"]
         end
 
         AggregateNode["AggregateResults Node\n(Deduplication & Confidence Ranking)"]
@@ -67,7 +69,7 @@ flowchart TD
     end
 
     subgraph Delivery ["Review Dispatch & Governance"]
-        HITLQueue["👤 Human-in-the-Loop Approval Queue"]
+        HITLQueue["Human-in-the-Loop Approval Queue"]
         PostNode["PostReview Node\n(GitHub REST API Client)"]
         EventsDB[("Agent Events & Observability")]
     end
@@ -136,11 +138,13 @@ Each specialist operates under a strict role contract, using domain-specific pro
 
 | Component | Technology | Description |
 | :--- | :--- | :--- |
-| **Web Dashboard** | **Next.js 15**, React, TailwindCSS, Lucide | Dashboard for review history, approvals triage, and token economics |
+| **Web Dashboard** | **Next.js 15**, React, TailwindCSS | Dashboard for review history, approvals triage, and token economics |
 | **Backend Core** | **FastAPI**, Python 3.11+, Uvicorn | Asynchronous REST and webhook API engine |
 | **Agent Orchestration** | **LangGraph**, LangChain Core | Workflow graphs, checkpointing, and parallel fan-out |
 | **Relational & Vector DB** | **PostgreSQL** + **pgvector** | Relational schema and embedding storage for RAG context |
 | **Queue & Memory** | **Redis** | High-throughput distributed caching, state locking, and idempotency |
+| **Worker Engine** | **ARQ**, AsyncIO | Decoupled background queue worker processing review tasks |
+| **Containerization** | **Docker**, Docker Compose | Multi-stage, unprivileged non-root execution topology |
 | **LLM & Reasoning** | **OpenAI GPT-4o** / Anthropic Claude | Reasoning models selected dynamically per agent domain |
 | **Observability** | **OpenTelemetry**, Structured Logging | Token attribution, distributed traces, and automated circuit breakers |
 
@@ -158,18 +162,55 @@ Hadron/
 │   ├── src/components/       Shared ui, brand, and layout components
 │   ├── src/lib/              API transport, DTOs, theme and SWR
 │   ├── tests/                Browser regression checks
+│   ├── Dockerfile            Multi-stage standalone Next.js container
 │   └── public/               Browser-served assets
 ├── tests/                    Python tests grouped by domain
 ├── fixtures/                 Shared demo/test webhook payload
 ├── scripts/                  Operational tools and migration artifacts
 ├── docs/                     Architecture, operations, design and evidence
 ├── assets/                   Repository branding assets
+├── Dockerfile                Multi-stage backend container (API & Worker)
+├── docker-compose.yml        Production compose topology
+├── docker-compose.dev.yml    All-local development compose topology
 └── .github/workflows/        CI and production readiness gate
 ```
 
-See [repository layout](docs/architecture/repository-layout.md) for dependency rules,
-verified upstream examples and the exact move mapping. The [documentation index](docs/README.md)
-and [test guide](tests/README.md) provide focused entrypoints.
+See [repository layout](docs/architecture/repository-layout.md) for dependency rules, verified upstream examples, and the exact move mapping. The [documentation index](docs/README.md) and [test guide](tests/README.md) provide focused entrypoints.
+
+---
+
+## Containerization & Docker architecture
+
+Hadron implements an enterprise multi-stage container strategy designed around clean process decoupling, minimal surface area, and unprivileged execution.
+
+### Container topology
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        DOCKER COMPOSE TOPOLOGY                         │
+├──────────────┬──────────────────┬──────────────┬───────────────────────┤
+│ Service      │ Base Image       │ Port         │ Responsibilities      │
+├──────────────┼──────────────────┼──────────────┼───────────────────────┤
+│ frontend     │ node:20-alpine   │ 3000:3000    │ Next.js 15 Standalone │
+│ api          │ python:3.11-slim │ 8000:8000    │ FastAPI & Webhooks    │
+│ worker       │ python:3.11-slim │ (Internal)   │ ARQ Review Pipeline   │
+│ redis        │ redis:7.2-alpine │ 6379:6379    │ AOF Idempotency Queue │
+│ postgres*    │ postgres:16      │ 5433:5432    │ Relational + pgvector │
+└──────────────┴──────────────────┴──────────────┴───────────────────────┘
+* Included in local development topology (docker-compose.dev.yml).
+```
+
+### Multi-stage build design
+
+- **Root `Dockerfile` (Backend & Worker):**
+  - **Stage 1 (`builder`):** Compiles native C dependencies (`build-essential`, `libpq-dev`), leverages `uv` for fast package resolution, and pre-compiles wheels.
+  - **Stage 2 (`runtime`):** Minimal `python:3.11-slim` image containing only `libpq5` runtime libraries. Creates an unprivileged system user (`hadron`, UID 1000). The entrypoint (`/app/scripts/entrypoint.sh`) dynamically executes either `api`, `worker`, or `combined` commands without privilege escalation.
+  - **Healthcheck:** Probes `/health/live` with 30s intervals and 5s timeout.
+- **Frontend `Dockerfile`:**
+  - **Stage 1 (`deps`):** Caches `node_modules` via `npm ci`.
+  - **Stage 2 (`builder`):** Compiles Next.js with `output: "standalone"`, extracting static assets and minified server bundles.
+  - **Stage 3 (`runner`):** Minimal Alpine image running as non-root user `nextjs` (UID 1001).
+  - **Healthcheck:** Probes `http://localhost:3000/` with wget.
 
 ---
 
@@ -177,103 +218,184 @@ and [test guide](tests/README.md) provide focused entrypoints.
 
 ### Prerequisites
 
-- **Python 3.10+**
-- **Node.js 18+** & npm / pnpm
-- **PostgreSQL 15+** with the `vector` extension enabled
-- **Redis 6+**
-- **GitHub App** (or Personal Access Token for testing)
-- **OpenAI API Key**
+- **Docker** & **Docker Compose** (recommended for quickstart)
+- Or for bare-metal local development:
+  - **Python 3.11+** with `uv`
+  - **Node.js 20+** with `npm`
+  - **PostgreSQL 15+** with the `vector` extension
+  - **Redis 7+**
 
 ---
 
-### Local Installation
+### 1. Environment configuration
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/krishujeniya/Hadron.git
-   cd Hadron
-   ```
-
-2. **Configure Environment Variables:**
-   ```bash
-   cp .env.example .env
-   ```
-   Populate your `.env` file with your local credentials:
-   ```ini
-   # App Environment
-   ENVIRONMENT=development
-   LOG_LEVEL=INFO
-
-   # Database (PostgreSQL with pgvector)
-   DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/hadron_db
-
-   # Redis
-   REDIS_URL=redis://localhost:6379/0
-
-   # LLM Providers
-   OPENAI_API_KEY=your-openai-api-key
-
-   # GitHub App Configuration
-   GITHUB_APP_ID=your-github-app-id
-   GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
-   GITHUB_WEBHOOK_SECRET=your-webhook-secret
-   ```
-
-3. **Start with Docker Compose (Recommended):**
-   ```bash
-   docker compose up -d
-   ```
-
-4. **Or Run Locally:**
-
-   **Backend:**
-   ```bash
-   # Install dependencies
-   pip install -r requirements.txt
-
-   # Start the FastAPI server
-   uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
-   ```
-
-   **Frontend:**
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-
-   - **Backend API:** `http://localhost:8000`
-   - **Interactive API Docs:** `http://localhost:8000/docs`
-   - **Frontend Dashboard:** `http://localhost:3000`
-
----
-
-## Running tests
-
-The test suite validates agent contracts, state orchestration, idempotency, and regression gates:
+Clone the repository and prepare your environment file:
 
 ```bash
-# Run full test suite
-pytest -v
+git clone https://github.com/krishujeniya/Hadron.git
+cd Hadron
+cp .env.example .env
+```
 
-# Run targeted orchestration tests
-pytest tests/operations/test_health_settings_and_fixture.py -v
+Edit `.env` with your credentials:
+
+```ini
+# Application Environment
+APP_ENV=development
+LOG_LEVEL=INFO
+
+# Database Connection (PostgreSQL with pgvector)
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/pr_review_agent
+
+# Redis Queue Connection
+REDIS_URL=redis://localhost:6379
+
+# LLM Providers (OpenAI or Anthropic)
+OPENAI_API_KEY=your-openai-api-key
+ANTHROPIC_API_KEY=your-anthropic-api-key
+
+# GitHub App Configuration
+GITHUB_TOKEN=your-github-token
+GITHUB_WEBHOOK_SECRET=your-webhook-secret
 ```
 
 ---
 
-## Security and privacy
+### 2. Running with Docker Compose
 
-- **Zero source retention.** Source code and pull request diffs are processed in-memory during workflow execution and never stored or retained for model training.
-- **HMAC verification.** Every incoming webhook is cryptographically verified against the secret signature before execution triggers.
-- **Circuit breaker protection.** Integrated fail-safes isolate external provider disruptions, ensuring high availability and predictable degradation.
-- **Role-based access control.** Explicit role model governing the approval interface and repository configurations.
+#### Option A: All-Local Development Mode (Recommended)
+Spins up a self-contained local stack including PostgreSQL (on host port 5433 with pgvector), Redis (port 6379), FastAPI backend (port 8000), ARQ review worker, and the Next.js frontend (port 3000):
+
+```bash
+# Build and launch all services in background
+docker compose -f docker-compose.dev.yml up -d --build
+
+# Verify running services and health status
+docker compose -f docker-compose.dev.yml ps
+
+# Follow logs from API and background worker
+docker compose -f docker-compose.dev.yml logs -f api worker
+```
+
+#### Option B: Production Compose Topology
+Spins up the production frontend, API, decoupled ARQ worker fleet, and persistent Redis, connecting to your managed PostgreSQL database (e.g., Supabase or Neon):
+
+```bash
+# Build and launch production containers
+docker compose up -d --build
+
+# Inspect container health
+docker compose ps
+```
+
+#### Container Management Commands
+
+```bash
+# View aggregated service logs
+docker compose logs -f
+
+# Run database migrations inside the API container
+docker compose exec api python3 scripts/migrate.py
+
+# Open an interactive shell inside the backend container
+docker compose exec api bash
+
+# Scale review worker processes
+docker compose up -d --scale worker=3
+
+# Gracefully stop all containers
+docker compose down
+
+# Stop containers and purge local data volumes
+docker compose down -v
+```
+
+---
+
+### 3. Running Locally (Bare Metal)
+
+If you prefer to run services directly on your host machine:
+
+#### Backend Setup
+```bash
+# Create and sync Python virtual environment with uv
+uv sync
+
+# Or install with pip
+pip install -r requirements.txt
+
+# Start the FastAPI API server
+uv run uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+
+# In a separate terminal, start the ARQ worker
+uv run python -m arq backend.job_queue.arq_worker.WorkerSettings
+```
+
+#### Frontend Setup
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+- **Backend API:** `http://localhost:8000`
+- **Interactive OpenAPI Documentation:** `http://localhost:8000/docs`
+- **Frontend Dashboard:** `http://localhost:3000`
+
+---
+
+## Running tests and verification
+
+The repository enforces automated verification across all layers:
+
+```bash
+# 1. Verify structure and import boundaries
+python3 scripts/check_structure.py
+
+# 2. Python linting and formatting check
+uv run ruff check .
+
+# 3. Frontend static typecheck
+npm --prefix frontend run lint
+
+# 4. Next.js production build verification
+npm --prefix frontend run build
+
+# 5. Full deterministic Python test suite (414 tests)
+uv run pytest tests/ -m "not eval"
+
+# 6. Playwright browser UI regression checks
+npm run test:ui --prefix frontend
+```
+
+---
+
+## Health checks and monitoring
+
+Each service exposes dedicated healthcheck endpoints:
+
+| Endpoint | Target Component | Purpose |
+| :--- | :--- | :--- |
+| `GET /health/live` | API Server | Minimal liveness probe (0 external dependencies) |
+| `GET /health/ready` | API & Dependencies | Validates Postgres connection, schema DDL, Redis, and worker heartbeat |
+| `GET /api/v1/economics/budget` | Budget Guard | Real-time daily token expenditure and hard ceiling status |
+| `GET /` | Frontend Dashboard | Web interface availability probe |
+
+---
+
+## Security, privacy and governance
+
+- **Zero source code retention.** Pull request diffs are processed in-memory during workflow execution and never retained for model training.
+- **Cryptographic HMAC verification.** Webhooks require valid `X-Hub-Signature-256` signatures matching `GITHUB_WEBHOOK_SECRET`.
+- **Unprivileged container isolation.** Production Docker containers run as non-root service accounts (`hadron` UID 1000, `nextjs` UID 1001).
+- **Strict secret redaction.** Sensitive tokens, private keys, and passwords in diffs are masked before agent evaluation.
+- **Circuit breakers.** Failures in external LLM APIs isolate gracefully to prevent cascading timeouts.
 
 ---
 
 ## License
 
-This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
+This project is licensed under the [MIT License](LICENSE).
 
 ---
 
