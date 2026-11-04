@@ -13,7 +13,7 @@ PORT="${PORT:-8000}"
 case "$CMD_MODE" in
   api)
     echo "[Hadron Entrypoint] Launching API server on port ${PORT}..."
-    exec uvicorn backend.main:app --host 0.0.0.0 --port "${PORT}" --workers "${UVICORN_WORKERS:-1}"
+    exec uvicorn backend.main:app --host 0.0.0.0 --port "${PORT}" --workers "${UVICORN_WORKERS:-2}"
     ;;
 
   worker)

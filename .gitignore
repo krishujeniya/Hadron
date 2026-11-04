@@ -84,3 +84,7 @@ skills-lock.json
 
 # --- Deployment Guide (Local Only - User Requested to Ignore) ---
 deploy.md
+
+# --- Supabase CLI local cache ---
+supabase/.temp/
+.supabase/

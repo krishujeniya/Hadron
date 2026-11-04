@@ -242,10 +242,17 @@ def _build_engine():
             "statement_timeout": str(getattr(cfg, "db_statement_timeout_ms", 30000)),
             "lock_timeout": str(getattr(cfg, "db_lock_timeout_ms", 10000)),
         }
+        # Disable prepared statement caching when connecting to transaction poolers
+        # (Supabase Supavisor on port 6543 or any PgBouncer transaction mode endpoint)
+        if ":6543" in db_url or "pgbouncer=true" in db_url.lower():
+            connect_args["statement_cache_size"] = 0
+            connect_args["prepared_statement_cache_size"] = 0
 
     is_serverless = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
-    pool_size = 1 if is_serverless else 5
-    max_overflow = 2 if is_serverless else 10
+    default_pool = 1 if is_serverless else 5
+    default_overflow = 2 if is_serverless else 10
+    pool_size = int(os.getenv("DB_POOL_SIZE", str(getattr(cfg, "db_pool_size", default_pool))))
+    max_overflow = int(os.getenv("DB_MAX_OVERFLOW", str(getattr(cfg, "db_max_overflow", default_overflow))))
 
     engine = create_async_engine(
         db_url,

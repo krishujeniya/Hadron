@@ -102,6 +102,8 @@ class Settings(BaseSettings):
     # Format: postgresql+asyncpg://user:password@host:port/dbname
     # Used for: persistent review history, findings, audit log
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/pr_review_agent"
+    db_pool_size: int = Field(default=5, description="Async engine connection pool size.")
+    db_max_overflow: int = Field(default=10, description="Max burst connection overflow above pool size.")
 
     # Default Qdrant URL (retained for backward compatibility with phase 13 smoke tests)
     qdrant_url: str = "http://localhost:6333"
