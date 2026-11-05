@@ -77,7 +77,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: clamp(88px, 10vw, 160px);
+  gap: clamp(64px, 7vw, 108px);
   padding-bottom: 0;
   overflow: clip;
 }
@@ -121,14 +121,14 @@
   max-width: 1440px;
   width: 100%;
   margin: 0 auto;
-  padding: clamp(36px, 6vw, 88px) clamp(20px, 5vw, 64px) 0;
+  padding: clamp(12px, 2vw, 26px) clamp(20px, 5vw, 64px) 0;
   display: grid;
   grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr);
-  align-items: center;
+  align-items: start;
   column-gap: clamp(24px, 4vw, 64px);
-  min-height: min(800px, 85vh);
+  min-height: 0;
 }
-.hm-hero-copy { min-width:0; padding-block: 45px; position:relative; z-index:2; }
+.hm-hero-copy { min-width:0; padding-block: clamp(6px, 1.5vw, 18px); position:relative; z-index:2; }
 .hm-eyebrow {
   display:inline-flex;
   align-items:center;
@@ -153,13 +153,13 @@
 }
 .hm-headline .hm-headline-soft { color: color-mix(in srgb, var(--hm-ink) 48%, var(--hm-bg)); }
 .hm-lead {
-  margin-top:clamp(25px, 3.2vw, 48px);
+  margin-top:clamp(20px, 2.4vw, 32px);
   font-size: clamp(1rem, 1.22vw, 1.2rem);
   line-height: 1.68;
   max-width: 495px;
   color: var(--hm-muted);
 }
-.hm-actions { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:32px; }
+.hm-actions { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:24px; }
 .hm-button {
   min-height:52px;
   display:inline-flex; justify-content:center; align-items:center;
@@ -179,7 +179,7 @@
 .hm-button-secondary:hover { box-shadow:none; background:var(--hm-surface); }
 .hm-notes { margin-top:24px; display:flex; gap:11px; align-items:center; color:var(--hm-muted); font-size:12px; flex-wrap:wrap; }
 .hm-notes span+span::before { content:"·"; margin-right:11px; }
-.hm-hero-rail { margin-top:clamp(48px, 7vw, 100px); border-top:1px solid var(--hm-line); padding-top:17px; display:flex; justify-content:space-between; gap:20px; color:var(--hm-muted); font: 500 10px/1.5 ui-monospace, monospace; letter-spacing:.09em; text-transform:uppercase; }
+.hm-hero-rail { margin-top:clamp(28px, 4vw, 52px); border-top:1px solid var(--hm-line); padding-top:17px; display:flex; justify-content:space-between; gap:20px; color:var(--hm-muted); font: 500 10px/1.5 ui-monospace, monospace; letter-spacing:.09em; text-transform:uppercase; }
 /* Signature motion environment and the illustrative product window */
 .hm-stage {
   position:relative;
@@ -280,7 +280,7 @@
 .hadron-public > footer { border-color:var(--hm-line);background:var(--hm-bg);font-family:inherit;padding-block:36px; }
 .hadron-public > footer > div { max-width:1360px; }
 .hadron-public > footer p { font-family:inherit; }
-.hm-docs { max-width:1240px; margin:0 auto; padding:64px clamp(20px,5vw,48px) 120px; display:grid;grid-template-columns:245px minmax(0,1fr);gap:clamp(35px,6vw,96px); }
+.hm-docs { max-width:1240px; margin:0 auto; padding:36px clamp(20px,5vw,48px) 120px; display:grid;grid-template-columns:245px minmax(0,1fr);gap:clamp(35px,6vw,96px); }
 .hm-docs-aside { position:sticky;top:115px;align-self:start;display:flex;flex-direction:column;gap:7px; }
 .hm-docs-aside h2 { font:600 11px/1.4 ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--hm-muted);margin-bottom:16px; }
 .hm-docs-aside a { font-size:14px;font-weight:600;padding:12px 14px;border-radius:10px; }
@@ -313,13 +313,13 @@
 }
 @media (max-width:800px) {
   .hadron-public .hm-header { min-height:65px; padding-inline:20px; }
-  .hm-hero {grid-template-columns:1fr; gap:18px;padding-top:36px; }
-  .hm-hero-copy { padding-block:22px; }
+  .hm-hero {grid-template-columns:1fr; gap:16px;padding-top:14px; }
+  .hm-hero-copy { padding-block:3px; }
   .hm-eyebrow { margin-bottom:32px; }
   .hm-headline {max-width:680px;font-size:clamp(3.1rem,8.8vw,6.1rem);}
   .hm-lead {max-width:600px;}
-  .hm-hero-rail {margin-top:40px;}
-  .hm-stage {min-height:500px;margin-top:20px;}
+  .hm-hero-rail {margin-top:30px;}
+  .hm-stage {min-height:500px;margin-top:4px;}
   .hm-capabilities {grid-template-columns:repeat(2,minmax(0,1fr));}
   .hm-capability:first-child { grid-row:auto;grid-column:span 2;min-height:300px; }
   .hm-capability:nth-child(4) {grid-column:span 1;}
@@ -348,3 +348,6 @@
   .hm-hero-copy > *, .hm-stage { animation:none!important; }
   .hm-window, .hm-button, .hm-site * {scroll-behavior:auto!important;transition-duration:.01ms!important;}
 }
+
+/* Public sign-in guard uses the same compact rhythm as the landing page. */
+.hadron-public .hm-signin-gate { padding-top: clamp(32px, 5vw, 60px); padding-bottom: 50px; }

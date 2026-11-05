@@ -43,6 +43,24 @@ try {
     const run = await setup({ width });
     await run.page.goto(base);
     await run.page.getByRole('button', { name: 'Sign In to App' }).waitFor();
+    const hero = run.page.getByRole('heading', { name: /Every pull request deserves/i });
+    await hero.waitFor();
+    const publicBounds = await run.page.evaluate(() => {
+      const heading = document.querySelector('.hm-headline');
+      const header = document.querySelector('.hm-header');
+      if (!heading || !header) return null;
+      return {
+        top: heading.getBoundingClientRect().top,
+        headerBottom: header.getBoundingClientRect().bottom,
+        overflow: document.documentElement.scrollWidth > innerWidth + 1,
+      };
+    });
+    assert(publicBounds, 'public hero and navigation must render');
+    assert(publicBounds.top >= 0 && publicBounds.top - publicBounds.headerBottom < 115, 'public heading must start near navigation with no oversized blank gap');
+    assert(!publicBounds.overflow, 'public landing must not overflow the viewport');
+    assert.equal(await run.page.getByText('AUTONOMOUS CODE INTELLIGENCE / HADRON').count(), 0, 'remove redundant hero eyebrow');
+    assert.equal(await run.page.getByText('Zero model training').count(), 0, 'avoid unverified provider claims');
+    await run.page.screenshot({ path: `${output}/public-home-${width}.png`, fullPage: true });
     assert.equal(run.protectedCount(), 0, 'anonymous landing must not fetch private reviews');
     await run.page.getByRole('button', { name: 'Sign In to App' }).click();
     const dialog = run.page.getByRole('dialog', { name: 'Sign in to Hadron' });
@@ -68,6 +86,14 @@ try {
     const run = await setup({ signedIn: true, mode, width: 375, theme: mode === 'developer' ? 'dark' : 'light' });
     await run.page.goto(base);
     await run.page.getByRole('heading', { name: 'Review overview', exact: true }).waitFor();
+    const privateBounds = await run.page.evaluate(() => {
+      const hero = document.querySelector('.hm-overview-hero');
+      const topbar = document.querySelector('.hm-topbar');
+      if (!hero || !topbar) return null;
+      return { top: hero.getBoundingClientRect().top, topbarBottom: topbar.getBoundingClientRect().bottom };
+    });
+    assert(privateBounds, 'authenticated workspace hero and breadcrumb must render');
+    assert(privateBounds.top >= 0 && privateBounds.top - privateBounds.topbarBottom < 90, 'authenticated dashboard must not have excessive top spacing');
     assert.equal(await run.page.getByRole('button', { name: 'Developer view', exact: true }).count(), 0);
     const wordmarkColor = await run.page.getByText('HADRON', { exact: true }).first().evaluate((node) => getComputedStyle(node).color);
     assert.notEqual(wordmarkColor, 'rgba(0, 0, 0, 0)', 'wordmark must use a visible theme foreground');
@@ -79,6 +105,26 @@ try {
     results.push(`single dashboard with legacy ${mode} preference and session reload: PASS`);
     await run.context.close();
   }
+  // Desktop authenticated layout and public dark + reduced-motion behavior.
+  const desktop = await setup({ signedIn: true, width: 1280 });
+  await desktop.page.goto(base);
+  await desktop.page.getByRole('heading', { name: 'Review overview', exact: true }).waitFor();
+  assert.equal(await desktop.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true, 'desktop workspace must not overflow');
+  await desktop.page.screenshot({ path: `${output}/dashboard-desktop.png`, fullPage: true });
+  assert.deepEqual(desktop.errors, []);
+  await desktop.context.close();
+  results.push('authenticated desktop layout and overflow: PASS');
+
+  const darkPublic = await setup({ width: 375, theme: 'dark' });
+  await darkPublic.page.goto(base);
+  await darkPublic.page.getByRole('heading', { name: /Every pull request deserves/i }).waitFor();
+  assert(await darkPublic.page.locator('.hm-stage canvas').count(), 'decorative motion canvas must exist');
+  const darkSurface = await darkPublic.page.locator('.hadron-public').evaluate((node) => getComputedStyle(node).backgroundColor);
+  assert.notEqual(darkSurface, 'rgba(0, 0, 0, 0)', 'dark public theme needs a solid readable surface');
+  assert.deepEqual(darkPublic.errors, []);
+  await darkPublic.context.close();
+  results.push('public dark theme and decorative canvas: PASS');
+
   const callback = await setup();
   await callback.page.goto(`${base}/auth/callback?code=test-code&state=test-state`);
   await callback.page.getByRole('heading', { name: 'Review overview', exact: true }).waitFor();
