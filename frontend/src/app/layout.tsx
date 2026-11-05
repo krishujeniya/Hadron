@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: "Hadron | Autonomous PR Review Engine",
     description: "Automate code reviews on GitHub pull requests. Four parallel specialist agents inspect diffs across security, code quality, test coverage, and documentation before merge.",
     url: "https://hadron.vercel.app",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Hadron Autonomous PR Review Engine" }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Hadron multi-agent pull request review: four specialist agents, one review" }],
   },
   twitter: {
     card: "summary_large_image",
