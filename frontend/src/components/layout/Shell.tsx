@@ -117,6 +117,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
   // Allow public routes (solutions marketing pages, health telemetry, auth callback, and public landing page) to render without auth blocks (T32)
   const isSolutionsRoute = pathname?.startsWith("/solutions");
+  const isDocsRoute = pathname?.startsWith("/docs");
   const isPublicHome = pathname === "/" && !currentAccount;
   const isPublicHealth = pathname === "/health" && !currentAccount;
 
@@ -124,7 +125,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     return <main className="min-h-screen bg-bg text-foreground flex items-center justify-center" aria-busy="true"><p role="status">Checking your session…</p></main>;
   }
 
-  if (isSolutionsRoute || isPublicHome || isPublicHealth || (!currentAccount && pathname !== "/auth/callback")) {
+  if (isSolutionsRoute || isDocsRoute || isPublicHome || isPublicHealth || (!currentAccount && pathname !== "/auth/callback")) {
     return (
       <div className="hadron-public min-h-screen bg-bg text-foreground flex flex-col">
         {/* Accessible Skip Link (T39 / S05) */}
@@ -162,7 +163,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </header>
 
         <main id="main-content" tabIndex={-1} className="flex-1 min-w-0 max-w-full overflow-x-hidden focus:outline-none">
-          {isSolutionsRoute || isPublicHome || isPublicHealth ? children : (
+          {isSolutionsRoute || isDocsRoute || isPublicHome || isPublicHealth ? children : (
             <section className="max-w-lg mx-auto px-6 py-20 space-y-4">
               <h1 className="text-2xl font-semibold">Sign in to your workspace</h1>
               <p className="text-muted">Authenticate with GitHub to view your reviews and repository activity.</p>
