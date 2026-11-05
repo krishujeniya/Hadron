@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="assets/logo.png" alt="Hadron AI PR review engine" width="540" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg" />
+    <img src="assets/logo.svg" alt="Hadron — multi-agent pull request review" width="420" />
+  </picture>
 </p>
 
 # Hadron: autonomous multi-agent PR review engine
@@ -16,6 +19,10 @@
 </p>
 
 > Hadron reviews pull requests with four specialist sub-agents running in parallel: security, code quality, test coverage, and documentation. It fetches relevant repository context with vector search, scores finding confidence, and posts inline review comments to the pull request. Borderline findings are routed to a human approval queue.
+
+---
+
+The Hadron identity represents four review specialists converging on one shared decision. See the [brand system](docs/design/BRAND.md) for the SVG masters, color roles, favicon variants, and reproducible PNG exports.
 
 ---
 
