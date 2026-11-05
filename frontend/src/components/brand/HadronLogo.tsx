@@ -2,10 +2,10 @@
 
 import React from "react";
 import Link from "next/link";
-import { HadronIcon } from "@/components/brand/HadronIcon";
 
 interface HadronLogoProps {
   size?: "sm" | "md" | "lg";
+  /** Retained for backwards compatibility. Brand marks do not animate. */
   animated?: boolean;
   withLink?: boolean;
   showSubtitle?: boolean;
@@ -14,61 +14,43 @@ interface HadronLogoProps {
 
 export function HadronLogo({
   size = "md",
-  animated = false,
   withLink = true,
-  showSubtitle = true,
+  showSubtitle = false,
   className = "",
 }: HadronLogoProps) {
-  const iconSizes = {
-    sm: 26,
-    md: 32,
-    lg: 48,
-  };
-
-  const titleSizes = {
-    sm: "text-sm",
-    md: "text-base",
-    lg: "text-2xl",
-  };
-
-  const subtitleSizes = {
-    sm: "text-[9px]",
-    md: "text-[10px]",
-    lg: "text-xs",
-  };
+  const dimensions = {
+    sm: { width: 136, height: 39 },
+    md: { width: 170, height: 48 },
+    lg: { width: 240, height: 68 },
+  }[size];
 
   const content = (
-    <div className={`flex items-center gap-2.5 group select-none ${className}`}>
-      <HadronIcon
-        size={iconSizes[size]}
-        animated={animated}
-        withPlate={true}
-        className="transition-transform duration-300 group-hover:scale-105"
+    <span className={`inline-flex flex-col items-start justify-center min-w-0 ${className}`}>
+      <img
+        src="/logo.svg"
+        alt="Hadron"
+        width={dimensions.width}
+        height={dimensions.height}
+        className="block dark:hidden shrink-0"
       />
-      <div className="flex flex-col">
-        <div
-          className={`font-mono font-extrabold tracking-wider text-foreground transition-colors duration-150 ${titleSizes[size]}`}
-        >
-          HADRON
-        </div>
-        {showSubtitle && (
-          <div
-            className={`text-muted font-mono tracking-tight -mt-0.5 uppercase ${subtitleSizes[size]}`}
-          >
-            ai pr review engine
-          </div>
-        )}
-      </div>
-    </div>
+      <img
+        src="/logo-dark.svg"
+        alt="Hadron"
+        width={dimensions.width}
+        height={dimensions.height}
+        className="hidden dark:block shrink-0"
+      />
+      {showSubtitle && (
+        <span className="text-[9px] font-medium uppercase tracking-[0.1em] text-muted">
+          Multi-agent pull request review
+        </span>
+      )}
+    </span>
   );
 
-  if (withLink) {
-    return (
-      <Link href="/" className="inline-block" title="Hadron PR review engine">
-        {content}
-      </Link>
-    );
-  }
-
-  return content;
+  return withLink ? (
+    <Link href="/" className="inline-flex items-center" title="Hadron — pull request review" aria-label="Hadron home">
+      {content}
+    </Link>
+  ) : content;
 }
