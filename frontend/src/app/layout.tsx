@@ -1,4 +1,5 @@
 import "./globals.css";
+import "./marketing.css";
 import type { Metadata } from "next";
 import { SWRProvider } from "@/lib/swr";
 import { GitHubProvider } from "@/features/auth/github-context";

@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { HadronLogo } from "@/components/brand/HadronLogo";
-import { HadronIcon } from "@/components/brand/HadronIcon";
 import { useGitHubAccount } from "@/features/auth/github-context";
+import { ParticleField } from "@/features/marketing/ParticleField";
 
 interface SampleDiff {
   id: string;
@@ -144,7 +143,7 @@ export function PublicLandingPage() {
   const { openAccountModal } = useGitHubAccount();
   const [selectedDiffId, setSelectedDiffId] = useState<string>("python-sql");
   const [isRunningReview, setIsRunningReview] = useState(false);
-  const [hasRun, setHasRun] = useState(true);
+  const [, setHasRun] = useState(true);
   const [copied, setCopied] = useState(false);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
 
@@ -159,7 +158,7 @@ export function PublicLandingPage() {
     }, 450);
   };
 
-  const handleCopyMarkdown = () => {
+  const handleCopyMarkdown = async () => {
     const md = `## Hadron Review: ${currentDiff.prTitle}
 **Verdict:** ${currentDiff.verdict} (Confidence: ${Math.round(currentDiff.confidence * 100)}%)
 
@@ -174,164 +173,69 @@ ${currentDiff.findings
 ---
 *Reviewed by Hadron Autonomous Multi-Agent Engine*`;
 
-    void navigator.clipboard.writeText(md);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(md);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
   };
 
   return (
-    <div className="space-y-24 md:space-y-32 pb-20">
+    <div className="hm-site">
       {/* ------------------------------------------------------------------ */}
       {/* SECTION 1: HERO                                                    */}
       {/* ------------------------------------------------------------------ */}
-      <section className="pt-8 md:pt-14 px-3 sm:px-6 max-w-6xl mx-auto min-w-0 max-w-full overflow-hidden">
-        <div className="text-center max-w-3xl mx-auto space-y-6 min-w-0">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-surface text-xs font-mono text-muted max-w-full">
-            <span className="w-2 h-2 rounded-full bg-accent animate-pulse shrink-0" aria-hidden="true" />
-            <span className="break-words">Autonomous code review for GitHub pull requests</span>
-          </div>
-
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-b from-white via-zinc-100 to-zinc-400 dark:from-white dark:via-zinc-100 dark:to-zinc-400 bg-clip-text text-transparent leading-[1.12] break-words">
-            Autonomous code reviews that catch critical vulnerabilities, logic flaws, and test gaps before you merge.
-          </h1>
-
-          <p className="text-base sm:text-lg text-muted leading-relaxed max-w-2xl mx-auto font-sans break-words">
-            Four specialized review agents inspect your pull request diffs in parallel, analyzing syntax trees and test suites to post deterministic, actionable reviews directly to GitHub.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-            <button
-              type="button"
-              onClick={openAccountModal}
-              className="w-full sm:w-auto inline-flex min-h-[44px] items-center justify-center px-6 py-3 rounded-xl bg-primary-action text-white dark:text-black font-semibold text-sm hover:opacity-90 active:scale-[0.98] transition-transform duration-150 ease-out shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              <svg className="w-4 h-4 mr-2 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
-              </svg>
-              <span>Install GitHub App</span>
+      <section className="hm-hero" aria-labelledby="hadron-hero-title">
+        <div className="hm-hero-copy">
+          <div className="hm-eyebrow"><span className="hm-eyebrow-dot" aria-hidden="true" /> AUTONOMOUS CODE INTELLIGENCE / HADRON</div>
+          <h1 id="hadron-hero-title" className="hm-headline">Every pull request deserves <span className="hm-headline-soft">a second brain.</span></h1>
+          <p className="hm-lead">Meet the multi-agent review engine that thinks in parallel. Security, quality, testing and documentation specialists examine your changes, then bring the findings together for a more informed merge.</p>
+          <div className="hm-actions">
+            <button type="button" onClick={openAccountModal} className="hm-button">
+              Connect with GitHub
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 12h16m-7-7 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
-
-            <a
-              href="#demo"
-              className="w-full sm:w-auto inline-flex min-h-[44px] items-center justify-center px-6 py-3 rounded-xl border border-border bg-surface text-foreground font-medium text-sm hover:bg-panel active:scale-[0.98] transition-transform duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              Try live review (No sign-up) →
-            </a>
+            <a className="hm-button hm-button-secondary" href="#demo">Explore the demo <span aria-hidden="true">↗</span></a>
           </div>
-
-          <p className="text-xs text-muted font-mono">
-            Free for public repositories · Read-only PR diff access · Zero code training
-          </p>
+          <div className="hm-notes"><span>Built for GitHub PRs</span><span>Human review when needed</span><span>Open-source project</span></div>
+          <div className="hm-hero-rail" aria-hidden="true"><span>01 / UNDERSTAND THE DIFF</span><span>02 / REVIEW IN PARALLEL</span></div>
         </div>
-
-        {/* Real Review Sample Card on PR #142 */}
-        <div className="mt-12 max-w-4xl mx-auto rounded-2xl border border-border bg-surface overflow-hidden shadow-2xl min-w-0 max-w-full">
-          {/* GitHub PR Simulated Header */}
-          <div className="bg-panel/70 border-b border-border px-3 sm:px-4 py-3 flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 font-mono text-xs min-w-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="w-2.5 h-2.5 rounded-full bg-ok shrink-0" aria-hidden="true" />
-              <span className="text-muted break-all">octocat / auth-service</span>
-              <span className="text-muted shrink-0">·</span>
-              <span className="font-semibold text-foreground shrink-0">PR #142</span>
+        <div className="hm-stage" aria-label="Illustrative multi-agent review visualization">
+          <ParticleField />
+          <div className="hm-stage-top"><span className="hm-window-label">HADRON / REVIEW ENGINE</span><span className="hm-status"><span className="hm-status-dot" aria-hidden="true" /> Visual concept</span></div>
+          <div className="hm-window">
+            <div className="hm-window-bar"><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><span>pull_request / illustration</span></div>
+            <div className="hm-code" aria-label="Illustrative code review trace">
+              <span className="hm-code-line is-muted">+  async def get_user(query):</span>
+              <span className="hm-code-line">+    result = <b>await</b> db.execute(query)</span>
+              <span className="hm-code-line is-muted">+    return result.first()</span>
+              <span className="hm-code-line">&nbsp;</span>
+              <span className="hm-code-line"><em>● security</em> / inspecting input</span>
+              <span className="hm-code-line"><em>● quality</em>  / tracing context</span>
+              <span className="hm-code-line"><em>● testing</em>  / checking coverage</span>
+              <span className="hm-code-line"><em>● docs</em>     / reviewing changes</span>
             </div>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
-              <span className="text-muted text-[11px] sm:text-xs">12 files changed (+340 -82)</span>
-              <span className="px-2 py-0.5 rounded bg-err/20 text-err text-[10px] sm:text-[11px] font-semibold border border-err/30">
-                CHANGES RECOMMENDED
-              </span>
-            </div>
+            <div className="hm-result"><div className="hm-result-icon" aria-hidden="true">!</div><div><strong>Potential unsafe query construction</strong><p>Illustrative finding · Surface risks with context and actionable guidance.</p></div></div>
           </div>
-
-          {/* GitHub Review Body */}
-          <div className="p-3.5 sm:p-6 space-y-4 sm:space-y-5 min-w-0 max-w-full overflow-hidden">
-            <div className="flex items-start gap-3">
-              <div className="shrink-0">
-                <HadronIcon size={32} animated={false} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center justify-between gap-1">
-                  <div>
-                    <span className="font-semibold text-sm text-foreground font-mono">Hadron Bot</span>
-                    <span className="text-xs text-muted ml-2">commented on PR #142</span>
-                  </div>
-                  <span className="text-[11px] font-mono text-muted">automated review</span>
-                </div>
-                <p className="text-xs text-muted mt-1 break-words">
-                  Evaluated security, code quality, test coverage, and documentation contracts across modified files.
-                </p>
-              </div>
-            </div>
-
-            {/* Finding Item: Security */}
-            <div className="rounded-xl border border-err/30 bg-err/5 p-3.5 sm:p-4 space-y-2.5 sm:space-y-3 min-w-0 max-w-full overflow-hidden">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="px-2 py-0.5 rounded bg-err/20 text-err text-[10px] font-mono font-bold uppercase tracking-wider shrink-0">
-                    Security Agent
-                  </span>
-                  <span className="font-semibold text-xs text-foreground font-mono break-all">backend/auth/token.py:84</span>
-                </div>
-                <span className="text-[11px] font-mono text-muted shrink-0">94% confidence</span>
-              </div>
-              <p className="text-xs text-foreground font-medium break-words">
-                Potential race condition in session invalidation check under multi-replica deployments.
-              </p>
-              <div className="rounded-lg bg-bg p-3 font-mono text-xs overflow-x-auto border border-border/80 min-w-0 max-w-full">
-                <div className="text-err/90 whitespace-pre">- if token in in_memory_revocations: return False</div>
-                <div className="text-ok/90 whitespace-pre">+ if await redis.sismember(&quot;revoked_tokens&quot;, token): return False</div>
-              </div>
-              <p className="text-[11px] text-muted break-words">
-                Rule: SEC-AUTH-004 · In-memory cache is not synchronized between stateless API instances. Use distributed Redis set.
-              </p>
-            </div>
-
-            {/* Finding Item: Test Coverage */}
-            <div className="rounded-xl border border-warn/30 bg-warn/5 p-3.5 sm:p-4 space-y-2.5 sm:space-y-3 min-w-0 max-w-full overflow-hidden">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="px-2 py-0.5 rounded bg-warn/20 text-warn text-[10px] font-mono font-bold uppercase tracking-wider shrink-0">
-                    Test Agent
-                  </span>
-                  <span className="font-semibold text-xs text-foreground font-mono break-all">tests/test_auth.py:112</span>
-                </div>
-                <span className="text-[11px] font-mono text-muted shrink-0">91% confidence</span>
-              </div>
-              <p className="text-xs text-foreground font-medium break-words">
-                Missing unit test for empty or malformed token string edge cases.
-              </p>
-              <p className="text-[11px] text-muted font-mono break-words">
-                Suggestion: Add test_revocation_empty_token_returns_401 to ensure early exit before Redis query.
-              </p>
-            </div>
-          </div>
+          <div className="hm-stage-foot"><span className="hm-mini-line" aria-hidden="true" /> An original, interactive particle environment</div>
         </div>
       </section>
 
       {/* ------------------------------------------------------------------ */}
       {/* SECTION 2: PROOF METRICS                                           */}
       {/* ------------------------------------------------------------------ */}
-      <section className="px-3 sm:px-6 max-w-6xl mx-auto min-w-0 max-w-full">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4">
-          <div className="rounded-2xl border border-border bg-surface p-3.5 sm:p-5 text-center min-w-0">
-            <div className="text-2xl sm:text-4xl font-extrabold font-mono text-foreground">4</div>
-            <div className="text-[11px] sm:text-xs font-mono font-semibold text-accent uppercase tracking-wider mt-1 break-words">Specialist agents</div>
-            <p className="text-[10px] sm:text-[11px] text-muted mt-2">Security, Quality, Test, Docs parallel.</p>
+      <section aria-label="What makes Hadron different">
+        <div className="hm-capabilities">
+          <div className="hm-capability">
+            <span className="hm-capability-kicker">01 / Parallel intelligence</span>
+            <div className="hm-capability-visual" aria-label="Four specialist review agents"><span className="hm-agent-pill">Security</span><span className="hm-agent-pill">Quality</span><span className="hm-agent-pill">Testing</span><span className="hm-agent-pill">Documentation</span></div>
+            <div><h2 className="hm-capability-title">Four perspectives. One cohesive review.</h2><p className="hm-capability-body" style={{ marginTop: 16 }}>Specialist agents investigate different failure modes in parallel. Findings are consolidated before any review is delivered.</p></div>
           </div>
-          <div className="rounded-2xl border border-border bg-surface p-3.5 sm:p-5 text-center min-w-0">
-            <div className="text-2xl sm:text-4xl font-extrabold font-mono text-foreground">&lt;18s</div>
-            <div className="text-[11px] sm:text-xs font-mono font-semibold text-accent uppercase tracking-wider mt-1 break-words">Review latency</div>
-            <p className="text-[10px] sm:text-[11px] text-muted mt-2">Webhook receipt to GitHub comment.</p>
-          </div>
-          <div className="rounded-2xl border border-border bg-surface p-3.5 sm:p-5 text-center min-w-0">
-            <div className="text-2xl sm:text-4xl font-extrabold font-mono text-foreground">100%</div>
-            <div className="text-[11px] sm:text-xs font-mono font-semibold text-accent uppercase tracking-wider mt-1 break-words">Verifiable citations</div>
-            <p className="text-[10px] sm:text-[11px] text-muted mt-2">Exact file and line ranges pinned.</p>
-          </div>
-          <div className="rounded-2xl border border-border bg-surface p-3.5 sm:p-5 text-center min-w-0">
-            <div className="text-2xl sm:text-4xl font-extrabold font-mono text-foreground">0</div>
-            <div className="text-[11px] sm:text-xs font-mono font-semibold text-accent uppercase tracking-wider mt-1 break-words">Hallucinated rules</div>
-            <p className="text-[10px] sm:text-[11px] text-muted mt-2">Concrete syntax tree checks.</p>
-          </div>
+          <div className="hm-capability"><span className="hm-capability-kicker">02 / Repository context</span><div><h3 className="hm-capability-title">Look beyond the changed lines.</h3><p className="hm-capability-body" style={{ marginTop: 14 }}>Context retrieval helps agents reason about code in the surrounding project.</p></div></div>
+          <div className="hm-capability"><span className="hm-capability-kicker">03 / Human judgment</span><div><h3 className="hm-capability-title">Keep people in control.</h3><p className="hm-capability-body" style={{ marginTop: 14 }}>Route findings that need a second look through the approval queue.</p></div></div>
+          <div className="hm-capability"><span className="hm-capability-kicker">04 / Actionable output</span><div><h3 className="hm-capability-title">Findings that lead somewhere.</h3><p className="hm-capability-body" style={{ marginTop: 14 }}>File locations, severity and rationale make the next step clear.</p></div></div>
         </div>
       </section>
 
@@ -343,9 +247,9 @@ ${currentDiff.findings
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6 min-w-0">
             <div className="min-w-0">
               <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-accent/10 text-accent text-xs font-mono font-semibold mb-2 max-w-full break-words">
-                Interactive playground · No sign-up required
+                Illustrative playground · No sign-up required
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold font-mono text-foreground break-words">Test a real pull request review</h2>
+              <h2 className="text-xl sm:text-2xl font-bold font-mono text-foreground break-words">Explore a sample pull request review</h2>
               <p className="text-xs text-muted mt-1 break-words">
                 Select a code sample or review the simulated output from our four parallel specialist agents.
               </p>
@@ -358,17 +262,27 @@ ${currentDiff.findings
                 disabled={isRunningReview}
                 className="inline-flex min-h-[44px] items-center px-4 py-2 rounded-xl bg-primary-action text-white dark:text-black text-xs font-semibold hover:opacity-90 active:scale-[0.98] transition-transform duration-150 ease-out disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
-                {isRunningReview ? "Analyzing diff..." : "Run review again"}
+                {isRunningReview ? "Replaying sample..." : "Replay sample"}
               </button>
             </div>
           </div>
 
           {/* Sample Preset Tabs */}
-          <div className="flex flex-wrap gap-2 min-w-0">
+          <div className="flex flex-wrap gap-2 min-w-0" role="tablist" aria-label="Code review examples">
             {SAMPLE_DIFFS.map((diff) => (
               <button
                 key={diff.id}
                 type="button"
+                role="tab"
+                aria-selected={selectedDiffId === diff.id}
+                onKeyDown={(event) => {
+                  if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+                  event.preventDefault();
+                  const current = SAMPLE_DIFFS.findIndex((entry) => entry.id === selectedDiffId);
+                  const next = (current + (event.key === "ArrowRight" ? 1 : -1) + SAMPLE_DIFFS.length) % SAMPLE_DIFFS.length;
+                  setSelectedDiffId(SAMPLE_DIFFS[next].id);
+                  event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
+                }}
                 onClick={() => {
                   setSelectedDiffId(diff.id);
                   setHasRun(true);
@@ -418,7 +332,7 @@ ${currentDiff.findings
               {isRunningReview ? (
                 <div className="py-12 flex flex-col items-center justify-center gap-3 text-xs font-mono text-muted">
                   <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-                  <span>Parallel agents checking syntax tree...</span>
+                  <span>Replaying example findings...</span>
                 </div>
               ) : (
                 <div className="space-y-3 flex-1 overflow-y-auto min-w-0">
@@ -670,88 +584,30 @@ ${currentDiff.findings
       {/* ------------------------------------------------------------------ */}
       {/* SECTION 7: PRICING & ACCESS                                        */}
       {/* ------------------------------------------------------------------ */}
-      <section id="pricing" className="px-3 sm:px-6 max-w-6xl mx-auto scroll-mt-24 space-y-8 min-w-0 max-w-full">
-        <div className="text-center max-w-2xl mx-auto space-y-3 min-w-0">
-          <h2 className="text-2xl sm:text-3xl font-extrabold font-mono text-foreground break-words">Developer-first pricing</h2>
-          <p className="text-xs sm:text-sm text-muted break-words">Transparent access tiers for open source developers and engineering organizations.</p>
+      <section id="pricing" aria-labelledby="hm-access-title">
+        <div className="max-w-3xl space-y-4">
+          <span className="hm-eyebrow" style={{ marginBottom: 0 }}>GET STARTED / OPEN SOURCE</span>
+          <h2 id="hm-access-title">Run Hadron in the workflow you already use.</h2>
+          <p className="text-muted leading-relaxed text-base max-w-2xl">Explore the source, review the deployment requirements, or connect your GitHub account to inspect the workspace. Availability and costs depend on your own infrastructure and configured providers.</p>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 min-w-0">
-          {/* Community */}
-          <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6 flex flex-col justify-between space-y-6 min-w-0">
-            <div className="space-y-4 min-w-0">
-              <div>
-                <h3 className="font-bold text-base font-mono text-foreground">Community</h3>
-                <p className="text-xs text-muted mt-1">For individual developers and open source projects.</p>
-              </div>
-              <div className="text-2xl sm:text-3xl font-extrabold font-mono text-foreground">Free</div>
-              <ul className="text-xs text-muted space-y-2 font-mono">
-                <li className="flex items-center gap-2">✓ Unlimited public repositories</li>
-                <li className="flex items-center gap-2">✓ 4 parallel specialist agents</li>
-                <li className="flex items-center gap-2">✓ GitHub pull request comments</li>
-                <li className="flex items-center gap-2">✓ Community support</li>
-              </ul>
-            </div>
-            <button
-              type="button"
-              onClick={openAccountModal}
-              className="w-full inline-flex min-h-[44px] items-center justify-center rounded-xl border border-border bg-panel text-xs font-mono font-semibold text-foreground hover:bg-surface transition-colors"
-            >
-              Get started free
-            </button>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-9">
+          <div className="rounded-2xl border border-border bg-surface p-7 space-y-4">
+            <span className="hm-capability-kicker">For developers</span>
+            <h3>Explore the platform</h3>
+            <p className="text-muted leading-relaxed text-sm">Start with the architecture and a sample review. No account is needed for the illustrative demo.</p>
+            <a href="#demo" className="inline-flex font-semibold text-sm underline underline-offset-4">Open sample review ↗</a>
           </div>
-
-          {/* Team */}
-          <div className="rounded-2xl border-2 border-accent bg-surface p-4 sm:p-6 flex flex-col justify-between space-y-6 relative shadow-xl min-w-0">
-            <div className="absolute -top-3 right-4 sm:right-6 px-3 py-0.5 rounded-full bg-accent text-bg text-[10px] font-mono font-bold uppercase tracking-wider">
-              Most Popular
-            </div>
-            <div className="space-y-4 min-w-0">
-              <div>
-                <h3 className="font-bold text-base font-mono text-foreground">Team</h3>
-                <p className="text-xs text-muted mt-1">For growing teams shipping production software.</p>
-              </div>
-              <div className="text-2xl sm:text-3xl font-extrabold font-mono text-foreground">
-                $29 <span className="text-xs font-normal text-muted">/ dev / month</span>
-              </div>
-              <ul className="text-xs text-foreground space-y-2 font-mono">
-                <li className="flex items-center gap-2">✓ Unlimited private repositories</li>
-                <li className="flex items-center gap-2">✓ Custom review rule configuration</li>
-                <li className="flex items-center gap-2">✓ Human-in-the-Loop review queue</li>
-                <li className="flex items-center gap-2">✓ Priority queue execution</li>
-                <li className="flex items-center gap-2">✓ Slack / Discord notifications</li>
-              </ul>
-            </div>
-            <button
-              type="button"
-              onClick={openAccountModal}
-              className="w-full inline-flex min-h-[44px] items-center justify-center rounded-xl bg-primary-action text-white dark:text-black text-xs font-mono font-semibold hover:opacity-90 transition-colors shadow-sm"
-            >
-              Start team trial
-            </button>
+          <div className="rounded-2xl border border-border bg-surface p-7 space-y-4">
+            <span className="hm-capability-kicker">For teams</span>
+            <h3>Connect a workspace</h3>
+            <p className="text-muted leading-relaxed text-sm">Authenticate with GitHub to view account-scoped repositories and review activity.</p>
+            <button type="button" onClick={openAccountModal} className="inline-flex font-semibold text-sm underline underline-offset-4">Sign in with GitHub ↗</button>
           </div>
-
-          {/* Enterprise */}
-          <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6 flex flex-col justify-between space-y-6 min-w-0">
-            <div className="space-y-4 min-w-0">
-              <div>
-                <h3 className="font-bold text-base font-mono text-foreground">Enterprise</h3>
-                <p className="text-xs text-muted mt-1">For security-sensitive or regulated engineering teams.</p>
-              </div>
-              <div className="text-2xl sm:text-3xl font-extrabold font-mono text-foreground">Custom</div>
-              <ul className="text-xs text-muted space-y-2 font-mono">
-                <li className="flex items-center gap-2">✓ Self-hosted VPC deployment</li>
-                <li className="flex items-center gap-2">✓ Bring your own LLM API keys</li>
-                <li className="flex items-center gap-2">✓ SAML SSO / Okta integration</li>
-                <li className="flex items-center gap-2">✓ Dedicated SLA & account manager</li>
-              </ul>
-            </div>
-            <a
-              href="mailto:team@hadron.vercel.app?subject=Hadron Enterprise Inquiry"
-              className="w-full inline-flex min-h-[44px] items-center justify-center rounded-xl border border-border bg-panel text-xs font-mono font-semibold text-foreground hover:bg-surface transition-colors"
-            >
-              Contact engineering
-            </a>
+          <div className="rounded-2xl border border-border bg-surface p-7 space-y-4">
+            <span className="hm-capability-kicker">For builders</span>
+            <h3>Inspect and self-host</h3>
+            <p className="text-muted leading-relaxed text-sm">Read the repository setup guide, environment requirements and deployment options.</p>
+            <a href="https://github.com/krishujeniya/Hadron#readme" target="_blank" rel="noopener noreferrer" className="inline-flex font-semibold text-sm underline underline-offset-4">View source on GitHub ↗</a>
           </div>
         </div>
       </section>
@@ -769,7 +625,7 @@ ${currentDiff.findings
           {[
             {
               q: "How does Hadron prevent hallucinations common in AI chatbots?",
-              a: "Rather than asking a single general-purpose chat model to review raw files, Hadron parses the Abstract Syntax Tree, extracts modified symbols, and runs deterministic rule validators. Every reported issue requires exact file, line number, and rule citations.",
+              a: "Rather than asking a single general-purpose chat model to review raw files, Hadron parses the Abstract Syntax Tree, extracts modified symbols, and runs deterministic rule validators. Findings are designed to include file locations and supporting rationale for human verification.",
             },
             {
               q: "Can Hadron automatically approve or block pull requests?",
@@ -785,7 +641,7 @@ ${currentDiff.findings
             },
             {
               q: "Does Hadron store or train on our code?",
-              a: "No. Your source code is processed ephemerally in memory-isolated sandboxes with network egress blocked. Code is never used to train public or proprietary machine learning models.",
+              a: "Hadron is designed to process code for review. Check your configured model provider and deployment policy for data retention and training terms.",
             },
           ].map((item, idx) => (
             <div key={idx} className="rounded-2xl border border-border bg-surface overflow-hidden min-w-0">
@@ -811,32 +667,14 @@ ${currentDiff.findings
       {/* ------------------------------------------------------------------ */}
       {/* SECTION 9: CLOSING ACTION                                          */}
       {/* ------------------------------------------------------------------ */}
-      <section className="px-3 sm:px-6 max-w-4xl mx-auto text-center min-w-0 max-w-full">
-        <div className="rounded-3xl border border-border bg-surface p-5 sm:p-8 md:p-12 space-y-6 shadow-2xl relative overflow-hidden min-w-0 max-w-full">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold font-mono text-foreground tracking-tight break-words">
-            Stop letting security bugs slip into main.
-          </h2>
-          <p className="text-xs sm:text-sm text-muted max-w-xl mx-auto leading-relaxed break-words">
-            Install the Hadron GitHub App in two minutes. Your next pull request will be autonomously evaluated across security, code quality, test coverage, and documentation.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-            <button
-              type="button"
-              onClick={openAccountModal}
-              className="w-full sm:w-auto inline-flex min-h-[44px] items-center justify-center px-8 py-3 rounded-xl bg-primary-action text-white dark:text-black font-semibold text-sm hover:opacity-90 active:scale-[0.98] transition-transform duration-150 ease-out shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              Install Hadron for GitHub
-            </button>
-            <Link
-              href="/solutions/python-security-audit"
-              className="w-full sm:w-auto inline-flex min-h-[44px] items-center justify-center px-6 py-3 rounded-xl border border-border bg-surface text-foreground font-medium text-sm hover:bg-panel active:scale-[0.98] transition-transform duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              Explore Solutions →
-            </Link>
+      <section aria-labelledby="hm-closing-title">
+        <div className="hm-closing">
+          <div>
+            <span className="hm-window-label">THE NEXT MERGE STARTS HERE</span>
+            <h2 id="hm-closing-title" style={{ marginTop: 22 }}>Better context.<br />More confident decisions.</h2>
+            <p>Explore Hadron's sample review, connect your workspace, or browse the source to see how the engine works.</p>
           </div>
-          <p className="text-xs text-muted font-mono pt-2">
-            No credit card required · Free for public repositories · 2-minute setup
-          </p>
+          <button type="button" className="hm-button" onClick={openAccountModal}>Open your workspace <span aria-hidden="true">↗</span></button>
         </div>
       </section>
 
