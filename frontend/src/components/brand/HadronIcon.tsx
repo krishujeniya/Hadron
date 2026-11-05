@@ -2,168 +2,42 @@
 
 import React from "react";
 
-interface HadronIconProps {
+export interface HadronIconProps {
   size?: number | string;
   className?: string;
+  /** Kept for compatibility: the new identity is intentionally static. */
   animated?: boolean;
+  /** Kept for compatibility: the four-agent mark never needs a container plate. */
   withPlate?: boolean;
 }
 
-export function HadronIcon({
-  size = 32,
-  className = "",
-  animated = false,
-  withPlate = true,
-}: HadronIconProps) {
+/**
+ * Canonical 4-agent identity: the shared central diamond represents the
+ * consolidated review; the four colors represent independent specialist roles.
+ * SVG remains crisp on high-density displays and uses no filters or orbit rings.
+ */
+export function HadronIcon({ size = 32, className = "" }: HadronIconProps) {
   return (
     <svg
-      viewBox="0 0 128 128"
+      viewBox="0 0 256 256"
       width={size}
       height={size}
       className={`shrink-0 ${className}`}
-      fill="none"
+      aria-hidden="true"
+      focusable="false"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <defs>
-        <linearGradient id="hiPlateGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#18181B" />
-          <stop offset="100%" stopColor="#050505" />
-        </linearGradient>
-
-        <linearGradient id="hiBeam1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="50%" stopColor="#D4D4D8" />
-          <stop offset="100%" stopColor="#71717A" />
-        </linearGradient>
-
-        <linearGradient id="hiBeam2" x1="100%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#A1A1AA" />
-          <stop offset="50%" stopColor="#FFFFFF" />
-          <stop offset="100%" stopColor="#52525B" />
-        </linearGradient>
-
-        <linearGradient id="hiCore" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
-          <stop offset="100%" stopColor="#A1A1AA" stopOpacity="0.8" />
-        </linearGradient>
-
-        <filter id="hiGlow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="2.5" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-
-      {/* Optional Rounded Container Plate */}
-      {withPlate && (
-        <rect
-          x="4"
-          y="4"
-          width="120"
-          height="120"
-          rx="28"
-          fill="url(#hiPlateGrad)"
-          stroke="#27272A"
-          strokeWidth="2"
-        />
-      )}
-
-      {/* Outer Collider Detector Ring with Optional Spin */}
-      <circle
-        cx="64"
-        cy="64"
-        r="50"
-        fill="none"
-        stroke="url(#hiBeam1)"
-        strokeWidth="1.5"
-        strokeDasharray="3 5"
-        opacity="0.4"
-        className={animated ? "animate-[spin_24s_linear_infinite] origin-center" : ""}
-      />
-
-      {/* "H" Magnetic Accelerator Pillars (Slight Inward Curve at Collision Waist) */}
-      <path
-        d="M 46 30 Q 50 64 46 98"
-        fill="none"
-        stroke="url(#hiBeam1)"
-        strokeWidth="6"
-        strokeLinecap="round"
-      />
-      <path
-        d="M 82 30 Q 78 64 82 98"
-        fill="none"
-        stroke="url(#hiBeam2)"
-        strokeWidth="6"
-        strokeLinecap="round"
-      />
-
-      {/* High-Energy Horizontal Collision Bridge */}
-      <path
-        d="M 48 64 L 80 64"
-        fill="none"
-        stroke="#FFFFFF"
-        strokeWidth="4.5"
-        strokeLinecap="round"
-        opacity="0.95"
-      />
-
-      {/* Relativistic Crossing Beams (Rotated Particle Ellipses) */}
-      <ellipse
-        cx="64"
-        cy="64"
-        rx="42"
-        ry="15"
-        fill="none"
-        stroke="url(#hiBeam1)"
-        strokeWidth="2"
-        transform="rotate(-34 64 64)"
-        opacity="0.75"
-        className={animated ? "animate-[pulse_3s_ease-in-out_infinite]" : ""}
-      />
-      <ellipse
-        cx="64"
-        cy="64"
-        rx="42"
-        ry="15"
-        fill="none"
-        stroke="url(#hiBeam2)"
-        strokeWidth="2"
-        transform="rotate(34 64 64)"
-        opacity="0.75"
-        className={animated ? "animate-[pulse_3s_ease-in-out_infinite_1.5s]" : ""}
-      />
-
-      {/* 4 Sub-Agent Quantum Nodes — Pure Monochrome White/Silver */}
-      {/* 01: Security - Top Left */}
-      <circle cx="34" cy="42" r="4.5" fill="#FFFFFF" filter="url(#hiGlow)" opacity="0.9" />
-      <circle cx="34" cy="42" r="1.5" fill="#000000" />
-
-      {/* 02: Quality - Top Right */}
-      <circle cx="94" cy="42" r="4.5" fill="#E4E4E7" filter="url(#hiGlow)" opacity="0.9" />
-      <circle cx="94" cy="42" r="1.5" fill="#000000" />
-
-      {/* 03: Test Coverage - Bottom Right */}
-      <circle cx="94" cy="86" r="4.5" fill="#D4D4D8" filter="url(#hiGlow)" opacity="0.9" />
-      <circle cx="94" cy="86" r="1.5" fill="#000000" />
-
-      {/* 04: Documentation - Bottom Left */}
-      <circle cx="34" cy="86" r="4.5" fill="#A1A1AA" filter="url(#hiGlow)" opacity="0.9" />
-      <circle cx="34" cy="86" r="1.5" fill="#000000" />
-
-      {/* Central Collision Flash Nucleus */}
-      <circle
-        cx="64"
-        cy="64"
-        r="8"
-        fill="url(#hiCore)"
-        filter="url(#hiGlow)"
-        opacity="0.85"
-        className={animated ? "animate-ping origin-center opacity-75" : ""}
-      />
-      <circle cx="64" cy="64" r="7" fill="url(#hiCore)" />
-      <circle cx="64" cy="64" r="3.5" fill="#FFFFFF" />
+      <g fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M88 63 128 105 168 63" stroke="#0B69F7" strokeWidth="31" />
+        <path d="M193 88 151 128 193 168" stroke="#EF4050" strokeWidth="31" />
+        <path d="M168 193 128 151 88 193" stroke="#08B773" strokeWidth="31" />
+        <path d="M63 168 105 128 63 88" stroke="#F5B800" strokeWidth="31" />
+      </g>
+      <circle cx="128" cy="24" r="17" fill="#0B69F7" />
+      <circle cx="232" cy="128" r="17" fill="#EF4050" />
+      <circle cx="128" cy="232" r="17" fill="#08B773" />
+      <circle cx="24" cy="128" r="17" fill="#F5B800" />
+      <rect x="112" y="112" width="32" height="32" rx="4" transform="rotate(45 128 128)" fill="#20262F" />
     </svg>
   );
 }
