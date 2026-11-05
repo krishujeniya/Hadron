@@ -56,3 +56,18 @@ def test_social_master_and_export_pipeline():
     assert "assets/logo.png" in script
     assert (ROOT / ".github/workflows/brand-assets.yml").is_file()
     assert (ROOT / "docs/design/BRAND.md").is_file()
+
+
+def test_raster_exports_match_repository_and_public_variants():
+    """Generated binaries in README and website must not silently diverge."""
+    pairs = (
+        ("assets/logo.png", "frontend/public/logo.png"),
+        ("assets/icon.png", "frontend/public/icon-512.png"),
+        ("assets/og-image.png", "frontend/public/og-image.png"),
+    )
+    for first, second in pairs:
+        a = ROOT / first
+        b = ROOT / second
+        assert a.is_file() and b.is_file(), (first, second)
+        assert a.read_bytes() == b.read_bytes(), f"Brand mismatch between {first} and {second}"
+        assert len(a.read_bytes()) > 1000, f"Unexpectedly empty export: {first}"
