@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
-type Formation = "drift" | "orbit";
 type Particle = {
   x: number; y: number; vx: number; vy: number; baseX: number; baseY: number;
   size: number; depth: number; rotation: number; spin: number;
@@ -27,10 +26,6 @@ export function ParticleField() {
   const hostRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pointerRef = useRef({ x: -1000, y: -1000, active: false });
-  const formationRef = useRef<Formation>("drift");
-  const [formation, setFormation] = useState<Formation>("drift");
-
-  formationRef.current = formation;
 
   useEffect(() => {
     const host = hostRef.current;
@@ -90,28 +85,16 @@ export function ParticleField() {
       ctx.clearRect(0, 0, width, height);
       const dt = last ? clamp((now - last) / 16.667, 0.3, 2) : 1;
       last = now;
-      const orbit = formationRef.current === "orbit";
       const time = now * 0.00025;
-      const cx = width * 0.52;
-      const cy = height * 0.52;
-      const orbitRadius = Math.min(width, height) * 0.35;
 
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
         if (!reduced) {
-          if (orbit) {
-            const angle = (i / particles.length) * TWO_PI + time * (0.25 + p.depth * 0.15);
-            const radius = orbitRadius * (0.58 + 0.46 * seed(i, 11));
-            const tx = cx + Math.cos(angle) * radius;
-            const ty = cy + Math.sin(angle) * radius * 0.88;
-            p.vx = (p.vx + (tx - p.x) * 0.006 * dt) * Math.pow(0.88, dt);
-            p.vy = (p.vy + (ty - p.y) * 0.006 * dt) * Math.pow(0.88, dt);
-          } else {
-            p.vx += Math.sin(time * 3 + p.phase) * 0.004 * dt;
-            p.vy -= 0.005 * dt;
-            p.vx *= Math.pow(0.994, dt);
-            p.vy *= Math.pow(0.994, dt);
-          }
+          // Free drift is the sole motion behavior; no formation switching.
+          p.vx += Math.sin(time * 3 + p.phase) * 0.004 * dt;
+          p.vy -= 0.005 * dt;
+          p.vx *= Math.pow(0.994, dt);
+          p.vy *= Math.pow(0.994, dt);
           const pointer = pointerRef.current;
           if (pointer.active) {
             const dx = p.x - pointer.x;
@@ -129,17 +112,11 @@ export function ParticleField() {
           p.x += p.vx * dt;
           p.y += p.vy * dt;
           p.rotation += p.spin * dt;
-          if (!orbit) {
-            const margin = 24;
-            if (p.y < -margin) p.y = height + margin;
-            if (p.y > height + margin) p.y = -margin;
-            if (p.x < -margin) p.x = width + margin;
-            if (p.x > width + margin) p.x = -margin;
-          }
-        } else if (orbit) {
-          const angle = (i / particles.length) * TWO_PI;
-          p.x = cx + Math.cos(angle) * orbitRadius * (0.58 + 0.46 * seed(i, 11));
-          p.y = cy + Math.sin(angle) * orbitRadius * 0.8;
+          const margin = 24;
+          if (p.y < -margin) p.y = height + margin;
+          if (p.y > height + margin) p.y = -margin;
+          if (p.x < -margin) p.x = width + margin;
+          if (p.x > width + margin) p.x = -margin;
         } else {
           p.x = p.baseX;
           p.y = p.baseY;
@@ -238,11 +215,6 @@ export function ParticleField() {
       onPointerLeave={() => { pointerRef.current.active = false; }}
     >
       <canvas ref={canvasRef} aria-hidden="true" />
-      <div className="hm-field-orbit" aria-hidden="true" />
-      <div className="hm-field-controls" role="group" aria-label="Particle formation">
-        <button type="button" aria-pressed={formation === "drift"} onClick={() => setFormation("drift")}>Free drift</button>
-        <button type="button" aria-pressed={formation === "orbit"} onClick={() => setFormation("orbit")}>Orbit</button>
-      </div>
     </div>
   );
 }
