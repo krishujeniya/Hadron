@@ -143,11 +143,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3 sm:gap-6 min-w-0">
             <HadronLogo size="sm" animated={false} />
             <nav className="hidden md:flex items-center gap-5 text-xs font-mono text-muted" aria-label="Public sections">
-              <a href="/#demo" className="hover:text-foreground transition-colors py-1">Live demo</a>
+              <a href="/#demo" className="hover:text-foreground transition-colors py-1">Sample review</a>
               <a href="/#how-it-works" className="hover:text-foreground transition-colors py-1">How it works</a>
               <Link href="/docs" className="hover:text-foreground transition-colors py-1">Docs</Link>
               <a href="/#security" className="hover:text-foreground transition-colors py-1">Security</a>
-              <a href="/#pricing" className="hover:text-foreground transition-colors py-1">Pricing</a>
+              <a href="/#pricing" className="hover:text-foreground transition-colors py-1">Get started</a>
               <a href="/#faq" className="hover:text-foreground transition-colors py-1">FAQ</a>
             </nav>
           </div>
@@ -167,9 +167,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
         <main id="main-content" tabIndex={-1} className="flex-1 min-w-0 max-w-full overflow-x-hidden focus:outline-none">
           {isSolutionsRoute || isDocsRoute || isPublicHome || isPublicHealth ? children : (
-            <section className="max-w-lg mx-auto px-6 py-20 space-y-4">
-              <h1 className="text-2xl font-semibold">Sign in to your workspace</h1>
-              <p className="text-muted">Authenticate with GitHub to view your reviews and repository activity.</p>
+            <section className="hm-signin-gate max-w-lg mx-auto px-6 py-20 space-y-4">
+              <h1 className="text-2xl sm:text-3xl tracking-tight font-semibold">Sign in to your workspace</h1>
+              <p className="text-muted">Sign in with GitHub to access your own repositories, review history, and human approval queue.</p>
               <button type="button" onClick={openAccountModal} className="min-h-[44px] px-4 py-2 rounded-lg bg-primary-action text-white dark:text-black font-semibold hover:opacity-90 transition">Sign in with GitHub</button>
             </section>
           )}
