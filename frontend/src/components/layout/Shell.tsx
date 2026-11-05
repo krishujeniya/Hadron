@@ -283,7 +283,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col flex-1 overflow-y-auto">
           {/* Hadron Logo & Header */}
           <div className="hm-sidebar-brand px-5 py-4 border-b border-border">
-            <HadronLogo size="sm" animated={true} />
+            <HadronLogo size="sm" animated={false} />
           </div>
 
           {/* Authenticated GitHub Account Card */}
