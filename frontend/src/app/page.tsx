@@ -84,11 +84,45 @@ export default function DashboardPage() {
   if (!currentAccount) return <PublicLandingPage />;
 
   return (
-    <div className="space-y-8">
+    <div className="hm-overview space-y-8">
+      {/* Informational hero: no fabricated performance metrics or live status claims. */}
+      <section className="hm-overview-hero" aria-labelledby="workspace-overview-title">
+        <div className="hm-overview-hero-copy">
+          <span className="hm-eyebrow">HADRON / YOUR REVIEW WORKSPACE</span>
+          <h1 id="workspace-overview-title">Review overview</h1>
+          <p className="hm-overview-description">
+            Everything that needs your attention, from running pull-request reviews
+            to findings that call for human judgment.
+          </p>
+          <div className="hm-overview-hero-actions">
+            <Link href="/reviews">Explore reviews <span aria-hidden="true">↗</span></Link>
+            <Link href="/hitl">Human approvals <span aria-hidden="true">↗</span></Link>
+          </div>
+        </div>
+        <div className="hm-orbits" aria-hidden="true">
+          <svg viewBox="0 0 420 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle className="hm-ring" cx="210" cy="210" r="177" />
+            <circle className="hm-ring hm-ring-inner" cx="210" cy="210" r="137" />
+            <circle className="hm-ring" cx="210" cy="210" r="95" />
+            <circle className="hm-ring hm-ring-inner" cx="210" cy="210" r="54" />
+            <path d="M35 210H385M210 35V385" stroke="#c8d2e3" strokeOpacity=".08" strokeDasharray="3 12" />
+            <circle cx="210" cy="210" r="25" fill="#f4f5f8" fillOpacity=".09" />
+            <circle className="hm-orbit-core" cx="210" cy="210" r="25" />
+            <path d="m198 210 12-12 12 12-12 12-12-12Z" fill="#f6f8fc" />
+            <circle className="hm-orbit-node" cx="210" cy="33" r="10" fill="#4285F4" />
+            <rect x="336" y="326" width="19" height="19" rx="5" fill="#EA4335" transform="rotate(-16 336 326)" />
+            <circle className="hm-orbit-node" cx="75" cy="231" r="9" fill="#34A853" />
+            <path d="m294 105 13 24h-26l13-24Z" fill="#FBBC04" />
+            <circle cx="339" cy="185" r="4" fill="#f4f5f8" />
+            <circle cx="152" cy="120" r="5" fill="#a5b7d2" />
+            <circle cx="265" cy="337" r="4" fill="#d6e0ec" />
+          </svg>
+        </div>
+      </section>
 
       {/* Account Context Banner */}
       {currentAccount ? (
-        <div className="border border-border rounded-2xl bg-surface p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm min-w-0 max-w-full">
+        <div className="hm-account-context border border-border rounded-2xl bg-surface p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm min-w-0 max-w-full">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             {currentAccount.avatar_url ? (
               <img
@@ -129,7 +163,7 @@ export default function DashboardPage() {
 
       {/* State-Aware Action Banner (T34) */}
       <div
-        className={`p-3.5 sm:p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm transition-all min-w-0 max-w-full ${
+        className={`hm-action-context p-3.5 sm:p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm transition-all min-w-0 max-w-full ${
           actionTone === "warning"
             ? "border-warn/40 bg-warn/10 text-foreground"
             : actionTone === "error"
@@ -154,13 +188,10 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      <header>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Review overview</h1>
-        <p className="text-muted text-sm mt-1">Pending decisions, running reviews, and recent findings for your workspace.</p>
-      </header>
-      <div className="space-y-8">
+      <div className="hm-section-divider" aria-hidden="true"><span>WORKSPACE ACTIVITY</span></div>
+      <div className="hm-overview-content space-y-8">
           {/* Operational Metrics Cards */}
-          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <section className="hm-metrics grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Workspace metrics">
             <StatCard label="Total reviews" value={reviewsResp?.total ?? reviews.length} err={!!reviewsErr} />
             <StatCard label="Watched repositories" value={repositories.length} tone="ok" />
             <StatCard
@@ -179,8 +210,8 @@ export default function DashboardPage() {
 
           {/* 1. Pending Human Decisions */}
           {pendingHitl.length > 0 && (
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
+            <section className="hm-list-section space-y-3">
+              <div className="hm-list-heading flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <h2 className="text-base font-semibold text-foreground font-mono">
                     Pending human decisions ({pendingHitl.length})
@@ -191,7 +222,7 @@ export default function DashboardPage() {
                   Open approvals queue →
                 </Link>
               </div>
-              <div className="border border-border rounded-xl bg-surface divide-y divide-border overflow-hidden shadow-sm">
+              <div className="hm-panel-list border border-border rounded-xl bg-surface divide-y divide-border overflow-hidden shadow-sm">
                 {pendingHitl.slice(0, 5).map((h) => (
                   <Link
                     key={h.id}
@@ -330,7 +361,7 @@ function StatCard({
       : "text-foreground";
 
   return (
-    <div className="border border-border rounded-xl bg-surface px-3.5 sm:px-4 py-3.5 hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150 shadow-sm min-w-0">
+    <div className="hm-stat-card border border-border rounded-xl bg-surface px-3.5 sm:px-4 py-3.5 hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150 shadow-sm min-w-0">
       <div className="text-xs uppercase tracking-wider font-mono text-muted break-words">{label}</div>
       <div className={`text-2xl font-mono font-bold mt-1.5 ${toneColor}`}>
         {err ? "N/A" : value ?? "…"}

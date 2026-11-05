@@ -83,6 +83,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const mobileTriggerRef = useRef<HTMLButtonElement>(null);
+  const workspacePage = [...PRIMARY_NAV, ...SECONDARY_NAV].find((item) =>
+    item.href === "/" ? pathname === "/" : pathname === item.href || pathname?.startsWith(`${item.href}/`)
+  )?.label || "Workspace";
 
   // Close mobile drawer on route navigation
   useEffect(() => {
@@ -203,7 +206,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   if (!currentAccount) return null;
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-bg text-foreground">
+    <div className="hadron-workspace min-h-screen flex flex-col md:flex-row bg-bg text-foreground">
       {/* Accessible Skip Link (T39 / S05) */}
       <a
         href="#main-content"
@@ -213,7 +216,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </a>
 
       {/* Mobile Top Bar with Ergonomic 44px Touch Targets */}
-      <div className="md:hidden flex items-center justify-between px-3 py-2 border-b border-border bg-panel sticky top-0 z-30">
+      <div className="hm-mobile-top md:hidden flex items-center justify-between px-3 py-2 border-b border-border bg-panel sticky top-0 z-30">
         <HadronLogo size="sm" animated={false} />
         <div className="flex items-center gap-1.5">
           <button
@@ -272,19 +275,19 @@ export function Shell({ children }: { children: React.ReactNode }) {
         id="mobile-nav-drawer"
         aria-label="Main Navigation"
         className={clsx(
-          "border-r border-border bg-panel flex flex-col justify-between shrink-0 transition-transform duration-200 z-50",
+          "hm-sidebar border-r border-border bg-panel flex flex-col justify-between shrink-0 transition-transform duration-200 z-50",
           "w-64 fixed inset-y-0 left-0 md:static md:translate-x-0",
           mobileOpen ? "translate-x-0 flex" : "-translate-x-full hidden md:flex"
         )}
       >
         <div className="flex flex-col flex-1 overflow-y-auto">
           {/* Hadron Logo & Header */}
-          <div className="px-5 py-4 border-b border-border flex items-center">
+          <div className="hm-sidebar-brand px-5 py-4 border-b border-border">
             <HadronLogo size="sm" animated={true} />
           </div>
 
           {/* Authenticated GitHub Account Card */}
-          <div className="p-3 mx-3 my-3 rounded-xl border border-border bg-surface">
+          <div className="hm-account-card p-3 mx-3 my-3 rounded-xl border border-border bg-surface">
             <div className="flex items-center gap-2.5">
               {currentAccount.avatar_url ? (
                 <img
@@ -336,7 +339,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={() => setPaletteOpen(true)}
-              className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl border border-border bg-surface hover:bg-panel transition-colors text-xs text-muted hover:text-foreground group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="hm-command-button w-full flex items-center justify-between px-3 py-1.5 rounded-xl border border-border bg-surface hover:bg-panel transition-colors text-xs text-muted hover:text-foreground group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               <span className="flex items-center gap-2">
                 <svg className="w-3.5 h-3.5 text-muted group-hover:text-foreground transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -352,8 +355,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Primary Navigation links */}
-          <nav aria-label="Primary" className="px-3 py-2 space-y-1">
-            <div className="px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
+          <nav aria-label="Primary" className="hm-nav-group px-3 py-2 space-y-1">
+            <div className="hm-nav-label px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
               Work
             </div>
             {PRIMARY_NAV.map((item) => {
@@ -367,7 +370,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   className={clsx(
-                    "flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all group",
+                    "hm-nav-link flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all group",
                     active
                       ? "bg-accent/10 text-accent font-semibold border-l-2 border-accent"
                       : "text-muted hover:text-foreground hover:bg-surface"
@@ -391,7 +394,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </nav>
 
           {/* Secondary Operations links */}
-          <nav aria-label="Operations" className="px-3 py-2 space-y-1 mt-2">
+          <nav aria-label="Operations" className="hm-nav-group px-3 py-2 space-y-1 mt-2">
             <div className="px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
               Operations
             </div>
@@ -422,27 +425,47 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* System Health & Theme / Footer */}
-        <div className="px-4 py-3 border-t border-border flex items-center justify-between text-[10px] text-muted font-mono">
-          <div className="flex items-center gap-1.5">
-            <span>Hadron Engine</span>
-            <span className="text-ok flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-ok" />
-              live
-            </span>
+        <div className="hm-sidebar-bottom px-4 py-3 border-t border-border flex items-center justify-between text-[10px] text-muted font-mono">
+          <div className="hm-engine-label">
+            <strong>Hadron workspace</strong>
+            <span>Connected: @{currentAccount.login}</span>
           </div>
           <ThemeToggle />
         </div>
       </aside>
 
       {/* Main Content */}
-      <main id="main-content" tabIndex={-1} className="flex-1 px-3 sm:px-6 md:px-8 py-4 md:py-6 pb-24 md:pb-6 overflow-x-hidden min-w-0 max-w-full focus:outline-none">
-        {children}
+      <main id="main-content" tabIndex={-1} className="hm-main flex-1 px-3 sm:px-6 md:px-8 py-4 md:py-6 pb-24 md:pb-6 overflow-x-hidden min-w-0 max-w-full focus:outline-none">
+        <div className="hm-main-inner">
+          <div className="hm-topbar">
+            <div className="hm-topbar-path" aria-label="Current workspace section">
+              <span>HADRON</span>
+              <span className="hm-topbar-separator" aria-hidden="true">/</span>
+              <span>WORKSPACE</span>
+              <span className="hm-topbar-separator" aria-hidden="true">/</span>
+              <strong>{workspacePage}</strong>
+            </div>
+            <div className="hm-topbar-actions">
+              <span className="hm-topbar-account">
+                {currentAccount.avatar_url && <img src={currentAccount.avatar_url} alt="" width={24} height={24} />}
+                @{currentAccount.login}
+              </span>
+              <Link href="/docs">Documentation ↗</Link>
+              <button type="button" onClick={() => setPaletteOpen(true)} aria-label="Search workspace commands">
+                <span>Search</span><kbd>⌘K</kbd>
+              </button>
+            </div>
+          </div>
+          <div className="hm-main-content">
+            {children}
+          </div>
+        </div>
       </main>
 
       {/* Mobile Ergonomic Bottom Navigation Dock */}
       <nav
         aria-label="Mobile Bottom Navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-panel/90 backdrop-blur-xl border-t border-border/80 px-1.5 py-1 flex items-center justify-around safe-area-pb shadow-lg max-w-full overflow-hidden"
+        className="hm-bottom-nav md:hidden fixed bottom-0 left-0 right-0 z-30 bg-panel/90 backdrop-blur-xl border-t border-border/80 px-1.5 py-1 flex items-center justify-around safe-area-pb shadow-lg max-w-full overflow-hidden"
       >
         {PRIMARY_NAV.map((item) => {
           const active =
@@ -453,6 +476,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <Link
               key={`mob-${item.href}`}
               href={item.href}
+              aria-current={active ? "page" : undefined}
               className={clsx(
                 "flex flex-col items-center justify-center min-w-[54px] min-h-[48px] py-1 px-2 rounded-xl text-[10px] font-mono transition-transform duration-150 active:scale-[0.98]",
                 active
