@@ -143,7 +143,7 @@ export function PublicLandingPage() {
   const { openAccountModal } = useGitHubAccount();
   const [selectedDiffId, setSelectedDiffId] = useState<string>("python-sql");
   const [isRunningReview, setIsRunningReview] = useState(false);
-  const [hasRun, setHasRun] = useState(true);
+  const [, setHasRun] = useState(true);
   const [copied, setCopied] = useState(false);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
 
@@ -158,7 +158,7 @@ export function PublicLandingPage() {
     }, 450);
   };
 
-  const handleCopyMarkdown = () => {
+  const handleCopyMarkdown = async () => {
     const md = `## Hadron Review: ${currentDiff.prTitle}
 **Verdict:** ${currentDiff.verdict} (Confidence: ${Math.round(currentDiff.confidence * 100)}%)
 
@@ -173,9 +173,13 @@ ${currentDiff.findings
 ---
 *Reviewed by Hadron Autonomous Multi-Agent Engine*`;
 
-    void navigator.clipboard.writeText(md);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(md);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
   };
 
   return (
@@ -243,9 +247,9 @@ ${currentDiff.findings
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6 min-w-0">
             <div className="min-w-0">
               <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-accent/10 text-accent text-xs font-mono font-semibold mb-2 max-w-full break-words">
-                Interactive playground · No sign-up required
+                Illustrative playground · No sign-up required
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold font-mono text-foreground break-words">Test a real pull request review</h2>
+              <h2 className="text-xl sm:text-2xl font-bold font-mono text-foreground break-words">Explore a sample pull request review</h2>
               <p className="text-xs text-muted mt-1 break-words">
                 Select a code sample or review the simulated output from our four parallel specialist agents.
               </p>
@@ -258,17 +262,27 @@ ${currentDiff.findings
                 disabled={isRunningReview}
                 className="inline-flex min-h-[44px] items-center px-4 py-2 rounded-xl bg-primary-action text-white dark:text-black text-xs font-semibold hover:opacity-90 active:scale-[0.98] transition-transform duration-150 ease-out disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
-                {isRunningReview ? "Analyzing diff..." : "Run review again"}
+                {isRunningReview ? "Replaying sample..." : "Replay sample"}
               </button>
             </div>
           </div>
 
           {/* Sample Preset Tabs */}
-          <div className="flex flex-wrap gap-2 min-w-0">
+          <div className="flex flex-wrap gap-2 min-w-0" role="tablist" aria-label="Code review examples">
             {SAMPLE_DIFFS.map((diff) => (
               <button
                 key={diff.id}
                 type="button"
+                role="tab"
+                aria-selected={selectedDiffId === diff.id}
+                onKeyDown={(event) => {
+                  if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+                  event.preventDefault();
+                  const current = SAMPLE_DIFFS.findIndex((entry) => entry.id === selectedDiffId);
+                  const next = (current + (event.key === "ArrowRight" ? 1 : -1) + SAMPLE_DIFFS.length) % SAMPLE_DIFFS.length;
+                  setSelectedDiffId(SAMPLE_DIFFS[next].id);
+                  event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
+                }}
                 onClick={() => {
                   setSelectedDiffId(diff.id);
                   setHasRun(true);
@@ -318,7 +332,7 @@ ${currentDiff.findings
               {isRunningReview ? (
                 <div className="py-12 flex flex-col items-center justify-center gap-3 text-xs font-mono text-muted">
                   <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-                  <span>Parallel agents checking syntax tree...</span>
+                  <span>Replaying example findings...</span>
                 </div>
               ) : (
                 <div className="space-y-3 flex-1 overflow-y-auto min-w-0">
@@ -570,88 +584,30 @@ ${currentDiff.findings
       {/* ------------------------------------------------------------------ */}
       {/* SECTION 7: PRICING & ACCESS                                        */}
       {/* ------------------------------------------------------------------ */}
-      <section id="pricing" className="px-3 sm:px-6 max-w-6xl mx-auto scroll-mt-24 space-y-8 min-w-0 max-w-full">
-        <div className="text-center max-w-2xl mx-auto space-y-3 min-w-0">
-          <h2 className="text-2xl sm:text-3xl font-extrabold font-mono text-foreground break-words">Developer-first pricing</h2>
-          <p className="text-xs sm:text-sm text-muted break-words">Transparent access tiers for open source developers and engineering organizations.</p>
+      <section id="pricing" aria-labelledby="hm-access-title">
+        <div className="max-w-3xl space-y-4">
+          <span className="hm-eyebrow" style={{ marginBottom: 0 }}>GET STARTED / OPEN SOURCE</span>
+          <h2 id="hm-access-title">Run Hadron in the workflow you already use.</h2>
+          <p className="text-muted leading-relaxed text-base max-w-2xl">Explore the source, review the deployment requirements, or connect your GitHub account to inspect the workspace. Availability and costs depend on your own infrastructure and configured providers.</p>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 min-w-0">
-          {/* Community */}
-          <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6 flex flex-col justify-between space-y-6 min-w-0">
-            <div className="space-y-4 min-w-0">
-              <div>
-                <h3 className="font-bold text-base font-mono text-foreground">Community</h3>
-                <p className="text-xs text-muted mt-1">For individual developers and open source projects.</p>
-              </div>
-              <div className="text-2xl sm:text-3xl font-extrabold font-mono text-foreground">Free</div>
-              <ul className="text-xs text-muted space-y-2 font-mono">
-                <li className="flex items-center gap-2">✓ Unlimited public repositories</li>
-                <li className="flex items-center gap-2">✓ 4 parallel specialist agents</li>
-                <li className="flex items-center gap-2">✓ GitHub pull request comments</li>
-                <li className="flex items-center gap-2">✓ Community support</li>
-              </ul>
-            </div>
-            <button
-              type="button"
-              onClick={openAccountModal}
-              className="w-full inline-flex min-h-[44px] items-center justify-center rounded-xl border border-border bg-panel text-xs font-mono font-semibold text-foreground hover:bg-surface transition-colors"
-            >
-              Get started free
-            </button>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-9">
+          <div className="rounded-2xl border border-border bg-surface p-7 space-y-4">
+            <span className="hm-capability-kicker">For developers</span>
+            <h3>Explore the platform</h3>
+            <p className="text-muted leading-relaxed text-sm">Start with the architecture and a sample review. No account is needed for the illustrative demo.</p>
+            <a href="#demo" className="inline-flex font-semibold text-sm underline underline-offset-4">Open sample review ↗</a>
           </div>
-
-          {/* Team */}
-          <div className="rounded-2xl border-2 border-accent bg-surface p-4 sm:p-6 flex flex-col justify-between space-y-6 relative shadow-xl min-w-0">
-            <div className="absolute -top-3 right-4 sm:right-6 px-3 py-0.5 rounded-full bg-accent text-bg text-[10px] font-mono font-bold uppercase tracking-wider">
-              Most Popular
-            </div>
-            <div className="space-y-4 min-w-0">
-              <div>
-                <h3 className="font-bold text-base font-mono text-foreground">Team</h3>
-                <p className="text-xs text-muted mt-1">For growing teams shipping production software.</p>
-              </div>
-              <div className="text-2xl sm:text-3xl font-extrabold font-mono text-foreground">
-                $29 <span className="text-xs font-normal text-muted">/ dev / month</span>
-              </div>
-              <ul className="text-xs text-foreground space-y-2 font-mono">
-                <li className="flex items-center gap-2">✓ Unlimited private repositories</li>
-                <li className="flex items-center gap-2">✓ Custom review rule configuration</li>
-                <li className="flex items-center gap-2">✓ Human-in-the-Loop review queue</li>
-                <li className="flex items-center gap-2">✓ Priority queue execution</li>
-                <li className="flex items-center gap-2">✓ Slack / Discord notifications</li>
-              </ul>
-            </div>
-            <button
-              type="button"
-              onClick={openAccountModal}
-              className="w-full inline-flex min-h-[44px] items-center justify-center rounded-xl bg-primary-action text-white dark:text-black text-xs font-mono font-semibold hover:opacity-90 transition-colors shadow-sm"
-            >
-              Start team trial
-            </button>
+          <div className="rounded-2xl border border-border bg-surface p-7 space-y-4">
+            <span className="hm-capability-kicker">For teams</span>
+            <h3>Connect a workspace</h3>
+            <p className="text-muted leading-relaxed text-sm">Authenticate with GitHub to view account-scoped repositories and review activity.</p>
+            <button type="button" onClick={openAccountModal} className="inline-flex font-semibold text-sm underline underline-offset-4">Sign in with GitHub ↗</button>
           </div>
-
-          {/* Enterprise */}
-          <div className="rounded-2xl border border-border bg-surface p-4 sm:p-6 flex flex-col justify-between space-y-6 min-w-0">
-            <div className="space-y-4 min-w-0">
-              <div>
-                <h3 className="font-bold text-base font-mono text-foreground">Enterprise</h3>
-                <p className="text-xs text-muted mt-1">For security-sensitive or regulated engineering teams.</p>
-              </div>
-              <div className="text-2xl sm:text-3xl font-extrabold font-mono text-foreground">Custom</div>
-              <ul className="text-xs text-muted space-y-2 font-mono">
-                <li className="flex items-center gap-2">✓ Self-hosted VPC deployment</li>
-                <li className="flex items-center gap-2">✓ Bring your own LLM API keys</li>
-                <li className="flex items-center gap-2">✓ SAML SSO / Okta integration</li>
-                <li className="flex items-center gap-2">✓ Dedicated SLA & account manager</li>
-              </ul>
-            </div>
-            <a
-              href="mailto:team@hadron.vercel.app?subject=Hadron Enterprise Inquiry"
-              className="w-full inline-flex min-h-[44px] items-center justify-center rounded-xl border border-border bg-panel text-xs font-mono font-semibold text-foreground hover:bg-surface transition-colors"
-            >
-              Contact engineering
-            </a>
+          <div className="rounded-2xl border border-border bg-surface p-7 space-y-4">
+            <span className="hm-capability-kicker">For builders</span>
+            <h3>Inspect and self-host</h3>
+            <p className="text-muted leading-relaxed text-sm">Read the repository setup guide, environment requirements and deployment options.</p>
+            <a href="https://github.com/krishujeniya/Hadron#readme" target="_blank" rel="noopener noreferrer" className="inline-flex font-semibold text-sm underline underline-offset-4">View source on GitHub ↗</a>
           </div>
         </div>
       </section>
@@ -669,7 +625,7 @@ ${currentDiff.findings
           {[
             {
               q: "How does Hadron prevent hallucinations common in AI chatbots?",
-              a: "Rather than asking a single general-purpose chat model to review raw files, Hadron parses the Abstract Syntax Tree, extracts modified symbols, and runs deterministic rule validators. Every reported issue requires exact file, line number, and rule citations.",
+              a: "Rather than asking a single general-purpose chat model to review raw files, Hadron parses the Abstract Syntax Tree, extracts modified symbols, and runs deterministic rule validators. Findings are designed to include file locations and supporting rationale for human verification.",
             },
             {
               q: "Can Hadron automatically approve or block pull requests?",
@@ -685,7 +641,7 @@ ${currentDiff.findings
             },
             {
               q: "Does Hadron store or train on our code?",
-              a: "No. Your source code is processed ephemerally in memory-isolated sandboxes with network egress blocked. Code is never used to train public or proprietary machine learning models.",
+              a: "Hadron is designed to process code for review. Check your configured model provider and deployment policy for data retention and training terms.",
             },
           ].map((item, idx) => (
             <div key={idx} className="rounded-2xl border border-border bg-surface overflow-hidden min-w-0">
@@ -711,32 +667,14 @@ ${currentDiff.findings
       {/* ------------------------------------------------------------------ */}
       {/* SECTION 9: CLOSING ACTION                                          */}
       {/* ------------------------------------------------------------------ */}
-      <section className="px-3 sm:px-6 max-w-4xl mx-auto text-center min-w-0 max-w-full">
-        <div className="rounded-3xl border border-border bg-surface p-5 sm:p-8 md:p-12 space-y-6 shadow-2xl relative overflow-hidden min-w-0 max-w-full">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold font-mono text-foreground tracking-tight break-words">
-            Stop letting security bugs slip into main.
-          </h2>
-          <p className="text-xs sm:text-sm text-muted max-w-xl mx-auto leading-relaxed break-words">
-            Install the Hadron GitHub App in two minutes. Your next pull request will be autonomously evaluated across security, code quality, test coverage, and documentation.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-            <button
-              type="button"
-              onClick={openAccountModal}
-              className="w-full sm:w-auto inline-flex min-h-[44px] items-center justify-center px-8 py-3 rounded-xl bg-primary-action text-white dark:text-black font-semibold text-sm hover:opacity-90 active:scale-[0.98] transition-transform duration-150 ease-out shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              Install Hadron for GitHub
-            </button>
-            <Link
-              href="/solutions/python-security-audit"
-              className="w-full sm:w-auto inline-flex min-h-[44px] items-center justify-center px-6 py-3 rounded-xl border border-border bg-surface text-foreground font-medium text-sm hover:bg-panel active:scale-[0.98] transition-transform duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              Explore Solutions →
-            </Link>
+      <section aria-labelledby="hm-closing-title">
+        <div className="hm-closing">
+          <div>
+            <span className="hm-window-label">THE NEXT MERGE STARTS HERE</span>
+            <h2 id="hm-closing-title" style={{ marginTop: 22 }}>Better context.<br />More confident decisions.</h2>
+            <p>Explore Hadron's sample review, connect your workspace, or browse the source to see how the engine works.</p>
           </div>
-          <p className="text-xs text-muted font-mono pt-2">
-            No credit card required · Free for public repositories · 2-minute setup
-          </p>
+          <button type="button" className="hm-button" onClick={openAccountModal}>Open your workspace <span aria-hidden="true">↗</span></button>
         </div>
       </section>
 
