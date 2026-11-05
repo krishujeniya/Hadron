@@ -60,16 +60,8 @@
   box-shadow: 10px 0 40px rgba(18,19,23,.018);
 }
 .hm-sidebar-brand {
-  padding: 29px 24px 27px;
+  padding: 20px 24px;
   border-color: var(--hw-line);
-}
-.hm-sidebar-brand::after {
-  content: "AUTONOMOUS CODE INTELLIGENCE";
-  display: block;
-  font: 600 9px/1.3 ui-monospace, "JetBrains Mono", monospace;
-  letter-spacing: .085em;
-  color: rgb(var(--muted));
-  margin: 11px 0 0 1px;
 }
 .hm-sidebar .hm-account-card {
   margin: 12px 14px 24px;
@@ -155,16 +147,16 @@
 .hm-main-inner {
   width: min(100%, 1390px);
   margin: 0 auto;
-  padding-top: 36px;
+  padding-top: 0;
   min-width: 0;
 }
 .hm-topbar {
-  min-height: 78px;
+  min-height: 64px;
   display:flex;
   align-items:center;
   justify-content: space-between;
   gap: 24px;
-  padding: 21px 0;
+  padding: 12px 0;
   border-bottom: 1px solid var(--hw-line);
 }
 .hm-topbar-path {
@@ -196,11 +188,11 @@
   font-size:11px;font-weight:600;color:rgb(var(--muted));
 }
 .hm-topbar-account img { width:24px;height:24px;border-radius:50%;border:1px solid var(--hw-line); }
-.hm-main-content { padding-block: clamp(26px, 3.5vw, 52px) 50px; }
+.hm-main-content { padding-block: clamp(16px, 2vw, 28px) 44px; }
 /* Page heading used by review, approval, repository and economics routes */
 .hm-page-header {
   position:relative;
-  padding: 0 0 30px;
+  padding: 0 0 22px;
   border-color:var(--hw-line);
   align-items: flex-end;
   margin-bottom: 4px;
@@ -258,13 +250,13 @@
   letter-spacing:-.06em;
   font-weight:640;
   color:#fff;
-  margin:20px 0;
+  margin:16px 0;
 }
 .hm-overview-hero p.hm-overview-description {
   color:#c8cfdb;font-size:clamp(13px, 1.05vw, 16px);
   line-height:1.7;max-width:540px;
 }
-.hm-overview-hero-actions {display:flex;gap:12px;flex-wrap:wrap;margin-top:30px;}
+.hm-overview-hero-actions {display:flex;gap:12px;flex-wrap:wrap;margin-top:24px;}
 .hm-overview-hero-actions a {
   min-height:44px;
   display:inline-flex;align-items:center;justify-content:center;
