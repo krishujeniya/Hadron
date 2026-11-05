@@ -119,6 +119,9 @@ try {
   await darkPublic.page.goto(base);
   await darkPublic.page.getByRole('heading', { name: /Every pull request deserves/i }).waitFor();
   assert(await darkPublic.page.locator('.hm-stage canvas').count(), 'decorative motion canvas must exist');
+  assert.equal(await darkPublic.page.locator('.hm-field-controls, .hm-field-orbit').count(), 0, 'no orbit decoration or mode selector may render');
+  assert.equal(await darkPublic.page.getByRole('button', { name: 'Orbit', exact: true }).count(), 0, 'orbit action must not exist');
+  assert.equal(await darkPublic.page.getByRole('button', { name: 'Free drift', exact: true }).count(), 0, 'free drift runs automatically without a mode button');
   const darkSurface = await darkPublic.page.locator('.hadron-public').evaluate((node) => getComputedStyle(node).backgroundColor);
   assert.notEqual(darkSurface, 'rgba(0, 0, 0, 0)', 'dark public theme needs a solid readable surface');
   assert.deepEqual(darkPublic.errors, []);

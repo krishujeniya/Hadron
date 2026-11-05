@@ -203,20 +203,6 @@
 }
 .hm-field { position:absolute; inset:0; z-index:1; overflow:hidden; touch-action:pan-y; }
 .hm-field canvas { position:absolute; inset:0; width:100%!important; height:100%!important; pointer-events:none; }
-.hm-field-orbit {
-  position:absolute; width:56%; aspect-ratio:1; border:1px solid rgba(255,255,255,.045);
-  border-radius:50%; left:22%; top:18%; transform:rotate(-20deg); pointer-events:none;
-}
-.hm-field-orbit::before { content:""; position:absolute; inset:17%; border-radius:50%; border:1px dashed rgba(255,255,255,.09); }
-.hm-field-controls {
-  position:absolute; bottom:21px; right:20px; z-index:3;
-  display:flex; gap:3px; padding:4px; border-radius:999px;
-  background:rgba(255,255,255,.075); border:1px solid rgba(255,255,255,.16);
-  backdrop-filter:blur(16px);
-}
-.hm-field-controls button { border-radius:999px; color:#d0d7e3; min-height:32px; padding:5px 13px; font:600 11px/1 ui-monospace,monospace; }
-.hm-field-controls button[aria-pressed="true"] { background:#f6f7f9; color:#121317; }
-.hm-field-controls button:focus-visible { outline:2px solid #fff; outline-offset:3px; }
 .hm-stage-top { position:relative; z-index:2; display:flex; justify-content:space-between; gap:12px; align-items:center; }
 .hm-window-label { font:600 10px/1.4 ui-monospace,monospace; letter-spacing:.11em; text-transform:uppercase; color:#c7cbd3; }
 .hm-status { display:flex; align-items:center; gap:8px; font:500 10px/1.4 ui-monospace,monospace; color:#b8c0cd; }
@@ -336,7 +322,6 @@
   .hm-code {font-size:11px;padding:18px 14px;}
   .hm-result {margin-inline:10px;}
   .hm-stage-foot {padding-right:0;transform:translateY(-9px);}
-  .hm-field-controls {right:12px;bottom:12px;}
   .hm-notes span+span::before {margin-right:7px;}
   .hm-capabilities {grid-template-columns:1fr;}
   .hm-capability, .hm-capability:first-child, .hm-capability:nth-child(4) {grid-column:1;min-height:230px;}
