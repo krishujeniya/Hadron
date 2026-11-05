@@ -189,12 +189,12 @@ ${currentDiff.findings
       {/* ------------------------------------------------------------------ */}
       <section className="hm-hero" aria-labelledby="hadron-hero-title">
         <div className="hm-hero-copy">
-          <div className="hm-eyebrow"><span className="hm-eyebrow-dot" aria-hidden="true" /> AUTONOMOUS CODE INTELLIGENCE / HADRON</div>
+          
           <h1 id="hadron-hero-title" className="hm-headline">Every pull request deserves <span className="hm-headline-soft">a second brain.</span></h1>
           <p className="hm-lead">Meet the multi-agent review engine that thinks in parallel. Security, quality, testing and documentation specialists examine your changes, then bring the findings together for a more informed merge.</p>
           <div className="hm-actions">
             <button type="button" onClick={openAccountModal} className="hm-button">
-              Connect with GitHub
+              Sign in with GitHub
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 12h16m-7-7 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
             <a className="hm-button hm-button-secondary" href="#demo">Explore the demo <span aria-hidden="true">↗</span></a>
@@ -251,7 +251,7 @@ ${currentDiff.findings
               </div>
               <h2 className="text-xl sm:text-2xl font-bold font-mono text-foreground break-words">Explore a sample pull request review</h2>
               <p className="text-xs text-muted mt-1 break-words">
-                Select a code sample or review the simulated output from our four parallel specialist agents.
+                Choose a prepared sample to explore illustrative findings. This playground does not run a live review or access your repositories.
               </p>
             </div>
 
@@ -421,7 +421,7 @@ ${currentDiff.findings
         <div className="text-center max-w-2xl mx-auto space-y-3 min-w-0">
           <h2 className="text-2xl sm:text-3xl font-extrabold font-mono text-foreground break-words">Works with your developer stack</h2>
           <p className="text-xs sm:text-sm text-muted break-words">
-            Connects directly to your GitHub pull requests with zero changes to existing CI workflows.
+            Integrates with GitHub pull-request events once your GitHub App, webhooks, and provider configuration are in place.
           </p>
         </div>
 
@@ -430,7 +430,7 @@ ${currentDiff.findings
             <div className="font-mono text-xs font-semibold text-accent uppercase">Native App</div>
             <h3 className="font-bold text-base font-mono text-foreground break-words">GitHub App</h3>
             <p className="text-xs text-muted leading-relaxed break-words">
-              One-click installation on individual repositories or entire organizations. Delivers inline review comments and status checks.
+              Configure GitHub integration for selected repositories. With the required permissions, Hadron can post pull-request findings.
             </p>
           </div>
 
@@ -477,7 +477,7 @@ ${currentDiff.findings
                 Python Security Audit
               </h3>
               <p className="text-xs text-muted leading-relaxed">
-                Taint analysis across SQLAlchemy, raw SQL queries, and subprocess sinks to eliminate injections and CVEs.
+                Reviews Python changes for suspicious input handling, unsafe queries, and security risks that need developer attention.
               </p>
             </div>
             <span className="text-xs font-mono font-medium text-foreground flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
@@ -495,7 +495,7 @@ ${currentDiff.findings
                 Next.js PR Review
               </h3>
               <p className="text-xs text-muted leading-relaxed">
-                Guarantees Server and Client Component separation, flags async fetch waterfalls, and checks Core Web Vitals.
+                Reviews React and Next.js changes for component-boundary issues, async waterfalls, and potential performance pitfalls.
               </p>
             </div>
             <span className="text-xs font-mono font-medium text-foreground flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
@@ -513,7 +513,7 @@ ${currentDiff.findings
                 FastAPI Code Quality
               </h3>
               <p className="text-xs text-muted leading-relaxed">
-                Detects event loop blocking, validates async context managers, and audits Pydantic v2 migrations.
+                Reviews FastAPI changes for potentially blocking calls, resource-handling mistakes, and migration issues.
               </p>
             </div>
             <span className="text-xs font-mono font-medium text-foreground flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
@@ -531,7 +531,7 @@ ${currentDiff.findings
                 Go Concurrency Checker
               </h3>
               <p className="text-xs text-muted leading-relaxed">
-                Tracks goroutine termination paths, identifies unbuffered channel deadlocks, and enforces mutex lock ordering.
+                Reviews Go changes for possible goroutine leaks, channel deadlocks, and synchronization hazards.
               </p>
             </div>
             <span className="text-xs font-mono font-medium text-foreground flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
@@ -552,29 +552,29 @@ ${currentDiff.findings
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold font-mono text-foreground break-words">Security in plain English</h2>
             <p className="text-xs sm:text-sm text-muted break-words">
-              Because an automated review engine reads pull requests, our security and privacy model is transparent and strictly bounded.
+              Hadron needs repository access to review pull requests. Permissions, retention, and provider behavior depend on the setup you configure.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 min-w-0">
             <div className="space-y-2 min-w-0">
-              <h3 className="font-bold text-sm font-mono text-foreground break-words">Read-only PR diff access</h3>
+              <h3 className="font-bold text-sm font-mono text-foreground break-words">Scoped GitHub integration</h3>
               <p className="text-xs text-muted leading-relaxed break-words">
-                We only read the pull request diff and touched files necessary to complete the review. We never clone untouched repositories or access unpushed local code.
+                Reviews inspect pull-request changes and may retrieve related repository context. Keep GitHub permissions scoped to the required repositories and actions.
               </p>
             </div>
 
             <div className="space-y-2 min-w-0">
-              <h3 className="font-bold text-sm font-mono text-foreground break-words">Zero model training</h3>
+              <h3 className="font-bold text-sm font-mono text-foreground break-words">Provider-aware data handling</h3>
               <p className="text-xs text-muted leading-relaxed break-words">
-                Your private code is never stored for training or used to train public or proprietary machine learning models. Code in transit is protected with TLS 1.3.
+                Code may be sent to a configured model provider. Check its retention terms, training controls, and regional settings before connecting private code.
               </p>
             </div>
 
             <div className="space-y-2 min-w-0">
-              <h3 className="font-bold text-sm font-mono text-foreground break-words">Isolated ephemeral execution</h3>
+              <h3 className="font-bold text-sm font-mono text-foreground break-words">Deployment boundaries</h3>
               <p className="text-xs text-muted leading-relaxed break-words">
-                Every AST parse and syntax check executes in memory-isolated sandboxes with network egress completely blocked, terminating immediately after review.
+                Hadron includes validation and security controls. Verify worker isolation, network policies, secrets, and storage for your own deployment.
               </p>
             </div>
           </div>
@@ -624,20 +624,20 @@ ${currentDiff.findings
         <div className="space-y-4 min-w-0">
           {[
             {
-              q: "How does Hadron prevent hallucinations common in AI chatbots?",
+              q: "How does Hadron reduce unsupported AI review findings?",
               a: "Rather than asking a single general-purpose chat model to review raw files, Hadron parses the Abstract Syntax Tree, extracts modified symbols, and runs deterministic rule validators. Findings are designed to include file locations and supporting rationale for human verification.",
             },
             {
               q: "Can Hadron automatically approve or block pull requests?",
-              a: "Yes. Hadron can be added to your GitHub branch protection rules as a required status check. Depending on your configuration, clean reviews pass immediately, while critical security flaws request changes and block merge.",
+              a: "Review verdicts and status checks can inform merge decisions when properly configured. Branch protection and repository rules determine whether a pull request can merge.",
             },
             {
               q: "What permissions does the GitHub App require?",
-              a: "The GitHub App requests read access to pull request diffs and repository metadata, and write access to pull request reviews and status checks. It does not require admin, billing, or organization-level write permissions.",
+              a: "Required permissions depend on the integration. Review the GitHub App installation scope; reading pull requests and posting reviews require different access levels.",
             },
             {
               q: "How does the Human-in-the-Loop review queue work?",
-              a: "When an agent computes confidence below your configured threshold (such as 85%), or flags high-risk database migrations, the PR is routed to your Hadron HITL queue for human sign-off before comments are published to GitHub.",
+              a: "Findings requiring judgment or falling below the configured confidence threshold can enter the human review queue for an explicit decision.",
             },
             {
               q: "Does Hadron store or train on our code?",
@@ -784,7 +784,7 @@ ${currentDiff.findings
 
         <div className="border-t border-border/60 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px]">
           <p>© 2026 Hadron. Autonomous pull request review engine for GitHub.</p>
-          <p>Zero customer code training · Read-only PR diff access · Ephemeral sandboxes</p>
+          <p>Zero customer code training · Scoped GitHub integration · Ephemeral sandboxes</p>
         </div>
       </footer>
     </div>
