@@ -240,7 +240,7 @@ ${currentDiff.findings
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* SECTION 3: LIVE REVIEW DEMO (TRY WITHOUT SIGNUP)                    */}
+      {/* SECTION 3: ILLUSTRATIVE REVIEW PLAYGROUND (NO SIGNUP)                 */}
       {/* ------------------------------------------------------------------ */}
       <section id="demo" className="px-3 sm:px-6 max-w-6xl mx-auto scroll-mt-24 min-w-0 max-w-full overflow-hidden">
         <div className="rounded-3xl border border-border bg-surface p-4 sm:p-8 space-y-6 shadow-xl min-w-0 max-w-full overflow-hidden">
@@ -298,7 +298,7 @@ ${currentDiff.findings
             ))}
           </div>
 
-          {/* Diff Viewer & Live Findings Grid */}
+          {/* Diff Viewer & Illustrative Findings Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-w-0 max-w-full">
             {/* Input Diff */}
             <div className="rounded-2xl border border-border bg-bg p-3.5 sm:p-4 flex flex-col min-w-0 max-w-full overflow-hidden">
@@ -582,7 +582,7 @@ ${currentDiff.findings
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* SECTION 7: PRICING & ACCESS                                        */}
+      {/* SECTION 7: ACCESS AND SETUP (NO UNVERIFIED PRICING)                  */}
       {/* ------------------------------------------------------------------ */}
       <section id="pricing" aria-labelledby="hm-access-title">
         <div className="max-w-3xl space-y-4">
@@ -784,7 +784,7 @@ ${currentDiff.findings
 
         <div className="border-t border-border/60 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px]">
           <p>© 2026 Hadron. Autonomous pull request review engine for GitHub.</p>
-          <p>Zero customer code training · Scoped GitHub integration · Ephemeral sandboxes</p>
+          <p>GitHub integration and model-provider policies vary by deployment</p>
         </div>
       </footer>
     </div>
