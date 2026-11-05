@@ -126,7 +126,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
   if (isSolutionsRoute || isPublicHome || isPublicHealth || (!currentAccount && pathname !== "/auth/callback")) {
     return (
-      <div className="min-h-screen bg-bg text-foreground flex flex-col">
+      <div className="hadron-public min-h-screen bg-bg text-foreground flex flex-col">
         {/* Accessible Skip Link (T39 / S05) */}
         <a
           href="#main-content"
@@ -135,12 +135,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
           Skip to main content
         </a>
 
-        <header className="border-b border-border bg-surface/85 px-3 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-40 backdrop-blur-xl min-w-0 max-w-full">
+        <header className="hm-header border-b border-border bg-surface/85 px-3 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-40 backdrop-blur-xl min-w-0 max-w-full">
           <div className="flex items-center gap-3 sm:gap-6 min-w-0">
             <HadronLogo size="sm" animated={false} />
             <nav className="hidden md:flex items-center gap-5 text-xs font-mono text-muted" aria-label="Public sections">
               <a href="/#demo" className="hover:text-foreground transition-colors py-1">Live demo</a>
               <a href="/#how-it-works" className="hover:text-foreground transition-colors py-1">How it works</a>
+              <Link href="/docs" className="hover:text-foreground transition-colors py-1">Docs</Link>
               <a href="/#security" className="hover:text-foreground transition-colors py-1">Security</a>
               <a href="/#pricing" className="hover:text-foreground transition-colors py-1">Pricing</a>
               <a href="/#faq" className="hover:text-foreground transition-colors py-1">FAQ</a>
@@ -179,6 +180,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <div className="flex flex-wrap items-center gap-4 text-xs">
               <Link href="/solutions/python-security-audit" className="hover:text-foreground transition-colors">Python Security</Link>
               <Link href="/solutions/nextjs-pr-review" className="hover:text-foreground transition-colors">Next.js Review</Link>
+              <Link href="/docs" className="hover:text-foreground transition-colors">Docs</Link>
               <a href="https://github.com/krishujeniya/Hadron" target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors">GitHub ↗</a>
             </div>
           </div>
