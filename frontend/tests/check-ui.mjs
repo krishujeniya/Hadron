@@ -43,6 +43,10 @@ try {
     const run = await setup({ width });
     await run.page.goto(base);
     await run.page.getByRole('button', { name: 'Sign In to App' }).waitFor();
+    const publicLogo = run.page.locator('.hm-header img[src="/logo.svg"]');
+    await publicLogo.waitFor({ state: 'attached' });
+    assert.equal(await publicLogo.getAttribute('alt'), 'Hadron', 'public logo must have a descriptive accessible name');
+    assert.equal(await run.page.locator('.hm-header img[src="/logo-dark.svg"]').count(), 1, 'the dark-mode logo variant must exist');
     const hero = run.page.getByRole('heading', { name: /Every pull request deserves/i });
     await hero.waitFor();
     const publicBounds = await run.page.evaluate(() => {

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="256" viewBox="0 0 900 256">
+  <title>Hadron</title>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M88 63 128 105 168 63" stroke="#0B69F7" stroke-width="31"/>
+  <path d="M193 88 151 128 193 168" stroke="#EF4050" stroke-width="31"/>
+  <path d="M168 193 128 151 88 193" stroke="#08B773" stroke-width="31"/>
+  <path d="M63 168 105 128 63 88" stroke="#F5B800" stroke-width="31"/>
+</g>
+<g>
+  <circle cx="128" cy="24" r="17" fill="#0B69F7"/>
+  <circle cx="232" cy="128" r="17" fill="#EF4050"/>
+  <circle cx="128" cy="232" r="17" fill="#08B773"/>
+  <circle cx="24" cy="128" r="17" fill="#F5B800"/>
+  <rect x="112" y="112" width="32" height="32" rx="4" transform="rotate(45 128 128)" fill="#20262F"/>
+</g>
+  <!-- Wordmark: monogram H with blue bridge + adaptable typography. -->
+  <g fill="#20262F">
+    <path d="M316 77h21v107h-21zM389 77h21v107h-21z"/>
+    <text x="426" y="183" font-family="Inter, 'Inter Display', 'Arial', sans-serif"
+          font-weight="760" font-size="134" letter-spacing="-6">adron</text>
+  </g>
+  <path d="M337 132 389 113 389 137 337 156Z" fill="#0B69F7"/>
+</svg>
