@@ -92,7 +92,7 @@ export default function EconomicsPage() {
       {/* Budget gauge */}
       <section className="border border-border rounded-xl bg-panel p-5 shadow-sm space-y-3">
         <div className="flex items-baseline justify-between">
-          <div className="text-xs uppercase tracking-wider text-muted font-mono font-semibold">
+          <div className="text-xs normal-case tracking-normal text-muted font-mono font-semibold">
             Daily Budget Ceiling (UTC)
           </div>
           <div className="text-xs text-muted font-mono">
@@ -121,7 +121,7 @@ export default function EconomicsPage() {
               className="h-3 rounded bg-surface border border-border overflow-hidden"
             >
               <div
-                className={`h-full transition-all ${
+                className={`h-full transition-colors ${
                   budget.exceeded
                     ? "bg-err"
                     : budget.daily_utilization > 0.8
@@ -191,7 +191,7 @@ export default function EconomicsPage() {
       <section className="border border-border rounded-xl bg-panel p-5 space-y-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
           <div>
-            <h2 className="text-sm font-semibold text-foreground font-mono">Daily Spend Trend (30 Days)</h2>
+            <h2 className="text-sm font-semibold text-foreground font-sans">Daily Spend Trend (30 Days)</h2>
             <p className="text-xs text-muted">Dense UTC daily timeline aggregated across authorized review runs.</p>
           </div>
           <Button
@@ -282,8 +282,8 @@ function Stat({
   loading?: boolean;
 }) {
   return (
-    <div className="border border-border rounded-xl bg-panel px-4 py-3 shadow-sm hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150">
-      <div className="text-xs uppercase tracking-wide text-muted font-mono">{label}</div>
+    <div className="border border-border rounded-xl bg-panel px-4 py-3 shadow-sm hover:border-muted/50 hover:-translate-y-0.5 transition-colors duration-150">
+      <div className="text-xs normal-case tracking-normal text-muted font-mono">{label}</div>
       <div className="text-2xl font-mono font-bold mt-1 text-foreground">
         {err ? "Telemetry error" : loading ? "…" : value ?? "$0.00"}
       </div>
@@ -308,7 +308,7 @@ function Breakdown({
   const entries = rows ? Object.entries(rows).sort((a, b) => b[1] - a[1]) : [];
   return (
     <div className="border border-border rounded-xl bg-panel shadow-sm overflow-hidden">
-      <div className="px-4 py-3 border-b border-border text-xs font-semibold text-foreground font-mono uppercase tracking-wider">
+      <div className="px-4 py-3 border-b border-border text-xs font-semibold text-foreground font-mono normal-case tracking-normal">
         {title}
       </div>
       {err ? (
