@@ -63,13 +63,13 @@ export default function DocsPage() {
       </aside>
       <article className="hm-docs-article">
         <div id="overview">
-          <span className="hm-eyebrow" style={{ marginBottom: 20 }}>HADRON / DEVELOPER REFERENCE</span>
-          <h1>Build with a clearer view of your code.</h1>
+          
+          <h1>Hadron documentation</h1>
           <p style={{ marginTop: 23 }}>Hadron orchestrates four specialist review agents that analyze pull-request changes, retrieve related repository context, and aggregate findings for GitHub review or human triage.</p>
           <p style={{ marginTop: 14 }}>This index links directly to the source-controlled documentation. It deliberately does not publish operational state, private configuration, or internal tracker data.</p>
         </div>
         <section id="quickstart">
-          <h2>Start locally.</h2>
+          <h2>Set up locally</h2>
           <p>Copy the commands below to run the development Compose topology. Configure the example environment file before launching containers. You will need Docker, Compose, and provider credentials for the applicable integrations.</p>
           <div style={{ position: "relative" }}>
             <pre><code>{commands.join("\n")}</code></pre>
@@ -78,7 +78,7 @@ export default function DocsPage() {
           <p>Frontend: <code>http://localhost:3000</code> · API: <code>http://localhost:8000</code> · OpenAPI: <code>http://localhost:8000/docs</code>.</p>
         </section>
         <section id="resources">
-          <h2>Explore the system.</h2>
+          <h2>Explore the architecture</h2>
           <p>Search approved documentation topics and open the canonical Markdown sources on GitHub.</p>
           <label htmlFor="hm-docs-search" style={{ display: "block", fontSize: 13, marginTop: 23 }}>Search documentation</label>
           <input id="hm-docs-search" ref={inputRef} value={query} onChange={(event) => setQuery(event.target.value)} className="hm-docs-search" type="search" placeholder="Search architecture, setup, security… (⌘K)" aria-controls="hm-docs-results" />
@@ -93,7 +93,7 @@ export default function DocsPage() {
           </div>
         </section>
         <section id="integration">
-          <h2>Connect the workflow.</h2>
+          <h2>Integrate with GitHub</h2>
           <p>Hadron consumes GitHub pull-request events via the backend webhook, coordinates specialized analysis, and publishes findings through its GitHub integration. Production deployments require configured credentials and infrastructure; the visual sample on the marketing page is illustrative and does not execute a remote review.</p>
           <p style={{ marginTop: 16 }}><a href="https://github.com/krishujeniya/Hadron/blob/main/.env.example" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "underline" }}>Explore configuration ↗</a></p>
         </section>
