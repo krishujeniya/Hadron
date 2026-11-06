@@ -401,3 +401,16 @@
   .hadron-workspace * {scroll-behavior:auto!important;}
   .hm-stat-card,.hm-overview-hero-actions a,.hm-nav-link{transition:none!important;}
 }
+
+
+/* Hallmark v2: authenticated overview provides meaningful next steps in place of orbital artwork. */
+.hm-overview-hero{display:flex;align-items:center;justify-content:space-between;gap:clamp(24px,4vw,70px);overflow:hidden}
+.hm-overview-hero::after{display:none!important;content:none!important}
+.hm-overview-hero-copy{max-width:650px}
+.hm-overview-steps{position:relative;z-index:2;display:grid;gap:0;min-width:min(300px,35%);max-width:390px;flex:1;border-left:1px solid rgba(255,255,255,.26);padding-left:clamp(18px,3vw,35px)}
+.hm-overview-steps>div{display:grid;gap:7px;padding:15px 0;border-bottom:1px solid rgba(255,255,255,.19)}
+.hm-overview-steps>div:last-child{border-bottom:0}
+.hm-overview-steps span{font-size:12px;letter-spacing:0;text-transform:none;color:#b8c6d9}
+.hm-overview-steps strong{font-size:clamp(14px,1.3vw,17px);font-weight:600;color:#fff}
+@media(max-width:900px){.hm-overview-hero{display:block}.hm-overview-steps{margin-top:34px;min-width:0;max-width:100%;padding-left:20px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.hm-overview-steps>div{border-bottom:0}}
+@media(max-width:580px){.hm-overview-steps{grid-template-columns:minmax(0,1fr);gap:0;margin-top:22px}.hm-overview-steps>div{border-bottom:1px solid rgba(255,255,255,.19);padding-block:10px}.hm-overview-steps>div:last-child{border-bottom:0}}
