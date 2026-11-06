@@ -26,10 +26,8 @@ export function PageHeader({
       )}
     >
       <div className="min-w-0 flex-1">
-        <p className="hm-page-overline text-xs font-mono font-medium uppercase tracking-wider text-muted mb-1 break-all">
-          {tag || "HADRON / WORKSPACE"}
-        </p>
-        <h1 className="hm-page-title text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-mono break-words">
+        {tag && <p className="hm-page-overline text-xs font-medium text-muted mb-2">{tag}</p>}
+        <h1 className="hm-page-title text-2xl sm:text-3xl font-bold tracking-tight text-foreground break-words">
           {title}
         </h1>
         {description && (
