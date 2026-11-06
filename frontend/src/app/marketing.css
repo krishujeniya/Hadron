@@ -336,3 +336,24 @@
 
 /* Public sign-in guard uses the same compact rhythm as the landing page. */
 .hadron-public .hm-signin-gate { padding-top: clamp(32px, 5vw, 60px); padding-bottom: 50px; }
+
+
+/* Hallmark v2: specific product proof, restrained type, no generic AI ambience. */
+.hadron-public{--hm-focus:#2061d1}
+.hadron-public .hm-hero{min-height:0;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);align-items:center;gap:clamp(26px,4vw,60px);padding-block:clamp(54px,7vh,88px)}
+.hadron-public .hm-hero-copy{padding:0}
+.hadron-public .hm-headline{font-family:"Plus Jakarta Sans","Inter",system-ui,sans-serif;font-size:clamp(3.1rem,5.7vw,6.25rem);line-height:1.08;font-weight:650;letter-spacing:-.065em;margin:0 0 24px;overflow-wrap:break-word}
+.hadron-public .hm-lead{font-size:clamp(1rem,1.4vw,1.2rem);line-height:1.62;max-width:590px}
+.hadron-public .hm-stage{min-height:0;align-self:stretch;display:flex;flex-direction:column;justify-content:space-between;gap:25px;border-radius:16px;padding:clamp(20px,3vw,38px);overflow:hidden}
+.hadron-public .hm-stage::before{display:none;content:none}
+.hadron-public .hm-window{transform:none!important;border-radius:10px;box-shadow:none}
+.hadron-public .hm-stage:hover .hm-window{transform:none!important}
+.hadron-public .hm-window-bar i{display:none}
+.hadron-public .hm-window-bar span{margin-left:0;font-size:12px;letter-spacing:0}
+.hadron-public .hm-window-label,.hadron-public .hm-capability-kicker,.hadron-public .hm-stage-foot{font-family:inherit;font-size:12px;font-weight:500;letter-spacing:0;text-transform:none}
+.hadron-public .hm-stage-foot{padding:0;color:#c4d2de}
+.hadron-public .hm-site{gap:clamp(58px,6vw,100px)}
+.hadron-public :focus-visible{outline:3px solid var(--hm-focus);outline-offset:3px}
+@media(max-width:980px){.hadron-public .hm-hero{grid-template-columns:minmax(0,1fr);padding-block:48px 70px}.hadron-public .hm-stage{width:100%;max-width:750px}.hadron-public .hm-headline{font-size:clamp(3rem,8vw,5.5rem)}}
+@media(max-width:600px){.hadron-public .hm-hero{padding:40px 18px 60px}.hadron-public .hm-headline{font-size:clamp(2.75rem,11vw,4.25rem)}.hadron-public .hm-stage{padding:18px}.hadron-public .hm-lead{font-size:16px}}
+@media(prefers-reduced-motion:reduce){.hadron-public .hm-hero-copy>*,.hadron-public .hm-stage{animation:none!important;transform:none!important}}
