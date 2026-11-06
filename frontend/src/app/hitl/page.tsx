@@ -102,7 +102,7 @@ function HITLQueueContent() {
               <path d="m9 14 2 2 4-4" />
             </svg>
           </div>
-          <h3 className="text-base font-semibold text-foreground font-mono">
+          <h3 className="text-base font-semibold text-foreground font-sans">
             No Pending Decisions in Scope
           </h3>
           <p className="text-xs text-muted max-w-md mx-auto">
@@ -118,7 +118,7 @@ function HITLQueueContent() {
               <Link
                 key={h.id}
                 href={`/hitl/${encodeURIComponent(h.id)}`}
-                className="flex flex-col sm:flex-row sm:items-start justify-between px-4 sm:px-5 py-3.5 sm:py-4 hover:bg-panel transition-all gap-3 sm:gap-4 group min-w-0 max-w-full overflow-hidden"
+                className="flex flex-col sm:flex-row sm:items-start justify-between px-4 sm:px-5 py-3.5 sm:py-4 hover:bg-panel transition-colors gap-3 sm:gap-4 group min-w-0 max-w-full overflow-hidden"
               >
                 <div className="min-w-0 flex-1 space-y-1.5">
                   <div className="flex flex-wrap items-center gap-2 min-w-0">
