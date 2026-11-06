@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useGitHubAccount } from "@/features/auth/github-context";
-import { ParticleField } from "@/features/marketing/ParticleField";
 
 interface SampleDiff {
   id: string;
@@ -190,8 +189,8 @@ ${currentDiff.findings
       <section className="hm-hero" aria-labelledby="hadron-hero-title">
         <div className="hm-hero-copy">
           
-          <h1 id="hadron-hero-title" className="hm-headline">Every pull request deserves <span className="hm-headline-soft">a second brain.</span></h1>
-          <p className="hm-lead">Meet the multi-agent review engine that thinks in parallel. Security, quality, testing and documentation specialists examine your changes, then bring the findings together for a more informed merge.</p>
+          <h1 id="hadron-hero-title" className="hm-headline">Review the code before you merge.</h1>
+          <p className="hm-lead">Hadron brings security, quality, test and documentation findings into one review. Inspect the evidence and make the merge decision yourself.</p>
           <div className="hm-actions">
             <button type="button" onClick={openAccountModal} className="hm-button">
               Sign in with GitHub
@@ -200,13 +199,11 @@ ${currentDiff.findings
             <a className="hm-button hm-button-secondary" href="#demo">Explore the demo <span aria-hidden="true">↗</span></a>
           </div>
           <div className="hm-notes"><span>Built for GitHub PRs</span><span>Human review when needed</span><span>Open-source project</span></div>
-          <div className="hm-hero-rail" aria-hidden="true"><span>01 / UNDERSTAND THE DIFF</span><span>02 / REVIEW IN PARALLEL</span></div>
         </div>
         <div className="hm-stage" aria-label="Illustrative multi-agent review visualization">
-          <ParticleField />
-          <div className="hm-stage-top"><span className="hm-window-label">HADRON / REVIEW ENGINE</span><span className="hm-status"><span className="hm-status-dot" aria-hidden="true" /> Visual concept</span></div>
+          <div className="hm-stage-top"><span className="hm-window-label">Review example</span><span className="hm-status">Illustrative output</span></div>
           <div className="hm-window">
-            <div className="hm-window-bar"><i aria-hidden="true" /><i aria-hidden="true" /><i aria-hidden="true" /><span>pull_request / illustration</span></div>
+            <div className="hm-window-bar"><span>pull_request / illustration</span></div>
             <div className="hm-code" aria-label="Illustrative code review trace">
               <span className="hm-code-line is-muted">+  async def get_user(query):</span>
               <span className="hm-code-line">+    result = <b>await</b> db.execute(query)</span>
@@ -219,7 +216,7 @@ ${currentDiff.findings
             </div>
             <div className="hm-result"><div className="hm-result-icon" aria-hidden="true">!</div><div><strong>Potential unsafe query construction</strong><p>Illustrative finding · Surface risks with context and actionable guidance.</p></div></div>
           </div>
-          <div className="hm-stage-foot"><span className="hm-mini-line" aria-hidden="true" /> An original, interactive particle environment</div>
+          <div className="hm-stage-foot">Review findings are examples; connect GitHub to inspect your own pull requests.</div>
         </div>
       </section>
 
