@@ -28,7 +28,7 @@ const SOLUTIONS: Record<string, FrameworkSolution> = {
     title: "Automated Python Security Audit & OWASP Code Review Bot",
     subtitle: "Eliminate SQLi, command injection, insecure deserialization, and hardcoded secrets in Python pull requests.",
     badge: "Python & Django / FastAPI Security",
-    headline: "Zero-Latency Python AST & Taint Analysis on Every GitHub PR",
+    headline: "Python security checks for pull requests",
     description:
       "Hadron acts as an autonomous Python security engineer, checking pull requests against Bandit, Semgrep, and OWASP Top 10 heuristics before code merges.",
     targetKeywords: [
@@ -347,7 +347,7 @@ export default async function SolutionDetailPage({
           <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent shrink-0" aria-hidden="true" />
           <span className="break-words">{solution.badge}</span>
         </div>
-        <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold tracking-tight text-foreground font-mono break-words">
+        <h1 className="text-2xl sm:text-3xl md:text-5xl font-semibold tracking-tight text-foreground break-words">
           {solution.title}
         </h1>
         <p className="text-base sm:text-lg md:text-xl text-muted max-w-3xl leading-relaxed break-words">
@@ -371,7 +371,7 @@ export default async function SolutionDetailPage({
 
       {/* Architecture Highlights */}
       <div className="space-y-6 min-w-0">
-        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground border-b border-separator pb-3 font-mono break-words">
+        <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground border-b border-separator pb-3 break-words">
           Specialist agent capabilities
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 min-w-0">
@@ -380,7 +380,7 @@ export default async function SolutionDetailPage({
               key={idx}
               className="p-4 sm:p-5 rounded-xl border border-border bg-surface hover:border-muted/50 transition-colors space-y-2 shadow-sm min-w-0"
             >
-              <div className="text-[11px] font-mono text-accent uppercase tracking-wider font-semibold break-words">
+              <div className="text-[11px] text-accent font-medium font-semibold break-words">
                 {feat.agent}
               </div>
               <h3 className="text-base font-semibold text-foreground break-words">
@@ -447,7 +447,7 @@ export default async function SolutionDetailPage({
 
       {/* CTA Box */}
       <div className="rounded-2xl border border-border bg-surface p-8 text-center space-y-4 shadow-sm">
-        <h2 className="text-2xl md:text-3xl font-bold text-foreground font-mono">
+        <h2 className="text-2xl md:text-3xl font-semibold text-foreground">
           Accelerate your code reviews with Hadron
         </h2>
         <p className="text-sm text-muted max-w-xl mx-auto">
