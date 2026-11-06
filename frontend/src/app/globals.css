@@ -150,3 +150,13 @@ main {
 .safe-area-pt {
   padding-top: max(0.5rem, env(safe-area-inset-top));
 }
+
+
+/* Hallmark v2: consistent focus, overflow and motion safeguards on all routes. */
+html,body{overflow-x:clip}
+:where(h1,h2,h3,h4){min-width:0;overflow-wrap:break-word}
+:where(button,a,input,textarea,select,summary):focus-visible{outline:3px solid rgb(var(--accent));outline-offset:3px;transition:none}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
