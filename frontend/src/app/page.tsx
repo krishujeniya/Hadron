@@ -88,7 +88,7 @@ export default function DashboardPage() {
       {/* Informational hero: no fabricated performance metrics or live status claims. */}
       <section className="hm-overview-hero" aria-labelledby="workspace-overview-title">
         <div className="hm-overview-hero-copy">
-          <span className="hm-eyebrow">HADRON / YOUR REVIEW WORKSPACE</span>
+          
           <h1 id="workspace-overview-title">Review overview</h1>
           <p className="hm-overview-description">
             Everything that needs your attention, from running pull-request reviews
@@ -99,25 +99,11 @@ export default function DashboardPage() {
             <Link href="/hitl">Human approvals <span aria-hidden="true">↗</span></Link>
           </div>
         </div>
-        <div className="hm-orbits" aria-hidden="true">
-          <svg viewBox="0 0 420 420" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle className="hm-ring" cx="210" cy="210" r="177" />
-            <circle className="hm-ring hm-ring-inner" cx="210" cy="210" r="137" />
-            <circle className="hm-ring" cx="210" cy="210" r="95" />
-            <circle className="hm-ring hm-ring-inner" cx="210" cy="210" r="54" />
-            <path d="M35 210H385M210 35V385" stroke="#c8d2e3" strokeOpacity=".08" strokeDasharray="3 12" />
-            <circle cx="210" cy="210" r="25" fill="#f4f5f8" fillOpacity=".09" />
-            <circle className="hm-orbit-core" cx="210" cy="210" r="25" />
-            <path d="m198 210 12-12 12 12-12 12-12-12Z" fill="#f6f8fc" />
-            <circle className="hm-orbit-node" cx="210" cy="33" r="10" fill="#4285F4" />
-            <rect x="336" y="326" width="19" height="19" rx="5" fill="#EA4335" transform="rotate(-16 336 326)" />
-            <circle className="hm-orbit-node" cx="75" cy="231" r="9" fill="#34A853" />
-            <path d="m294 105 13 24h-26l13-24Z" fill="#FBBC04" />
-            <circle cx="339" cy="185" r="4" fill="#f4f5f8" />
-            <circle cx="152" cy="120" r="5" fill="#a5b7d2" />
-            <circle cx="265" cy="337" r="4" fill="#d6e0ec" />
-          </svg>
-        </div>
+        <aside className="hm-overview-steps" aria-label="Review workflow">
+          <div><span>Inspect</span><strong>Changes and findings</strong></div>
+          <div><span>Decide</span><strong>Human approvals</strong></div>
+          <div><span>Track</span><strong>Review history</strong></div>
+        </aside>
       </section>
 
       {/* Account Context Banner */}
