@@ -16,7 +16,7 @@ export default function RepositoriesPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground font-mono">Account repositories</h1>
+          <h1 className="text-2xl font-semibold text-foreground font-sans">Account repositories</h1>
           <p className="text-muted text-sm mt-1">Please connect or select a GitHub account first.</p>
         </div>
         <div className="border border-border rounded-xl bg-surface p-8 text-center space-y-4 shadow-sm">
@@ -97,7 +97,7 @@ export default function RepositoriesPage() {
           {filtered.map((repo) => (
             <div
               key={repo.id}
-              className="border border-border rounded-xl bg-surface p-3.5 sm:p-4 flex flex-col justify-between hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150 shadow-sm min-w-0 max-w-full overflow-hidden"
+              className="border border-border rounded-xl bg-surface p-3.5 sm:p-4 flex flex-col justify-between hover:border-muted/50 hover:-translate-y-0.5 transition-colors duration-150 shadow-sm min-w-0 max-w-full overflow-hidden"
             >
               <div>
                 <div className="flex items-start justify-between gap-2">
