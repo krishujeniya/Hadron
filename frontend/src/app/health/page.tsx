@@ -34,7 +34,7 @@ export default function HealthPage() {
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs px-2.5 py-1 rounded-full border border-border bg-panel text-muted font-mono">
+          <span className="text-xs px-2.5 py-1 rounded-full border border-border bg-panel text-muted font-sans">
             {readyData?.env || "production"}
           </span>
         </div>
@@ -44,10 +44,10 @@ export default function HealthPage() {
       <div className="border border-border rounded-xl bg-panel p-4 sm:p-5 min-w-0 max-w-full">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <div className="text-xs uppercase tracking-wider text-muted font-semibold mb-1">
+            <div className="text-xs normal-case tracking-normal text-muted font-semibold mb-1">
               Overall Review Pipeline State
             </div>
-            <div className="text-lg font-mono font-medium flex items-center gap-2">
+            <div className="text-lg font-sans font-medium flex items-center gap-2">
               {!isLive ? (
                 <span className="text-err flex items-center gap-2">
                   <span className="h-3 w-3 rounded-full bg-err inline-block animate-pulse" />
@@ -81,7 +81,7 @@ export default function HealthPage() {
             </p>
           </div>
           {isTigerDegraded && (
-            <div className="px-3 py-1.5 rounded-lg border border-warn/30 bg-warn/10 text-warn text-xs font-mono">
+            <div className="px-3 py-1.5 rounded-lg border border-warn/30 bg-warn/10 text-warn text-xs font-sans">
               Vector RAG Degraded (Soft Fallback)
             </div>
           )}
@@ -93,10 +93,10 @@ export default function HealthPage() {
         {/* API Server */}
         <div className="border border-border rounded-xl bg-panel p-4 flex flex-col justify-between hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150 shadow-sm">
           <div>
-            <div className="text-xs text-muted font-semibold uppercase tracking-wider mb-2">
+            <div className="text-xs text-muted font-semibold normal-case tracking-normal mb-2">
               API Server (Liveness)
             </div>
-            <div className="text-sm font-mono flex items-center gap-2">
+            <div className="text-sm font-sans flex items-center gap-2">
               {isLive ? (
                 <span className="text-ok font-semibold">● ONLINE</span>
               ) : (
@@ -112,10 +112,10 @@ export default function HealthPage() {
         {/* Database & Schema */}
         <div className="border border-border rounded-xl bg-panel p-4 flex flex-col justify-between hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150 shadow-sm">
           <div>
-            <div className="text-xs text-muted font-semibold uppercase tracking-wider mb-2">
+            <div className="text-xs text-muted font-semibold normal-case tracking-normal mb-2">
               PostgreSQL & Schema
             </div>
-            <div className="text-sm font-mono space-y-1">
+            <div className="text-sm font-sans space-y-1">
               <div className="flex justify-between">
                 <span className="text-muted">Connection:</span>
                 <span
@@ -146,10 +146,10 @@ export default function HealthPage() {
         {/* Redis & Job Queue */}
         <div className="border border-border rounded-xl bg-panel p-4 flex flex-col justify-between hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150 shadow-sm">
           <div>
-            <div className="text-xs text-muted font-semibold uppercase tracking-wider mb-2">
+            <div className="text-xs text-muted font-semibold normal-case tracking-normal mb-2">
               Redis Queue & State
             </div>
-            <div className="text-sm font-mono space-y-1">
+            <div className="text-sm font-sans space-y-1">
               <div className="flex justify-between">
                 <span className="text-muted">Connectivity:</span>
                 <span
@@ -176,10 +176,10 @@ export default function HealthPage() {
         {/* Worker Fleet Capability */}
         <div className="border border-border rounded-xl bg-panel p-4 flex flex-col justify-between hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150 shadow-sm">
           <div>
-            <div className="text-xs text-muted font-semibold uppercase tracking-wider mb-2">
+            <div className="text-xs text-muted font-semibold normal-case tracking-normal mb-2">
               Review Worker Fleet
             </div>
-            <div className="text-sm font-mono space-y-1">
+            <div className="text-sm font-sans space-y-1">
               <div className="flex justify-between">
                 <span className="text-muted">Fleet Heartbeat:</span>
                 <span
@@ -206,10 +206,10 @@ export default function HealthPage() {
         {/* Queue Latency / Oldest Job */}
         <div className="border border-border rounded-xl bg-panel p-4 flex flex-col justify-between hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150 shadow-sm">
           <div>
-            <div className="text-xs text-muted font-semibold uppercase tracking-wider mb-2">
+            <div className="text-xs text-muted font-semibold normal-case tracking-normal mb-2">
               Oldest Accepted Job
             </div>
-            <div className="text-sm font-mono">
+            <div className="text-sm font-sans">
               <div className="text-xl font-bold text-foreground">
                 {readyData?.queue?.oldest_accepted_job_age_seconds != null
                   ? `${readyData.queue.oldest_accepted_job_age_seconds.toFixed(1)}s`
@@ -230,10 +230,10 @@ export default function HealthPage() {
         {/* Tiger Cloud / Vector Memory */}
         <div className="border border-border rounded-xl bg-panel p-4 flex flex-col justify-between hover:border-muted/50 hover:-translate-y-0.5 transition-all duration-150 shadow-sm">
           <div>
-            <div className="text-xs text-muted font-semibold uppercase tracking-wider mb-2">
+            <div className="text-xs text-muted font-semibold normal-case tracking-normal mb-2">
               Tiger Memory (RAG)
             </div>
-            <div className="text-sm font-mono space-y-1">
+            <div className="text-sm font-sans space-y-1">
               <div className="flex justify-between">
                 <span className="text-muted">Status:</span>
                 <span
@@ -257,7 +257,7 @@ export default function HealthPage() {
       {/* Circuit Breakers */}
       {readyData?.circuit_breakers && readyData.circuit_breakers.length > 0 && (
         <div className="border border-border rounded-xl bg-panel p-5 space-y-3">
-          <div className="text-xs uppercase tracking-wider text-muted font-semibold">
+          <div className="text-xs normal-case tracking-normal text-muted font-semibold">
             Agent Circuit Breakers
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
@@ -266,10 +266,10 @@ export default function HealthPage() {
                 key={b.name}
                 className="border border-border rounded-lg p-3 bg-background flex flex-col justify-between"
               >
-                <div className="font-mono text-xs font-semibold text-foreground break-all">
+                <div className="font-sans text-xs font-semibold text-foreground break-all">
                   {b.name}
                 </div>
-                <div className="flex items-center justify-between mt-2 text-xs font-mono">
+                <div className="flex items-center justify-between mt-2 text-xs font-sans">
                   <span
                     className={
                       b.state === "CLOSED"
@@ -291,10 +291,10 @@ export default function HealthPage() {
 
       {/* Raw Diagnostic Payload */}
       <div className="border border-border rounded-xl bg-panel p-5 space-y-2">
-        <div className="text-xs uppercase tracking-wider text-muted font-semibold">
+        <div className="text-xs normal-case tracking-normal text-muted font-semibold">
           Diagnostic Telemetry Snapshot
         </div>
-        <pre className="p-3 rounded-lg bg-background border border-border text-xs font-mono text-muted overflow-x-auto max-h-48">
+        <pre className="p-3 rounded-lg bg-background border border-border text-xs font-sans text-muted overflow-x-auto max-h-48">
           {JSON.stringify(readyData || liveData || { error: "Probe unreachable" }, null, 2)}
         </pre>
       </div>
