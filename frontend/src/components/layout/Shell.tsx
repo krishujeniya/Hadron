@@ -142,7 +142,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <header className="hm-header border-b border-border bg-surface/85 px-3 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-40 backdrop-blur-xl min-w-0 max-w-full">
           <div className="flex items-center gap-3 sm:gap-6 min-w-0">
             <HadronLogo size="sm" animated={false} />
-            <nav className="hidden md:flex items-center gap-5 text-xs font-mono text-muted" aria-label="Public sections">
+            <nav className="hidden md:flex items-center gap-5 text-xs font-sans text-muted" aria-label="Public sections">
               <a href="/#demo" className="hover:text-foreground transition-colors py-1">Sample review</a>
               <a href="/#how-it-works" className="hover:text-foreground transition-colors py-1">How it works</a>
               <Link href="/docs" className="hover:text-foreground transition-colors py-1">Docs</Link>
@@ -175,7 +175,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           )}
         </main>
 
-        <footer className="border-t border-border py-8 text-xs text-muted font-mono bg-panel/30">
+        <footer className="border-t border-border py-8 text-xs text-muted font-sans bg-panel/30">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
               <p className="font-semibold text-foreground">Hadron · Autonomous Multi-Agent PR Review Engine</p>
@@ -304,12 +304,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="font-mono text-xs font-semibold text-foreground break-all">
+                  <span className="font-sans text-xs font-semibold text-foreground break-all">
                     @{currentAccount.login}
                   </span>
                   <span className="w-1.5 h-1.5 rounded-full bg-ok shrink-0" title="Connected" />
                 </div>
-                <div className="text-[10px] text-muted break-words">
+                <div className="text-xs text-muted break-words">
                   {currentAccount.name || "GitHub Account"}
                 </div>
               </div>
@@ -319,14 +319,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <button
                 type="button"
                 onClick={openAccountModal}
-                className="text-accent hover:underline text-[11px] font-mono"
+                className="text-accent hover:underline text-[11px] font-sans"
               >
                 Switch workspace
               </button>
               <button
                 type="button"
                 onClick={logout}
-                className="text-muted hover:text-foreground text-[11px] font-mono transition"
+                className="text-muted hover:text-foreground text-[11px] font-sans transition"
                 title="Disconnect GitHub account"
               >
                 Sign out →
@@ -348,7 +348,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 </svg>
                 <span className="group-hover:text-foreground transition-colors">Commands</span>
               </span>
-              <kbd className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-panel text-muted border border-border">
+              <kbd className="px-1.5 py-0.5 rounded text-xs font-sans bg-panel text-muted border border-border">
                 ⌘K
               </kbd>
             </button>
@@ -356,7 +356,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
           {/* Primary Navigation links */}
           <nav aria-label="Primary" className="hm-nav-group px-3 py-2 space-y-1">
-            <div className="hm-nav-label px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
+            <div className="hm-nav-label px-3 py-1 text-xs font-sans normal-case tracking-normal text-muted font-semibold">
               Work
             </div>
             {PRIMARY_NAV.map((item) => {
@@ -382,7 +382,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   </div>
                   <div className="flex items-center gap-1.5">
                     {item.badge && !active && (
-                      <span className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase tracking-wider bg-warn/10 text-warn border border-warn/30">
+                      <span className="px-1.5 py-0.2 rounded text-xs font-sans normal-case tracking-normal bg-warn/10 text-warn border border-warn/30">
                         {item.badge}
                       </span>
                     )}
@@ -395,7 +395,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
           {/* Secondary Operations links */}
           <nav aria-label="Operations" className="hm-nav-group px-3 py-2 space-y-1 mt-2">
-            <div className="px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-muted font-semibold">
+            <div className="px-3 py-1 text-xs font-sans normal-case tracking-normal text-muted font-semibold">
               Operations
             </div>
             {SECONDARY_NAV.map((item) => {
@@ -425,7 +425,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* System Health & Theme / Footer */}
-        <div className="hm-sidebar-bottom px-4 py-3 border-t border-border flex items-center justify-between text-[10px] text-muted font-mono">
+        <div className="hm-sidebar-bottom px-4 py-3 border-t border-border flex items-center justify-between text-xs text-muted font-sans">
           <div className="hm-engine-label">
             <strong>Hadron workspace</strong>
             <span>Connected: @{currentAccount.login}</span>
@@ -478,7 +478,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={clsx(
-                "flex flex-col items-center justify-center min-w-[54px] min-h-[48px] py-1 px-2 rounded-xl text-[10px] font-mono transition-transform duration-150 active:scale-[0.98]",
+                "flex flex-col items-center justify-center min-w-[54px] min-h-[48px] py-1 px-2 rounded-xl text-xs font-sans transition-transform duration-150 active:scale-[0.98]",
                 active
                   ? "text-accent font-semibold"
                   : "text-muted hover:text-foreground"
