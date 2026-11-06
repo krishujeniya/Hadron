@@ -47,7 +47,7 @@ try {
     await publicLogo.waitFor({ state: 'attached' });
     assert.equal(await publicLogo.getAttribute('alt'), 'Hadron', 'public logo must have a descriptive accessible name');
     assert.equal(await run.page.locator('.hm-header img[src="/logo-dark.svg"]').count(), 1, 'the dark-mode logo variant must exist');
-    const hero = run.page.getByRole('heading', { name: /Every pull request deserves/i });
+    const hero = run.page.getByRole('heading', { name: /Review the code before you merge/i });
     await hero.waitFor();
     const publicBounds = await run.page.evaluate(() => {
       const heading = document.querySelector('.hm-headline');
@@ -121,8 +121,9 @@ try {
 
   const darkPublic = await setup({ width: 375, theme: 'dark' });
   await darkPublic.page.goto(base);
-  await darkPublic.page.getByRole('heading', { name: /Every pull request deserves/i }).waitFor();
-  assert(await darkPublic.page.locator('.hm-stage canvas').count(), 'decorative motion canvas must exist');
+  await darkPublic.page.getByRole('heading', { name: /Review the code before you merge/i }).waitFor();
+  assert.equal(await darkPublic.page.locator('.hm-stage canvas').count(), 0, 'ornamental particle canvas must be removed');
+  assert(await darkPublic.page.getByText('Review example', {exact:true}).count(), 'illustrative review must remain understandable');
   assert.equal(await darkPublic.page.locator('.hm-field-controls, .hm-field-orbit').count(), 0, 'no orbit decoration or mode selector may render');
   assert.equal(await darkPublic.page.getByRole('button', { name: 'Orbit', exact: true }).count(), 0, 'orbit action must not exist');
   assert.equal(await darkPublic.page.getByRole('button', { name: 'Free drift', exact: true }).count(), 0, 'free drift runs automatically without a mode button');
@@ -130,7 +131,7 @@ try {
   assert.notEqual(darkSurface, 'rgba(0, 0, 0, 0)', 'dark public theme needs a solid readable surface');
   assert.deepEqual(darkPublic.errors, []);
   await darkPublic.context.close();
-  results.push('public dark theme and decorative canvas: PASS');
+  results.push('public dark theme, readable review example, no ambient particle canvas: PASS');
 
   const callback = await setup();
   await callback.page.goto(`${base}/auth/callback?code=test-code&state=test-state`);
