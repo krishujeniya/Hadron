@@ -49,7 +49,7 @@ export default function HITLDetailPage() {
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-separator pb-4 min-w-0">
             <div className="min-w-0 flex-1">
               <div className="text-xs text-muted font-mono break-all">{data.review_id}</div>
-              <h1 className="text-xl font-bold text-foreground mt-1 font-mono break-all">
+              <h1 className="text-xl font-bold text-foreground mt-1 font-sans break-all">
                 {data.repo_full_name} #{data.pr_number}
               </h1>
               <p className="text-sm text-muted mt-1 break-words">{data.escalation_reason}</p>
@@ -80,7 +80,7 @@ export default function HITLDetailPage() {
 
           {isResolved && data.human_reason && (
             <div className="border border-border rounded-xl bg-surface p-4 shadow-sm min-w-0">
-              <div className="text-xs uppercase tracking-wide text-muted font-mono mb-2">
+              <div className="text-xs normal-case tracking-normal text-muted font-mono mb-2">
                 Human reason {data.reviewer_id ? `· by ${data.reviewer_id}` : ""}
               </div>
               <p className="text-sm whitespace-pre-wrap break-words text-foreground">{data.human_reason}</p>
@@ -91,7 +91,7 @@ export default function HITLDetailPage() {
         <div className="lg:col-span-1 min-w-0">
           {isResolved ? (
             <div className="border border-border rounded-xl bg-surface p-4 text-sm shadow-sm min-w-0">
-              <div className="text-xs uppercase tracking-wide text-muted font-mono mb-2">
+              <div className="text-xs normal-case tracking-normal text-muted font-mono mb-2">
                 Resolution status
               </div>
               <div className="font-mono text-foreground font-semibold break-all">{data.status}</div>
@@ -103,7 +103,7 @@ export default function HITLDetailPage() {
             </div>
           ) : (
             <div className="sticky top-6">
-              <h2 className="text-sm uppercase tracking-wide text-muted font-mono font-semibold mb-3">
+              <h2 className="text-sm normal-case tracking-normal text-muted font-sans font-semibold mb-3">
                 Make a determination
               </h2>
               <HITLDecisionForm hitlId={data.id} />
