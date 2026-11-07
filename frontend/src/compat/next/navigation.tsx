@@ -20,6 +20,9 @@ export function usePathname(): string {
 
 export function useSearchParams(): URLSearchParams {
   const ctx = useRouterContext();
+  if (typeof window !== "undefined" && (!ctx.searchParams || Array.from(ctx.searchParams.keys()).length === 0)) {
+    return new URLSearchParams(window.location.search);
+  }
   return ctx.searchParams;
 }
 

@@ -16,8 +16,28 @@ function CallbackHandler() {
   const [errorText, setErrorText] = useState<string | null>(null);
 
   useEffect(() => {
-    const code = searchParams.get("code");
-    const state = searchParams.get("state");
+    let code = searchParams.get("code");
+    let state = searchParams.get("state");
+
+    // Resilient fallback extraction for GitHub Pages SPA redirects
+    if ((!code || !state) && typeof window !== "undefined") {
+      try {
+        const urlObj = new URL(window.location.href);
+        code = code || urlObj.searchParams.get("code");
+        state = state || urlObj.searchParams.get("state");
+
+        if (!code || !state) {
+          const rawSearch = window.location.search || window.location.hash;
+          if (rawSearch) {
+            const normalized = rawSearch.replace(/~and~/g, "&");
+            const codeMatch = normalized.match(/[?&#]code=([^&#]+)/);
+            const stateMatch = normalized.match(/[?&#]state=([^&#]+)/);
+            if (codeMatch) code = decodeURIComponent(codeMatch[1]);
+            if (stateMatch) state = decodeURIComponent(stateMatch[1]);
+          }
+        }
+      } catch {}
+    }
 
     if (!code || !state) {
       setErrorText("Missing GitHub authorization code or security state. Please sign in again.");

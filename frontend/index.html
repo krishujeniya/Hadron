@@ -46,13 +46,24 @@
 
     <!-- SPA URL Restoration Script for GitHub Pages -->
     <script>
-      (function() {
-        var redirect = sessionStorage.redirect;
-        delete sessionStorage.redirect;
-        if (redirect && redirect != location.href) {
-          history.replaceState(null, null, redirect);
+      (function(l) {
+        if (l.search[1] === '/') {
+          var decoded = l.search.slice(1).split('&').map(function(s) {
+            return s.replace(/~and~/g, '&');
+          }).join('?');
+          window.history.replaceState(null, null,
+            l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        } else if (l.search.indexOf('p=') !== -1) {
+          var params = new URLSearchParams(l.search);
+          var p = params.get('p') || '';
+          params.delete('p');
+          var q = params.toString().replace(/~and~/g, '&');
+          window.history.replaceState(null, null,
+            l.pathname.replace(/\/$/, '') + (p.charAt(0) === '/' ? p : '/' + p) + (q ? '?' + q : '') + l.hash
+          );
         }
-      })();
+      }(window.location));
     </script>
   </head>
   <body class="bg-canvas text-fg antialiased selection:bg-brand/20 selection:text-brand">
