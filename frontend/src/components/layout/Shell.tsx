@@ -121,14 +121,19 @@ export function Shell({ children }: { children: React.ReactNode }) {
   // Allow public routes (solutions marketing pages, health telemetry, auth callback, and public landing page) to render without auth blocks (T32)
   const isSolutionsRoute = pathname?.startsWith("/solutions");
   const isDocsRoute = pathname?.startsWith("/docs");
-  const isPublicHome = pathname === "/" && !currentAccount;
+  const isPublicHome = (pathname === "/" || pathname === "" || pathname === "/Hadron" || pathname === "/Hadron/") && !currentAccount;
   const isPublicHealth = pathname === "/health" && !currentAccount;
+  const isAuthCallback =
+    pathname === "/auth/callback" ||
+    pathname?.startsWith("/auth/callback") ||
+    pathname?.includes("auth/callback") ||
+    pathname?.includes("auth%2Fcallback");
 
-  if (isLoading && pathname !== "/auth/callback") {
+  if (isLoading && !isAuthCallback) {
     return <main className="min-h-screen bg-bg text-foreground flex items-center justify-center" aria-busy="true"><p role="status">Checking your session…</p></main>;
   }
 
-  if (isSolutionsRoute || isDocsRoute || isPublicHome || isPublicHealth || (!currentAccount && pathname !== "/auth/callback")) {
+  if (isSolutionsRoute || isDocsRoute || isPublicHome || isPublicHealth || (!currentAccount && !isAuthCallback)) {
     return (
       <div className="hadron-public min-h-screen bg-bg text-foreground flex flex-col">
         {/* Accessible Skip Link (T39 / S05) */}
@@ -197,7 +202,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   }
 
   // Allow the OAuth callback route to process even before currentAccount is stored
-  if (pathname === "/auth/callback") {
+  if (isAuthCallback) {
     return <main className="min-h-screen bg-bg text-foreground">{children}</main>;
   }
 

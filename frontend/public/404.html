@@ -17,7 +17,7 @@
         var query = l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '';
         var redirectUrl = l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
           l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
-          encodeURIComponent(path) + query + l.hash;
+          path + query + l.hash;
         l.replace(redirectUrl);
       })();
     </script>

@@ -46,7 +46,12 @@ function PageRouter() {
     const framework = params.framework || pathname.split("/solutions/")[1] || "python-security-audit";
     // FrameworkSolutionPage accepts params
     PageComponent = <SolutionPage params={Promise.resolve({ framework })} />;
-  } else if (pathname === "/auth/callback" || pathname.startsWith("/auth/callback")) {
+  } else if (
+    pathname === "/auth/callback" ||
+    pathname.startsWith("/auth/callback") ||
+    pathname.includes("auth/callback") ||
+    pathname.includes("auth%2Fcallback")
+  ) {
     PageComponent = <AuthCallbackPage />;
   }
 

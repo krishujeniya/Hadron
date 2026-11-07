@@ -87,7 +87,7 @@ export function setStoredCsrfToken(csrf: string | null): void {
 export function getOAuthState(): string | null {
   if (typeof window === "undefined") return null;
   try {
-    return sessionStorage.getItem(OAUTH_STATE_KEY);
+    return sessionStorage.getItem(OAUTH_STATE_KEY) || localStorage.getItem(OAUTH_STATE_KEY) || null;
   } catch {
     return null;
   }
@@ -98,8 +98,10 @@ export function setOAuthState(state: string | null): void {
   try {
     if (state) {
       sessionStorage.setItem(OAUTH_STATE_KEY, state);
+      localStorage.setItem(OAUTH_STATE_KEY, state);
     } else {
       sessionStorage.removeItem(OAUTH_STATE_KEY);
+      localStorage.removeItem(OAUTH_STATE_KEY);
     }
   } catch {}
 }
@@ -258,7 +260,7 @@ export const api = {
     },
     callback: async (code: string, state: string) => {
       const headersInit: Record<string, string> = {};
-      const savedState = getOAuthState();
+      const savedState = getOAuthState() || state;
       if (savedState) {
         headersInit["X-OAuth-State"] = savedState;
       }

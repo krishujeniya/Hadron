@@ -51,16 +51,23 @@
           var decoded = l.search.slice(1).split('&').map(function(s) {
             return s.replace(/~and~/g, '&');
           }).join('?');
+          var parts = decoded.split('?');
+          var pathPart = parts[0];
+          try { pathPart = decodeURIComponent(pathPart); } catch(e) {}
+          if (pathPart.charAt(0) !== '/') pathPart = '/' + pathPart;
+          var queryPart = parts.slice(1).join('?');
           window.history.replaceState(null, null,
-            l.pathname.slice(0, -1) + decoded + l.hash
+            l.pathname.slice(0, -1) + pathPart + (queryPart ? '?' + queryPart : '') + l.hash
           );
         } else if (l.search.indexOf('p=') !== -1) {
           var params = new URLSearchParams(l.search);
           var p = params.get('p') || '';
           params.delete('p');
           var q = params.toString().replace(/~and~/g, '&');
+          try { p = decodeURIComponent(p); } catch(e) {}
+          if (p.charAt(0) !== '/') p = '/' + p;
           window.history.replaceState(null, null,
-            l.pathname.replace(/\/$/, '') + (p.charAt(0) === '/' ? p : '/' + p) + (q ? '?' + q : '') + l.hash
+            l.pathname.replace(/\/$/, '') + p + (q ? '?' + q : '') + l.hash
           );
         }
       }(window.location));

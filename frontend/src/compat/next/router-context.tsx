@@ -21,6 +21,9 @@ export function getBasePath(): string {
 
 function normalizePath(fullPath: string, basePath: string): string {
   let path = fullPath;
+  try {
+    path = decodeURIComponent(path);
+  } catch {}
   if (basePath && path.startsWith(basePath)) {
     path = path.slice(basePath.length);
   }
@@ -41,12 +44,25 @@ export function RouterProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
-    const spaPath = url.searchParams.get("p") || url.searchParams.get("/");
+    let spaPath = url.searchParams.get("p") || url.searchParams.get("/");
+    let rawQuery = "";
+
     if (spaPath) {
       url.searchParams.delete("p");
       url.searchParams.delete("/");
-      const rawQuery = url.searchParams.toString().replace(/~and~/g, "&");
-      const decodedPath = decodeURIComponent(spaPath);
+      rawQuery = url.searchParams.toString().replace(/~and~/g, "&");
+    } else if (window.location.search.startsWith("?/")) {
+      const rest = window.location.search.slice(2);
+      const parts = rest.split("&");
+      spaPath = parts[0];
+      rawQuery = parts.slice(1).join("&").replace(/~and~/g, "&");
+    }
+
+    if (spaPath) {
+      let decodedPath = spaPath;
+      try {
+        decodedPath = decodeURIComponent(spaPath);
+      } catch {}
       const targetUrl = `${basePath}${decodedPath.startsWith("/") ? decodedPath : "/" + decodedPath}${rawQuery ? "?" + rawQuery : ""}${url.hash}`;
       window.history.replaceState(null, "", targetUrl);
       setPathState(normalizePath(decodedPath, ""));

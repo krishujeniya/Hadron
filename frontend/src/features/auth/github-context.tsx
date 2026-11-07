@@ -24,10 +24,26 @@ const GitHubContext = createContext<GitHubContextType | undefined>(undefined);
 
 const STORAGE_KEY = "ai_pr_review_github_account";
 const TOKEN_KEY = "ai_pr_review_github_token";
+const ACCOUNT_STORAGE_KEY = "hadron_account_profile";
 
 export function GitHubProvider({ children }: { children: React.ReactNode }) {
-  const [currentAccount, setCurrentAccount] = useState<AccountProfile | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [currentAccount, setCurrentAccount] = useState<AccountProfile | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const cached = localStorage.getItem(ACCOUNT_STORAGE_KEY);
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      return !localStorage.getItem(ACCOUNT_STORAGE_KEY);
+    } catch {
+      return true;
+    }
+  });
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [repositories, setRepositories] = useState<RepositoryItem[]>([]);
   const [loadingRepos, setLoadingRepos] = useState<boolean>(false);
@@ -43,9 +59,21 @@ export function GitHubProvider({ children }: { children: React.ReactNode }) {
     const controller = new AbortController();
     const generation = generationRef.current;
     api.auth.me(controller.signal).then((profile) => {
-      if (!controller.signal.aborted && generationRef.current === generation) setCurrentAccount(profile);
-    }).catch(() => {
-      if (!controller.signal.aborted && generationRef.current === generation) setCurrentAccount(null);
+      if (!controller.signal.aborted && generationRef.current === generation) {
+        setCurrentAccount(profile);
+        try {
+          localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(profile));
+        } catch {}
+      }
+    }).catch((err: any) => {
+      if (!controller.signal.aborted && generationRef.current === generation) {
+        if (err?.status === 401) {
+          setCurrentAccount(null);
+          try {
+            localStorage.removeItem(ACCOUNT_STORAGE_KEY);
+          } catch {}
+        }
+      }
     }).finally(() => {
       if (!controller.signal.aborted) setIsLoading(false);
     });
@@ -101,10 +129,12 @@ export function GitHubProvider({ children }: { children: React.ReactNode }) {
     delete safeProfile.token;
     setCurrentAccount(safeProfile);
     setIsModalOpen(false);
+    setIsLoading(false);
     try {
+      localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(safeProfile));
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(TOKEN_KEY);
-    } catch { /* Storage may be disabled. The server session remains authoritative. */ }
+    } catch { /* Storage may be disabled. */ }
   }, []);
 
   const connectAccount = async (accountName: string, token?: string): Promise<AccountProfile> => {
@@ -123,6 +153,7 @@ export function GitHubProvider({ children }: { children: React.ReactNode }) {
     clearClientTenantData();
     mutate(() => true, undefined, { revalidate: false }); // Purge all cached user/review/cost data
     try {
+      localStorage.removeItem(ACCOUNT_STORAGE_KEY);
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(TOKEN_KEY);
     } catch { /* Storage may be disabled. */ }
