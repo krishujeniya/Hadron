@@ -1,0 +1,76 @@
+# .github/workflows/deploy-gh-pages.yml
+#
+# Automated deployment of Hadron Static Frontend to GitHub Pages.
+# Deploys only the static client artifact without affecting Vercel backend services.
+
+name: Deploy Frontend to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/deploy-gh-pages.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy Static Frontend
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --prefix frontend
+
+      - name: Frontend TypeScript typecheck
+        run: npm run lint --prefix frontend
+
+      - name: Build static frontend for GitHub Pages
+        env:
+          VITE_BASE_PATH: "/Hadron/"
+          VITE_APP_URL: "https://krishujeniya.github.io/Hadron"
+          VITE_API_BASE_URL: "https://hadron-backend.vercel.app"
+          VITE_API_DIRECT: "1"
+        run: npm run build:pages --prefix frontend
+
+      - name: Verify static export artifact
+        run: |
+          test -f frontend/dist/index.html || { echo "Missing frontend/dist/index.html"; exit 1; }
+          test -f frontend/dist/404.html || { echo "Missing frontend/dist/404.html"; exit 1; }
+          test -f frontend/dist/.nojekyll || { echo "Missing frontend/dist/.nojekyll"; exit 1; }
+          test -d frontend/dist/assets || { echo "Missing frontend/dist/assets"; exit 1; }
+          echo "Static export artifacts verified successfully."
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -202,6 +202,8 @@ export interface AccountProfile {
   authenticated: boolean;
   auth_method?: "oauth" | "token" | "session" | "api_key" | "bearer_api_key";
   token?: string;
+  session_token?: string | null;
+  csrf_token?: string | null;
 }
 
 export type RepositoryStatus = "active" | "connected" | "indexing" | "discovered" | "degraded" | "disconnected";

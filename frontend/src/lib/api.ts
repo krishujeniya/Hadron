@@ -18,13 +18,91 @@ import type {
   WorkflowCost,
 } from "./types";
 
-// Empty BASE = use relative paths so Next.js rewrites (next.config.mjs) proxy
-// to the real backend. Sidesteps browser CORS in dev and prod alike.
-// To bypass the proxy, set NEXT_PUBLIC_API_DIRECT=1.
-const BASE =
-  process.env.NEXT_PUBLIC_API_DIRECT === "1"
-    ? (process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || "")
-    : "";
+// Origin and direct API resolution:
+// When running on GitHub Pages (*.github.io) or when NEXT_PUBLIC_API_DIRECT=1 is set,
+// all API requests dispatch directly to the production FastAPI backend (https://hadron-backend.vercel.app).
+const isClient = typeof window !== "undefined";
+const isGitHubPages = isClient && (window.location.hostname.endsWith("github.io") || window.location.pathname.startsWith("/Hadron"));
+
+const configuredApi =
+  (typeof process !== "undefined" && (process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL)) ||
+  "";
+
+const isDirect =
+  isGitHubPages ||
+  (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_DIRECT === "1");
+
+const DEFAULT_BACKEND = "https://hadron-backend.vercel.app";
+export const API_BASE_URL = isDirect ? (configuredApi || DEFAULT_BACKEND) : (configuredApi || "");
+const BASE = API_BASE_URL;
+
+const SESSION_STORAGE_KEY = "hadron_session_token";
+const CSRF_STORAGE_KEY = "hadron_csrf_token";
+const OAUTH_STATE_KEY = "hadron_oauth_state";
+
+export function getSessionToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(SESSION_STORAGE_KEY) || sessionStorage.getItem(SESSION_STORAGE_KEY) || null;
+  } catch {
+    return null;
+  }
+}
+
+export function setSessionToken(token: string | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (token) {
+      localStorage.setItem(SESSION_STORAGE_KEY, token);
+      sessionStorage.setItem(SESSION_STORAGE_KEY, token);
+    } else {
+      localStorage.removeItem(SESSION_STORAGE_KEY);
+      sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    }
+  } catch {}
+}
+
+export function getStoredCsrfToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(CSRF_STORAGE_KEY) || sessionStorage.getItem(CSRF_STORAGE_KEY) || null;
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredCsrfToken(csrf: string | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (csrf) {
+      localStorage.setItem(CSRF_STORAGE_KEY, csrf);
+      sessionStorage.setItem(CSRF_STORAGE_KEY, csrf);
+    } else {
+      localStorage.removeItem(CSRF_STORAGE_KEY);
+      sessionStorage.removeItem(CSRF_STORAGE_KEY);
+    }
+  } catch {}
+}
+
+export function getOAuthState(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return sessionStorage.getItem(OAUTH_STATE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setOAuthState(state: string | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (state) {
+      sessionStorage.setItem(OAUTH_STATE_KEY, state);
+    } else {
+      sessionStorage.removeItem(OAUTH_STATE_KEY);
+    }
+  } catch {}
+}
 
 export class ApiError extends Error {
   readonly status: number;
@@ -65,7 +143,8 @@ export class ApiError extends Error {
 function getCsrfToken(): string | null {
   if (typeof document === "undefined") return null;
   const match = document.cookie.match(/(?:^|; )hadron_csrf=([^;]*)/);
-  return match ? decodeURIComponent(match[1]) : null;
+  if (match) return decodeURIComponent(match[1]);
+  return getStoredCsrfToken();
 }
 
 function createRequestId(): string {
@@ -77,6 +156,10 @@ function headers(): Record<string, string> {
     "content-type": "application/json",
     "x-request-id": createRequestId(),
   };
+  const sessionToken = getSessionToken();
+  if (sessionToken) {
+    h["Authorization"] = `Bearer ${sessionToken}`;
+  }
   const csrf = getCsrfToken();
   if (csrf) h["x-csrf-token"] = csrf;
   return h;
@@ -149,6 +232,9 @@ export function clearClientTenantData(): void {
   if (typeof window === "undefined") return;
   try {
     sessionStorage.clear();
+    localStorage.removeItem(SESSION_STORAGE_KEY);
+    localStorage.removeItem(CSRF_STORAGE_KEY);
+    localStorage.removeItem(OAUTH_STATE_KEY);
     localStorage.removeItem("github_account_profile");
     localStorage.removeItem("github_access_token");
     localStorage.removeItem("hadron_active_tenant");
@@ -160,18 +246,62 @@ export function clearClientTenantData(): void {
 export const api = {
   // ── Auth ─────────────────────────────────────────────────────────
   auth: {
-    callback: (code: string, state: string) => req<AccountProfile>("/api/v1/auth/github/callback", {
-      method: "POST", body: JSON.stringify({ code, state }),
-    }),
+    loginUrl: async (redirectUri?: string) => {
+      const query = redirectUri ? `?redirect_uri=${encodeURIComponent(redirectUri)}` : "";
+      const res = await req<{ oauth_available: boolean; authorize_url?: string; state?: string }>(
+        `/api/v1/auth/github/login${query}`
+      );
+      if (res.state) {
+        setOAuthState(res.state);
+      }
+      return res;
+    },
+    callback: async (code: string, state: string) => {
+      const headersInit: Record<string, string> = {};
+      const savedState = getOAuthState();
+      if (savedState) {
+        headersInit["X-OAuth-State"] = savedState;
+      }
+      const profile = await req<AccountProfile>("/api/v1/auth/github/callback", {
+        method: "POST",
+        headers: headersInit,
+        body: JSON.stringify({ code, state }),
+      });
+      if (profile.session_token) {
+        setSessionToken(profile.session_token);
+      }
+      if (profile.csrf_token) {
+        setStoredCsrfToken(profile.csrf_token);
+      }
+      setOAuthState(null);
+      return profile;
+    },
     me: (signal?: AbortSignal) => req<AccountProfile>("/api/v1/auth/me", { signal }),
-    logout: () => req<{ status: string }>("/api/v1/auth/logout", { method: "POST" }),
+    logout: async () => {
+      try {
+        await req<{ status: string }>("/api/v1/auth/logout", { method: "POST" });
+      } finally {
+        setSessionToken(null);
+        setStoredCsrfToken(null);
+        clearClientTenantData();
+      }
+      return { status: "logged_out" };
+    },
     repos: (account: string, signal?: AbortSignal) =>
       req<any[]>(`/api/v1/auth/repos?account=${encodeURIComponent(account)}`, { signal }),
-    connect: (account: string, token?: string) =>
-      req<AccountProfile>("/api/v1/auth/connect", {
+    connect: async (account: string, token?: string) => {
+      const profile = await req<AccountProfile>("/api/v1/auth/connect", {
         method: "POST",
         body: JSON.stringify({ account, token }),
-      }),
+      });
+      if (profile.session_token) {
+        setSessionToken(profile.session_token);
+      }
+      if (profile.csrf_token) {
+        setStoredCsrfToken(profile.csrf_token);
+      }
+      return profile;
+    },
   },
 
   healthLive: () => req<HealthLiveResponse>("/health/live"),

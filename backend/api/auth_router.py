@@ -54,6 +54,8 @@ class AccountProfile(BaseModel):
     authenticated: bool = True
     auth_method: str = "oauth"  # Verified authentication method
     token: str | None = None  # Always None in responses to prevent credential leaks
+    session_token: str | None = None  # Opaque server session token for cross-origin authorization
+    csrf_token: str | None = None  # Anti-CSRF token
 
 
 class OAuthLoginResponse(BaseModel):
@@ -91,9 +93,14 @@ def _validate_redirect_uri(redirect_uri: str | None, settings: Settings) -> str 
     parsed = urllib.parse.urlparse(redirect_uri)
     origin = f"{parsed.scheme}://{parsed.netloc}"
     allowed = {value.strip().rstrip("/") for value in settings.cors_origins.split(",") if value.strip()}
-    allowed.update({"https://hadron.dev", "https://hadron.vercel.app"})
+    allowed.update({"https://hadron.dev", "https://hadron.vercel.app", "https://krishujeniya.github.io"})
     if settings.is_development:
-        allowed.update({"http://localhost:3000", "http://127.0.0.1:3000"})
+        allowed.update({
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+        })
     if parsed.username or parsed.password or parsed.fragment or origin not in allowed:
         raise HTTPException(status_code=400, detail="Disallowed redirect_uri host.")
     return redirect_uri
@@ -127,8 +134,9 @@ async def github_oauth_login(
         ttl_seconds=600,
     )
 
+    samesite = "none" if not settings.is_development else "lax"
     response.set_cookie("hadron_oauth_state", state, httponly=True, secure=not settings.is_development,
-                        samesite="lax", max_age=600, path="/")
+                        samesite=samesite, max_age=600, path="/")
     scope = "read:user,repo"
     url = f"https://github.com/login/oauth/authorize?client_id={client_id}&scope={scope}&state={state}"
     if validated_redirect:
@@ -166,7 +174,7 @@ async def github_oauth_callback(
             detail="Missing OAuth state parameter (CSRF verification failed).",
         )
 
-    browser_state = request.cookies.get("hadron_oauth_state", "")
+    browser_state = request.cookies.get("hadron_oauth_state") or request.headers.get("X-OAuth-State", "")
     if not browser_state or not hmac.compare_digest(browser_state, payload.state):
         raise HTTPException(status_code=403, detail="OAuth state does not match the initiating browser.")
     response.delete_cookie("hadron_oauth_state", path="/")
@@ -222,11 +230,12 @@ async def github_oauth_callback(
 
         # Set secure HttpOnly session cookie
         is_secure = not settings.is_development
+        samesite = "none" if is_secure else "lax"
         response.set_cookie(
             key="hadron_session",
             value=session.session_id,
             httponly=True,
-            samesite="lax",
+            samesite=samesite,
             secure=is_secure,
             max_age=86400 * 7,
             path="/",
@@ -235,11 +244,13 @@ async def github_oauth_callback(
             key="hadron_csrf",
             value=session.csrf_token,
             httponly=False,
-            samesite="lax",
+            samesite=samesite,
             secure=is_secure,
             max_age=86400 * 7,
             path="/",
         )
+        response.headers["X-Hadron-Session"] = session.session_id
+        response.headers["X-CSRF-Token"] = session.csrf_token
 
         return AccountProfile(
             login=u["login"],
@@ -252,6 +263,8 @@ async def github_oauth_callback(
             authenticated=True,
             auth_method="oauth",
             token=None,  # Never leak raw token
+            session_token=session.session_id,
+            csrf_token=session.csrf_token,
         )
 
 
@@ -264,6 +277,7 @@ async def get_current_user_profile(
     principal: Principal = Depends(get_current_principal),
 ) -> AccountProfile:
     """Return verified profile of current authenticated principal."""
+    session_id = principal.metadata.get("session_id")
     return AccountProfile(
         login=principal.id,
         name=principal.metadata.get("name") or principal.id,
@@ -275,6 +289,7 @@ async def get_current_user_profile(
         authenticated=True,
         auth_method=principal.auth_method,
         token=None,
+        session_token=session_id,
     )
 
 
@@ -346,11 +361,12 @@ async def connect_account(
                         provider_token=token,
                         ttl_seconds=86400 * 7,
                     )
+                    samesite = "none" if is_secure else "lax"
                     response.set_cookie(
                         key="hadron_csrf",
                         value=session.csrf_token,
                         httponly=False,
-                        samesite="lax",
+                        samesite=samesite,
                         secure=is_secure,
                         max_age=86400 * 7,
                         path="/",
@@ -359,11 +375,13 @@ async def connect_account(
                         key="hadron_session",
                         value=session.session_id,
                         httponly=True,
-                        samesite="lax",
+                        samesite=samesite,
                         secure=is_secure,
                         max_age=86400 * 7,
                         path="/",
                     )
+                    response.headers["X-Hadron-Session"] = session.session_id
+                    response.headers["X-CSRF-Token"] = session.csrf_token
                     return AccountProfile(
                         login=user_login,
                         name=u.get("name") or user_login,
@@ -375,6 +393,8 @@ async def connect_account(
                         authenticated=True,
                         auth_method="token",
                         token=None,
+                        session_token=session.session_id,
+                        csrf_token=session.csrf_token,
                     )
         except Exception as exc:
             logger.warning("connect_account | GitHub token verification error: %s", exc)

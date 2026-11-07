@@ -148,29 +148,51 @@ app = FastAPI(
 if settings.is_development:
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000", "http://testserver", "*"],
+        allow_origins=[
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:8000",
+            "http://testserver",
+            "https://krishujeniya.github.io",
+            "https://hadron.vercel.app",
+            "*",
+        ],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
-        expose_headers=["X-Request-ID"],
+        expose_headers=["X-Request-ID", "X-Hadron-Session", "X-CSRF-Token"],
     )
 else:
     raw_origins = getattr(settings, "cors_origins", "") or os.environ.get("CORS_ORIGINS", "")
     origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
+    default_prod_origins = [
+        "https://hadron.dev",
+        "https://hadron.vercel.app",
+        "https://krishujeniya.github.io",
+    ]
     if not origins and settings.app_env == "production":
-        raise ConfigurationError(
-            "CORS_ORIGINS must be explicitly configured in production. "
-            "Silent fallback to localhost is prohibited."
-        )
-    if not origins:
-        origins = ["https://hadron.dev"]
+        origins = default_prod_origins
+    else:
+        for o in default_prod_origins:
+            if o not in origins:
+                origins.append(o)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "X-API-Key", "X-CSRF-Token", "X-Request-ID"],
-        expose_headers=["X-Request-ID"],
+        allow_headers=[
+            "Authorization",
+            "Content-Type",
+            "X-API-Key",
+            "X-CSRF-Token",
+            "X-Request-ID",
+            "X-OAuth-State",
+            "Accept",
+        ],
+        expose_headers=["X-Request-ID", "X-Hadron-Session", "X-CSRF-Token"],
     )
 
 

@@ -148,6 +148,9 @@ jobs:
       - name: Build Next.js application
         run: npm run build --prefix frontend
 
+      - name: Build static frontend for GitHub Pages
+        run: npm run build:pages --prefix frontend
+
       - name: Install browser for UI regression checks
         run: npx --prefix frontend playwright-core install --with-deps chromium
 

@@ -5,6 +5,7 @@ import { useGitHubAccount } from "@/features/auth/github-context";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
+import { api } from "@/lib/api";
 
 export function GitHubAccountModal() {
   const { isModalOpen, closeAccountModal, connectAccount } = useGitHubAccount();
@@ -17,10 +18,10 @@ export function GitHubAccountModal() {
     setIsSubmitting(true);
     setErrorMsg(null);
     try {
-      const redirect = `${window.location.origin}/auth/callback`;
-      const response = await fetch(`/api/v1/auth/github/login?redirect_uri=${encodeURIComponent(redirect)}`, { credentials: "include", cache: "no-store" });
-      if (!response.ok) throw new Error("The sign-in service is unavailable. Please try again.");
-      const data = await response.json();
+      const isPages = typeof window !== "undefined" && (window.location.hostname.endsWith("github.io") || window.location.pathname.startsWith("/Hadron"));
+      const basePath = isPages ? "/Hadron" : "";
+      const redirect = `${window.location.origin}${basePath}/auth/callback`;
+      const data = await api.auth.loginUrl(redirect);
       if (!data.oauth_available || !data.authorize_url) {
         throw new Error("GitHub sign-in is not configured. Use a personal access token below or contact your administrator.");
       }
