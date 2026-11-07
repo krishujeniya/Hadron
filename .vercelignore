@@ -7,5 +7,5 @@ node_modules/
 frontend/
 __pycache__/
 *.pyc
-.git/
 .github/
+
