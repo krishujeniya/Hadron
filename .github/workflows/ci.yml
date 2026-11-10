@@ -38,7 +38,7 @@ jobs:
   # ---------------------------------------------------------------------------
   lint-and-typecheck:
     name: Lint & Typecheck
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -83,7 +83,7 @@ jobs:
   # ---------------------------------------------------------------------------
   test-suite:
     name: Critical-Path Test Suite
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: lint-and-typecheck
     env:
       APP_ENV: test
@@ -129,7 +129,7 @@ jobs:
   # ---------------------------------------------------------------------------
   frontend-build:
     name: Frontend Build & Verify
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: lint-and-typecheck
     steps:
       - name: Checkout repository
@@ -171,7 +171,7 @@ jobs:
   # ---------------------------------------------------------------------------
   eval-gate:
     name: Eval Gate (Real LLM)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [test-suite, frontend-build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
