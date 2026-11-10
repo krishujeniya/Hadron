@@ -49,7 +49,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from backend.auth.dependencies import require_auth
 from backend.auth.principal import Principal
 from backend.config.settings import Settings, get_settings
-from backend.core.exceptions import ConfigurationError
+from backend.core.exceptions import ConfigurationError  # noqa: F401 - re-exported for test imports
 from backend.memory.context_retriever import retrieve_context_for_diff  # noqa: F401 (used in routes)
 from backend.database.postgres import init_db, init_tiger_schema  # noqa: F401 - init_db needed for test patching
 ensure_collection = init_tiger_schema  # Backward compatibility alias for phase 13 tests
