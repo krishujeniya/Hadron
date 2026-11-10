@@ -27,23 +27,8 @@ const TOKEN_KEY = "ai_pr_review_github_token";
 const ACCOUNT_STORAGE_KEY = "hadron_account_profile";
 
 export function GitHubProvider({ children }: { children: React.ReactNode }) {
-  const [currentAccount, setCurrentAccount] = useState<AccountProfile | null>(() => {
-    if (typeof window === "undefined") return null;
-    try {
-      const cached = localStorage.getItem(ACCOUNT_STORAGE_KEY);
-      return cached ? JSON.parse(cached) : null;
-    } catch {
-      return null;
-    }
-  });
-  const [isLoading, setIsLoading] = useState<boolean>(() => {
-    if (typeof window === "undefined") return true;
-    try {
-      return !localStorage.getItem(ACCOUNT_STORAGE_KEY);
-    } catch {
-      return true;
-    }
-  });
+  const [currentAccount, setCurrentAccount] = useState<AccountProfile | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [repositories, setRepositories] = useState<RepositoryItem[]>([]);
   const [loadingRepos, setLoadingRepos] = useState<boolean>(false);
@@ -58,6 +43,14 @@ export function GitHubProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const controller = new AbortController();
     const generation = generationRef.current;
+
+    try {
+      const cached = localStorage.getItem(ACCOUNT_STORAGE_KEY);
+      if (cached) {
+        setCurrentAccount(JSON.parse(cached));
+      }
+    } catch {}
+
     api.auth.me(controller.signal).then((profile) => {
       if (!controller.signal.aborted && generationRef.current === generation) {
         setCurrentAccount(profile);

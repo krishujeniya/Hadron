@@ -149,7 +149,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaOrgData) }}
         />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <ThemeProvider>
           <GitHubProvider>
             <SWRProvider>
