@@ -1,0 +1,133 @@
+name: Supabase database security
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "supabase/**"
+      - "scripts/ci/supabase_*.sql"
+      - "scripts/ci/assert_supabase_*.sql"
+      - ".github/workflows/supabase-security.yml"
+  push:
+    branches: [main]
+    paths:
+      - "supabase/**"
+      - "scripts/ci/supabase_*.sql"
+      - "scripts/ci/assert_supabase_*.sql"
+      - ".github/workflows/supabase-security.yml"
+  workflow_dispatch:
+    inputs:
+      deploy_production:
+        description: "Apply the reviewed Supabase migration to hadron-production"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-security-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  rls-migration-test:
+    name: Test RLS migration in disposable PostgreSQL
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17.11-alpine
+        env:
+          POSTGRES_DB: hadron_security_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hadron_security_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hadron_security_test
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends postgresql-client
+
+      - name: Seed Supabase-style grants and production table names
+        run: psql "$TEST_DATABASE_URL" --set ON_ERROR_STOP=1 --file scripts/ci/supabase_public_api_rls_fixture.sql
+
+      - name: Apply tracked migrations
+        run: |
+          for migration in supabase/migrations/*.sql; do
+            test -f "$migration"
+            psql "$TEST_DATABASE_URL" --set ON_ERROR_STOP=1 --file "$migration"
+          done
+
+      - name: Verify RLS and API role denial
+        run: psql "$TEST_DATABASE_URL" --set ON_ERROR_STOP=1 --file scripts/ci/assert_supabase_public_api_rls.sql
+
+      - name: Verify future grants stay closed
+        run: psql "$TEST_DATABASE_URL" --set ON_ERROR_STOP=1 --file scripts/ci/assert_supabase_default_privileges.sql
+
+      - name: Verify migration is idempotent
+        run: psql "$TEST_DATABASE_URL" --set ON_ERROR_STOP=1 --file supabase/migrations/20261112102935_lock_down_public_api_roles.sql
+
+  deploy-production:
+    name: Apply migration to Supabase production
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.deploy_production
+    needs: rls-migration-test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: supabase-production
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v3.2.0
+        with:
+          version: 3.1.0
+
+      - name: Confirm deployment credentials are configured
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN" || { echo "Missing SUPABASE_ACCESS_TOKEN in supabase-production environment."; exit 1; }
+          test -n "$SUPABASE_DB_PASSWORD" || { echo "Missing SUPABASE_DB_PASSWORD in supabase-production environment."; exit 1; }
+
+      - name: Link checkout to the approved Supabase project
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase link --project-ref zwpfaqmwfjbeautfplzz --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Preview pending migrations
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase db push --remote=zwpfaqmwfjbeautfplzz --password "$SUPABASE_DB_PASSWORD" --dry-run --skip-vault
+
+      - name: Apply reviewed migrations
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase db push --remote=zwpfaqmwfjbeautfplzz --password "$SUPABASE_DB_PASSWORD" --yes --skip-vault
+
+      - name: Verify production table and sequence access
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: supabase db query --remote=zwpfaqmwfjbeautfplzz --read-only --file scripts/ci/assert_supabase_public_api_rls.sql
+
+      - name: Confirm Supabase Security Advisor errors are clear
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: supabase db advisors --remote=zwpfaqmwfjbeautfplzz --type security --level error --fail-on error --output-format json
