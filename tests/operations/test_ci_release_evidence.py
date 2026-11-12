@@ -5,7 +5,7 @@
 #
 # Invariants verified:
 #   1. CI workflow (.github/workflows/ci.yml) enforces concurrency cancellation, least privilege,
-#      complete deterministic test suite execution (not an isolated single file), and gated eval.
+#      complete deterministic test suite execution (not an isolated single file), without paid eval.
 #   2. CI checks strictly block deliberately introduced auth bypasses (401/403).
 #   3. CI checks strictly block failed-agent false positive approvals (aggregator safety invariant).
 #   4. Schema migration checks detect unmigrated tables and fail readiness probes.
@@ -28,7 +28,7 @@ def test_ci_workflow_structure_and_security_invariants():
       - Least-privilege permissions applied.
       - Full test suite (tests/) executed with eval isolation.
       - Frontend typecheck and production build included.
-      - Eval gate gated to main branch.
+      - Paid provider evaluations are excluded from routine CI.
     """
     ci_path = Path(__file__).resolve().parents[2] / ".github" / "workflows" / "ci.yml"
     assert ci_path.exists(), "CI workflow file .github/workflows/ci.yml must exist"
@@ -49,7 +49,7 @@ def test_ci_workflow_structure_and_security_invariants():
     assert "lint-and-typecheck" in jobs
     assert "test-suite" in jobs
     assert "frontend-build" in jobs
-    assert "eval-gate" in jobs
+    assert "eval-gate" not in jobs
 
     # 4. test-suite must run full test directory, not just a single smoke file
     test_suite_steps = jobs["test-suite"]["steps"]
@@ -57,9 +57,9 @@ def test_ci_workflow_structure_and_security_invariants():
     full_suite_invoked = any("pytest tests/" in r and "not eval" in r for r in run_steps)
     assert full_suite_invoked, "CI test-suite must execute full pytest tests/ suite excluding paid evals"
 
-    # 5. eval-gate must be gated to push on main
-    eval_gate = jobs["eval-gate"]
-    assert "push" in eval_gate.get("if", "") and "main" in eval_gate.get("if", "")
+    # 5. Routine CI must not run paid provider evaluations.
+    assert all("eval" not in job_name.lower() for job_name in jobs)
+    assert all("OPENAI_API_KEY" not in step.get("env", {}) for job in jobs.values() for step in job.get("steps", []))
 
 
 def test_required_checks_block_auth_bypass():
