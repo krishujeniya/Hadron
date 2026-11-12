@@ -1,0 +1,8 @@
+# Minimal Supabase CLI project configuration for tracked migrations.
+project_id = "hadron-production"
+
+[db]
+major_version = 17
+
+[db.migrations]
+enabled = true

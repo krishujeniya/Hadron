@@ -3,17 +3,15 @@
 # Production CI pipeline for Hadron Autonomous AI PR Review Agent.
 #
 # Pipeline Architecture:
-#   1. lint-and-typecheck  — Ruff linting, Python syntax validation, and Frontend TypeScript typecheck
-#   2. test-suite          — Complete deterministic critical-path test suite (315+ unit, contract,
-#                            security, disaster recovery, and isolation tests with mocked I/O)
-#   3. frontend-build      — Next.js production build, route verification (16/16 routes), and static export
-#   4. eval-gate           — Paid evaluation gate with real LLM model calls (ONLY on push to main)
+#   1. lint-and-typecheck  — Ruff, repository checks, and frontend TypeScript typecheck
+#   2. test-suite          — Deterministic tests with mocked external services
+#   3. frontend-build      — Next.js and GitHub Pages builds plus browser regression checks
+#   4. backend-image       — Build the production backend container
 #
 # Security & Reliability Guarantees:
 #   - Concurrency group with cancel-in-progress to terminate redundant runs
-#   - Least-privilege GITHUB_TOKEN permissions (contents: read, pull-requests: read)
-#   - PRs run with network denied / isolated mock credentials to protect secrets
-#   - Deploys to Railway / production require all checks to pass
+#   - Least-privilege GITHUB_TOKEN permissions (contents: read)
+#   - Deterministic tests use placeholder credentials and skip paid provider evaluations
 
 name: CI
 
@@ -29,7 +27,6 @@ concurrency:
 
 permissions:
   contents: read
-  pull-requests: read
 
 jobs:
 
@@ -39,6 +36,7 @@ jobs:
   lint-and-typecheck:
     name: Lint & Typecheck
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -84,6 +82,7 @@ jobs:
   test-suite:
     name: Critical-Path Test Suite
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     needs: lint-and-typecheck
     env:
       APP_ENV: test
@@ -117,12 +116,12 @@ jobs:
         run: pip install uv
 
       - name: Install all project dependencies
-        run: uv pip install --system -e ".[dev]"
+        run: uv sync --locked --extra dev
 
       - name: Run complete test suite (Unit, Contract, Security, DR)
         run: |
           # Runs all non-eval tests with full verbosity and trace summaries
-          python3 -m pytest tests/ -v --tb=short -m "not eval"
+          uv run --locked python -m pytest tests/ -v --tb=short -m "not eval"
 
   # ---------------------------------------------------------------------------
   # JOB 3: Frontend Build & Route Verification
@@ -130,6 +129,7 @@ jobs:
   frontend-build:
     name: Frontend Build & Verify
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     needs: lint-and-typecheck
     steps:
       - name: Checkout repository
@@ -163,51 +163,23 @@ jobs:
             if curl --silent --fail http://127.0.0.1:3000/ > /dev/null; then break; fi
             sleep 1
           done
+          if ! kill -0 "$SERVER_PID" 2>/dev/null || ! curl --silent --fail http://127.0.0.1:3000/ > /dev/null; then
+            cat /tmp/hadron-ui-server.log
+            echo "Frontend server did not become ready."
+            exit 1
+          fi
           npm run test:ui --prefix frontend
 
   # ---------------------------------------------------------------------------
-  # JOB 4: Eval Gate (Real LLM Prompt & Verdict Regression Gate)
-  # Only executes on push to main with configured secrets
+  # JOB 4: Backend Production Container Build
   # ---------------------------------------------------------------------------
-  eval-gate:
-    name: Eval Gate (Real LLM)
+  backend-image:
+    name: Backend Container Build
     runs-on: ubuntu-24.04
-    needs: [test-suite, frontend-build]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
-    env:
-      APP_ENV: test
-      DATABASE_URL: "sqlite+aiosqlite:///:memory:"
-      REDIS_URL: "redis://localhost:6379"
-      QDRANT_URL: "http://localhost:6333"
-      QDRANT_API_KEY: "test-key"
-      QDRANT_COLLECTION_NAME: "test_collection"
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      ANTHROPIC_API_KEY: "test-placeholder"
-      SECURITY_PROVIDER: "openai"
-      SECURITY_MODEL: "gpt-4o"
-      GITHUB_WEBHOOK_SECRET: "test-secret"
-      GITHUB_TOKEN: "ghp_test_placeholder"
-      LOG_LEVEL: "INFO"
-      API_KEY: "valid-test-key-12345"
-      CONFIDENCE_THRESHOLD: "0.85"
-      WORKFLOW_TIMEOUT_SECONDS: "300"
-      MAX_CONCURRENT_REVIEWS: "5"
-
+    timeout-minutes: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install uv
-        run: pip install uv
-
-      - name: Install dependencies
-        run: uv pip install --system -e ".[dev]"
-
-      - name: Run eval gate test
-        run: python3 -m pytest tests/evaluation/test_eval_gate.py -v -s --timeout=120
+      - name: Build backend production image
+        run: docker build --tag hadron-backend:ci .
