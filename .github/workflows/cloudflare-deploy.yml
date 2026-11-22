@@ -19,7 +19,21 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v4
 
+      - name: Check Cloudflare secrets
+        id: check-secrets
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -n "$CF_API_TOKEN" ] && [ -n "$CF_ACCOUNT_ID" ]; then
+            echo "has_secrets=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_secrets=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Cloudflare credentials not configured in repo secrets. Skipping automated deployment."
+          fi
+
       - name: Deploy to Cloudflare
+        if: steps.check-secrets.outputs.has_secrets == 'true'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
