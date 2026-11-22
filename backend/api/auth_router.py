@@ -93,7 +93,12 @@ def _validate_redirect_uri(redirect_uri: str | None, settings: Settings) -> str 
     parsed = urllib.parse.urlparse(redirect_uri)
     origin = f"{parsed.scheme}://{parsed.netloc}"
     allowed = {value.strip().rstrip("/") for value in settings.cors_origins.split(",") if value.strip()}
-    allowed.update({"https://hadron.dev", "https://hadron.vercel.app", "https://krishujeniya.github.io"})
+    allowed.update({
+        "https://hadron.dev",
+        "https://hadron.pages.dev",
+        "https://krishujeniya.dev",
+        "https://hadron.vercel.app",
+    })
     if settings.is_development:
         allowed.update({
             "http://localhost:3000",

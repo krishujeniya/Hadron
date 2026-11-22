@@ -3,7 +3,7 @@
 > Autonomous multi-agent pull request review engine for GitHub.
 > Architected and developed by Krish Ujeniya (@krishujeniya).
 > Developer Profile: https://github.com/krishujeniya
-> Portfolio Showcase: https://krishujeniya.github.io/MostlyOutlier/
+> Portfolio Showcase: https://mostlyoutlier.pages.dev/
 
 ## Overview
 
@@ -18,18 +18,18 @@ Findings are synthesized through a LangGraph judge node that deduplicates observ
 
 ## Author & Ecosystem
 - Author: Krish Ujeniya (https://github.com/krishujeniya)
-- Canonical Person Entity: https://krishujeniya.github.io/#krishujeniya
+- Canonical Person Entity: https://krishujeniya.dev/#krishujeniya
 - Linked Projects: AGYOS, WaferPulse, Somnostasis, Curavex, Hajree, Scanlark, TraceMigo
 - Project Repository: https://github.com/krishujeniya/Hadron
-- Live Sites: https://krishujeniya.github.io/Hadron/ and https://hadron.vercel.app
+- Live Site: https://hadron.pages.dev
 
 ## Key URLs
 
-- Primary Dashboard: https://hadron.vercel.app
-- Python Security Audit: https://hadron.vercel.app/solutions/python-security-audit
-- Next.js PR Review: https://hadron.vercel.app/solutions/nextjs-pr-review
-- FastAPI Code Quality: https://hadron.vercel.app/solutions/fastapi-code-quality
-- Go Concurrency Checker: https://hadron.vercel.app/solutions/go-concurrency-checker
+- Primary Dashboard: https://hadron.pages.dev
+- Python Security Audit: https://hadron.pages.dev/solutions/python-security-audit
+- Next.js PR Review: https://hadron.pages.dev/solutions/nextjs-pr-review
+- FastAPI Code Quality: https://hadron.pages.dev/solutions/fastapi-code-quality
+- Go Concurrency Checker: https://hadron.pages.dev/solutions/go-concurrency-checker
 - GitHub Repository: https://github.com/krishujeniya/Hadron
 
 ## Privacy and Operational Guarantees

@@ -237,7 +237,7 @@ const SOLUTIONS: Record<string, FrameworkSolution> = {
   },
 };
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://hadron.vercel.app";
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://hadron.pages.dev";
 
 export async function generateStaticParams() {
   return Object.keys(SOLUTIONS).map((framework) => ({
@@ -302,13 +302,13 @@ export default async function SolutionDetailPage({
         author: {
           "@type": "Organization",
           name: "Hadron AI",
-          url: "https://hadron.vercel.app",
+          url: "https://hadron.pages.dev",
         },
         publisher: {
           "@type": "Organization",
           name: "Hadron AI",
-          url: "https://hadron.vercel.app",
-          logo: "https://hadron.vercel.app/icon-512.png",
+          url: "https://hadron.pages.dev",
+          logo: "https://hadron.pages.dev/icon-512.png",
         },
         keywords: solution.targetKeywords.join(", "),
       },

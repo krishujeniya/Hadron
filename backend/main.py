@@ -155,8 +155,8 @@ if settings.is_development:
             "http://127.0.0.1:5173",
             "http://localhost:8000",
             "http://testserver",
-            "https://krishujeniya.github.io",
-            "https://hadron.vercel.app",
+            "https://hadron.pages.dev",
+            "https://krishujeniya.dev",
             "*",
         ],
         allow_credentials=True,
@@ -169,8 +169,8 @@ else:
     origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
     default_prod_origins = [
         "https://hadron.dev",
-        "https://hadron.vercel.app",
-        "https://krishujeniya.github.io",
+        "https://hadron.pages.dev",
+        "https://krishujeniya.dev",
     ]
     if not origins and settings.app_env == "production":
         origins = default_prod_origins

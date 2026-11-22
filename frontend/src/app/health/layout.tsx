@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: "System Health & Telemetry | Hadron",
     description:
       "Real-time health status, circuit breaker states, and uptime metrics for the Hadron multi-agent review infrastructure.",
-    url: "https://hadron.vercel.app/health",
+    url: "https://hadron.pages.dev/health",
   },
 };
 

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: "Pull Request Reviews | Hadron",
     description:
       "Track autonomous code review statuses, specialist findings, and approval recommendations across your GitHub pull requests.",
-    url: "https://hadron.vercel.app/reviews",
+    url: "https://hadron.pages.dev/reviews",
   },
 };
 

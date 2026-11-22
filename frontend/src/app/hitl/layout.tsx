@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: "Human-in-the-Loop Review Queue | Hadron",
     description:
       "Triage escalated pull requests, inspect borderline agent confidence scores, and approve findings before GitHub publication.",
-    url: "https://hadron.vercel.app/hitl",
+    url: "https://hadron.pages.dev/hitl",
   },
 };
 

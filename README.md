@@ -8,7 +8,7 @@
 # Hadron: autonomous multi-agent PR review engine
 
 <p align="center">
-  <a href="https://hadron-api.curavex.workers.dev"><img src="https://img.shields.io/badge/Live_Dashboard-hadron.vercel.app-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Dashboard" /></a>
+  <a href="https://hadron.pages.dev"><img src="https://img.shields.io/badge/Live_Dashboard-hadron.pages.dev-F38020?style=for-the-badge&logo=cloudflare&logoColor=white" alt="Live Dashboard" /></a>
   <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+" />
   <img src="https://img.shields.io/badge/Next.js-15-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js 15" />
   <img src="https://img.shields.io/badge/FastAPI-0.100%2B-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />

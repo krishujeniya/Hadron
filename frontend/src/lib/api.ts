@@ -19,20 +19,20 @@ import type {
 } from "./types";
 
 // Origin and direct API resolution:
-// When running on GitHub Pages (*.github.io) or when NEXT_PUBLIC_API_DIRECT=1 is set,
-// all API requests dispatch directly to the production FastAPI backend (https://hadron-backend.vercel.app).
+// When running on Cloudflare Pages (*.pages.dev) or when NEXT_PUBLIC_API_DIRECT=1 is set,
+// all API requests dispatch directly to the production API gateway (https://hadron-api.curavex.workers.dev).
 const isClient = typeof window !== "undefined";
-const isGitHubPages = isClient && (window.location.hostname.endsWith("github.io") || window.location.pathname.startsWith("/Hadron"));
+const isCloudflarePages = isClient && (window.location.hostname.endsWith("pages.dev") || window.location.hostname === "hadron.pages.dev");
 
 const configuredApi =
   (typeof process !== "undefined" && (process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL)) ||
   "";
 
 const isDirect =
-  isGitHubPages ||
+  isCloudflarePages ||
   (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_DIRECT === "1");
 
-const DEFAULT_BACKEND = "https://hadron-backend.vercel.app";
+const DEFAULT_BACKEND = "https://hadron-api.curavex.workers.dev";
 export const API_BASE_URL = isDirect ? (configuredApi || DEFAULT_BACKEND) : (configuredApi || "");
 const BASE = API_BASE_URL;
 

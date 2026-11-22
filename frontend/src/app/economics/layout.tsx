@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: "Token Economics & Cost Ledger | Hadron",
     description:
       "Monitor per-review LLM token consumption, track daily budget ceilings, and audit operational spend across your engineering team.",
-    url: "https://hadron.vercel.app/economics",
+    url: "https://hadron.pages.dev/economics",
   },
 };
 

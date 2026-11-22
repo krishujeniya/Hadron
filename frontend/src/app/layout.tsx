@@ -8,7 +8,7 @@ import { ThemeProvider } from "@/lib/themeContext";
 import { Shell } from "@/components/layout/Shell";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://hadron.vercel.app"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://hadron.pages.dev"),
   title: "Hadron | Autonomous PR Review Engine",
   description: "Automate code reviews on GitHub pull requests. Four parallel specialist agents inspect diffs across security, code quality, test coverage, and documentation before merge.",
   alternates: {
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Hadron | Autonomous PR Review Engine",
     description: "Automate code reviews on GitHub pull requests. Four parallel specialist agents inspect diffs across security, code quality, test coverage, and documentation before merge.",
-    url: "https://hadron.vercel.app",
+    url: "https://hadron.pages.dev",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Hadron multi-agent pull request review: four specialist agents, one review" }],
   },
   twitter: {
@@ -55,7 +55,7 @@ const schemaOrgData = {
   "@graph": [
     {
       "@type": "Person",
-      "@id": "https://krishujeniya.github.io/#krishujeniya",
+      "@id": "https://krishujeniya.dev/#krishujeniya",
       name: "Krish Ujeniya",
       url: "https://github.com/krishujeniya",
       jobTitle: "Software Engineer & AI Systems Architect",
@@ -72,21 +72,21 @@ const schemaOrgData = {
       operatingSystem: "All",
       description:
         "Autonomous multi-agent pull request review engine that coordinates Security, Quality, Test, and Documentation agents in parallel.",
-      url: "https://hadron.vercel.app",
-      author: { "@id": "https://krishujeniya.github.io/#krishujeniya" },
-      creator: { "@id": "https://krishujeniya.github.io/#krishujeniya" },
+      url: "https://hadron.pages.dev",
+      author: { "@id": "https://krishujeniya.dev/#krishujeniya" },
+      creator: { "@id": "https://krishujeniya.dev/#krishujeniya" },
     },
     {
       "@type": "Organization",
       name: "Hadron AI",
-      url: "https://hadron.vercel.app",
-      logo: "https://hadron.vercel.app/icon-512.png",
+      url: "https://hadron.pages.dev",
+      logo: "https://hadron.pages.dev/icon-512.png",
       sameAs: ["https://github.com/krishujeniya/Hadron"],
     },
     {
       "@type": "WebSite",
       name: "Hadron",
-      url: "https://hadron.vercel.app",
+      url: "https://hadron.pages.dev",
     },
     {
       "@type": "FAQPage",

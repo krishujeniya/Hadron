@@ -2,29 +2,23 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Hadron | Redirecting...</title>
-    <script>
-      // Single Page Apps for GitHub Pages
-      // MIT License
-      // https://github.com/rafgraph/spa-github-pages
-      (function() {
-        var pathSegmentsToKeep = 1; // 1 segment for GitHub Project Pages: /<repo-name>/
-        var l = window.location;
-        if (l.hostname.indexOf('github.io') === -1) {
-          pathSegmentsToKeep = 0;
-        }
-        var path = l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/');
-        var query = l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '';
-        var redirectUrl = l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-          l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
-          path + query + l.hash;
-        l.replace(redirectUrl);
-      })();
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>404 - Page Not Found | Hadron</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style>
+      body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #09090b; color: #f4f4f5; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+      .container { text-align: center; padding: 2rem; }
+      h1 { font-size: 3rem; margin: 0 0 1rem; color: #38bdf8; }
+      p { font-size: 1.1rem; color: #a1a1aa; margin-bottom: 2rem; }
+      a { color: #38bdf8; text-decoration: none; border: 1px solid #27272a; padding: 0.5rem 1.25rem; border-radius: 6px; }
+      a:hover { background: #18181b; }
+    </style>
   </head>
   <body>
-    <p style="font-family: monospace; font-size: 13px; color: #888; padding: 20px;">
-      Redirecting to Hadron application...
-    </p>
+    <div class="container">
+      <h1>404</h1>
+      <p>The requested page could not be found.</p>
+      <a href="/">Return to Hadron</a>
+    </div>
   </body>
 </html>
