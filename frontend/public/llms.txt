@@ -1,6 +1,9 @@
 # Hadron
 
-> Autonomous multi-agent pull request review engine for GitHub. Four specialist sub-agents analyze pull request diffs concurrently across security, code quality, test coverage, and documentation.
+> Autonomous multi-agent pull request review engine for GitHub.
+> Architected and developed by Krish Ujeniya (@krishujeniya).
+> Developer Profile: https://github.com/krishujeniya
+> Portfolio Showcase: https://krishujeniya.github.io/MostlyOutlier/
 
 ## Overview
 
@@ -12,6 +15,13 @@ Hadron connects to GitHub pull requests via a native GitHub App or GitHub Action
 4. **Documentation Specialist**: Tracks API contract shifts, undocumented exported parameters, and outdated README or OpenAPI specs.
 
 Findings are synthesized through a LangGraph judge node that deduplicates observations and computes Bayesian confidence scores. High-confidence findings are published as inline review comments on GitHub. Low-confidence or high-risk findings (such as database migrations) are routed to an internal Human-in-the-Loop (HITL) queue.
+
+## Author & Ecosystem
+- Author: Krish Ujeniya (https://github.com/krishujeniya)
+- Canonical Person Entity: https://krishujeniya.github.io/#krishujeniya
+- Linked Projects: AGYOS, WaferPulse, Somnostasis, Curavex, Hajree, Scanlark, TraceMigo
+- Project Repository: https://github.com/krishujeniya/Hadron
+- Live Sites: https://krishujeniya.github.io/Hadron/ and https://hadron.vercel.app
 
 ## Key URLs
 

@@ -88,3 +88,10 @@ deploy.md
 # --- Supabase CLI local cache ---
 supabase/.temp/
 .supabase/
+
+# Cloudflare & Secret Guardrails
+.env.local
+.env.*.local
+.dev.vars
+.wrangler/
+.vercel/

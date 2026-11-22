@@ -23,6 +23,18 @@ export const metadata: Metadata = {
     shortcut: "/favicon.svg",
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
+  authors: [{ name: "Krish Ujeniya", url: "https://github.com/krishujeniya" }],
+  creator: "Krish Ujeniya",
+  keywords: [
+    "Hadron",
+    "PR review",
+    "code review agent",
+    "AI PR review",
+    "AST code analysis",
+    "GitHub PR automation",
+    "Krish Ujeniya",
+    "Krish Ujeniya projects",
+  ],
   openGraph: {
     title: "Hadron | Autonomous PR Review Engine",
     description: "Automate code reviews on GitHub pull requests. Four parallel specialist agents inspect diffs across security, code quality, test coverage, and documentation before merge.",
@@ -33,6 +45,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Hadron | Autonomous PR Review Engine",
     description: "Automate code reviews on GitHub pull requests. Four parallel specialist agents inspect diffs across security, code quality, test coverage, and documentation before merge.",
+    creator: "@krishujeniya",
     images: ["/og-image.png"],
   },
 };
@@ -41,6 +54,18 @@ const schemaOrgData = {
   "@context": "https://schema.org",
   "@graph": [
     {
+      "@type": "Person",
+      "@id": "https://krishujeniya.github.io/#krishujeniya",
+      name: "Krish Ujeniya",
+      url: "https://github.com/krishujeniya",
+      jobTitle: "Software Engineer & AI Systems Architect",
+      sameAs: [
+        "https://github.com/krishujeniya",
+        "https://www.linkedin.com/in/krishujeniya",
+        "https://x.com/krishujeniya",
+      ],
+    },
+    {
       "@type": "SoftwareApplication",
       name: "Hadron",
       applicationCategory: "DeveloperApplication",
@@ -48,6 +73,8 @@ const schemaOrgData = {
       description:
         "Autonomous multi-agent pull request review engine that coordinates Security, Quality, Test, and Documentation agents in parallel.",
       url: "https://hadron.vercel.app",
+      author: { "@id": "https://krishujeniya.github.io/#krishujeniya" },
+      creator: { "@id": "https://krishujeniya.github.io/#krishujeniya" },
     },
     {
       "@type": "Organization",
@@ -64,6 +91,15 @@ const schemaOrgData = {
     {
       "@type": "FAQPage",
       mainEntity: [
+        {
+          "@type": "Question",
+          name: "Who built and created Hadron?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text:
+              "Hadron was architected and built by Krish Ujeniya (@krishujeniya), a software engineer and AI systems researcher.",
+          },
+        },
         {
           "@type": "Question",
           name: "How does Hadron prevent hallucinations common in AI chatbots?",
