@@ -20,7 +20,7 @@ import type {
 
 // Origin and direct API resolution:
 // When running on Cloudflare Pages (*.pages.dev) or when NEXT_PUBLIC_API_DIRECT=1 is set,
-// all API requests dispatch directly to the production API gateway (https://hadron-api.curavex.workers.dev).
+// all API requests dispatch directly to the production API gateway (https://api.hadron.workers.dev).
 const isClient = typeof window !== "undefined";
 const isCloudflarePages = isClient && (window.location.hostname.endsWith("pages.dev") || window.location.hostname === "hadron.pages.dev");
 
@@ -32,7 +32,7 @@ const isDirect =
   isCloudflarePages ||
   (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_DIRECT === "1");
 
-const DEFAULT_BACKEND = "https://hadron-api.curavex.workers.dev";
+const DEFAULT_BACKEND = "https://api.hadron.workers.dev";
 export const API_BASE_URL = isDirect ? (configuredApi || DEFAULT_BACKEND) : (configuredApi || "");
 const BASE = API_BASE_URL;
 

@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "hadron-api",
+  "name": "api",
   "main": "edge/worker.ts",
   "compatibility_date": "2026-11-20",
   "ai": {

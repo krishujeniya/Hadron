@@ -20,7 +20,7 @@ export default defineConfig({
       process.env.VITE_APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://hadron.pages.dev"
     ),
     "process.env.NEXT_PUBLIC_API_BASE_URL": JSON.stringify(
-      process.env.VITE_API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://hadron-api.curavex.workers.dev"
+      process.env.VITE_API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.hadron.workers.dev"
     ),
     "process.env.NEXT_PUBLIC_API_DIRECT": JSON.stringify(
       process.env.VITE_API_DIRECT || process.env.NEXT_PUBLIC_API_DIRECT || "1"
