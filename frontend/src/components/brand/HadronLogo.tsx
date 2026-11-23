@@ -19,35 +19,33 @@ export function HadronLogo({
   className = "",
 }: HadronLogoProps) {
   const dimensions = {
-    sm: { width: 136, height: 39 },
-    md: { width: 170, height: 48 },
-    lg: { width: 240, height: 68 },
+    sm: { size: 32, text: "text-lg", h: 32 },
+    md: { size: 38, text: "text-xl", h: 38 },
+    lg: { size: 48, text: "text-2xl", h: 48 },
   }[size];
 
   const isPages = typeof window !== "undefined" && (window.location.hostname.endsWith("github.io") || window.location.pathname.startsWith("/Hadron"));
   const basePath = isPages ? "/Hadron" : "";
 
   const content = (
-    <span className={`inline-flex flex-col items-start justify-center min-w-0 ${className}`}>
+    <span className={`inline-flex items-center gap-2.5 min-w-0 select-none ${className}`}>
       <img
-        src={`${basePath}/logo.svg`}
+        src={`${basePath}/logo.png`}
         alt="Hadron"
-        width={dimensions.width}
-        height={dimensions.height}
-        className="block dark:hidden shrink-0"
+        width={dimensions.size}
+        height={dimensions.size}
+        className="shrink-0 object-contain rounded-lg"
       />
-      <img
-        src={`${basePath}/logo-dark.svg`}
-        alt="Hadron"
-        width={dimensions.width}
-        height={dimensions.height}
-        className="hidden dark:block shrink-0"
-      />
-      {showSubtitle && (
-        <span className="text-[9px] font-medium uppercase tracking-[0.1em] text-muted">
-          Multi-agent pull request review
+      <span className="flex flex-col leading-none">
+        <span className={`font-semibold tracking-tight text-fg ${dimensions.text}`}>
+          Hadron
         </span>
-      )}
+        {showSubtitle && (
+          <span className="text-[9px] font-medium uppercase tracking-[0.1em] text-muted mt-0.5">
+            Multi-agent PR review
+          </span>
+        )}
+      </span>
     </span>
   );
 
