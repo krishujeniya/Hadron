@@ -11,7 +11,7 @@ if (isProd && process.env.NEXT_PUBLIC_API_DIRECT === "1" && !configuredApi) {
 }
 
 // In local development default to local backend; in production default to live backend or configured host
-const DEFAULT_BACKEND = isProd ? "https://hadron.curavex.workers.dev" : "http://localhost:8000";
+const DEFAULT_BACKEND = isProd ? "https://api-hadron-pr.pages.dev" : "http://localhost:8000";
 const API_BASE = configuredApi || DEFAULT_BACKEND;
 
 const nextConfig = {
@@ -30,7 +30,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https: blob:",
               "font-src 'self' data:",
-              "connect-src 'self' http://localhost:8000 http://127.0.0.1:8000 https://hadron.curavex.workers.dev " + (configuredApi || ""),
+              "connect-src 'self' http://localhost:8000 http://127.0.0.1:8000 https://api-hadron-pr.pages.dev " + (configuredApi || ""),
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
