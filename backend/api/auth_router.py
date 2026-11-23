@@ -95,6 +95,7 @@ def _validate_redirect_uri(redirect_uri: str | None, settings: Settings) -> str 
     allowed = {value.strip().rstrip("/") for value in settings.cors_origins.split(",") if value.strip()}
     allowed.update({
         "https://hadron.dev",
+        "https://hadron-pr.pages.dev",
         "https://hadron.pages.dev",
         "https://krishujeniya.dev",
         "https://hadron.vercel.app",

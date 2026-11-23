@@ -17,13 +17,13 @@ export default defineConfig({
   },
   define: {
     "process.env.NEXT_PUBLIC_APP_URL": JSON.stringify(
-      process.env.VITE_APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://hadron.pages.dev"
+      process.env.VITE_APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://hadron-pr.pages.dev"
     ),
     "process.env.NEXT_PUBLIC_API_BASE_URL": JSON.stringify(
-      process.env.VITE_API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.hadron.workers.dev"
+      process.env.VITE_API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || ""
     ),
     "process.env.NEXT_PUBLIC_API_DIRECT": JSON.stringify(
-      process.env.VITE_API_DIRECT || process.env.NEXT_PUBLIC_API_DIRECT || "1"
+      process.env.VITE_API_DIRECT || process.env.NEXT_PUBLIC_API_DIRECT || "0"
     ),
     "process.env.NEXT_PUBLIC_BASE_PATH": JSON.stringify(
       process.env.VITE_BASE_PATH || process.env.NEXT_PUBLIC_BASE_PATH || ""
