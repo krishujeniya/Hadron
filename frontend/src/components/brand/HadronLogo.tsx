@@ -24,8 +24,18 @@ export function HadronLogo({
     lg: { width: 240, height: 68 },
   }[size];
 
+  const isPages = typeof window !== "undefined" && (window.location.hostname.endsWith("github.io") || window.location.pathname.startsWith("/Hadron"));
+  const basePath = isPages ? "/Hadron" : "";
+
   const content = (
-    <span className={`inline-flex flex-col items-start justify-center min-w-0 ${className}`}>
+    <span className={`inline-flex items-center gap-2.5 min-w-0 select-none ${className}`}>
+      <img
+        src={`${basePath}/logo1.png`}
+        alt="Hadron"
+        width={32}
+        height={32}
+        className="shrink-0 object-contain rounded-lg w-8 h-8"
+      />
       <img
         src="/logo.svg"
         alt="Hadron"
