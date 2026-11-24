@@ -342,7 +342,7 @@ async def test_shared_oauth_state_uses_atomic_consumption():
     from backend.auth.session_store import SessionStore
     store = SessionStore()
     pool = AsyncMock()
-    pool.getdel.side_effect = [json.dumps({"expires_at": time.time() + 60, "data": {"redirect_uri": "https://hadron.vercel.app/auth/callback"}}), None]
+    pool.getdel.side_effect = [json.dumps({"expires_at": time.time() + 60, "data": {"redirect_uri": "https://hadron.pages.dev/auth/callback"}}), None]
     with patch.object(store, "_get_redis_pool", new=AsyncMock(return_value=pool)):
         assert await store.verify_and_consume_oauth_state("state") is not None
         assert await store.verify_and_consume_oauth_state("state") is None
@@ -353,7 +353,7 @@ def test_redirect_rejects_arbitrary_hosting_tenants():
     from backend.api.auth_router import _validate_redirect_uri
     from backend.config.settings import Settings
     from fastapi import HTTPException
-    settings = Settings(_env_file=None, cors_origins="https://hadron.vercel.app")
+    settings = Settings(_env_file=None, cors_origins="https://hadron.pages.dev")
     with pytest.raises(HTTPException):
-        _validate_redirect_uri("https://attacker.vercel.app/auth/callback", settings)
-    assert _validate_redirect_uri("https://hadron.vercel.app/auth/callback", settings)
+        _validate_redirect_uri("https://attacker.pages.dev/auth/callback", settings)
+    assert _validate_redirect_uri("https://hadron.pages.dev/auth/callback", settings)

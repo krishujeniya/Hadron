@@ -15,7 +15,7 @@ export async function onRequest(context: any) {
     });
   }
 
-  const UPSTREAM = "https://hadron-backend.vercel.app";
+  const UPSTREAM = "https://api-hadron-pr.pages.dev";
   const targetUrl = new URL(url.pathname + url.search, UPSTREAM);
 
   const headers = new Headers(request.headers);

@@ -23,8 +23,8 @@ def probe(url: str) -> tuple[int, dict]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--frontend', default='https://hadron.vercel.app')
-    parser.add_argument('--backend', default='https://hadron-backend.vercel.app')
+    parser.add_argument('--frontend', default='https://hadron.pages.dev')
+    parser.add_argument('--backend', default='https://api-hadron-pr.pages.dev')
     args = parser.parse_args()
     frontend, backend = args.frontend.rstrip('/'), args.backend.rstrip('/')
     targets = [frontend, backend + '/health/live', backend + '/health/ready', frontend + '/api/v1/auth/me']

@@ -5,7 +5,7 @@ export interface Env {
   UPSTREAM_API?: string;
 }
 
-const UPSTREAM_DEFAULT = "https://hadron-backend.vercel.app";
+const UPSTREAM_DEFAULT = "https://api-hadron-pr.pages.dev";
 
 const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -44,7 +44,7 @@ export default {
       );
     }
 
-    // Proxy API and health routes to the full FastAPI backend on Vercel
+    // Proxy API and health routes to the backend on Cloudflare
     const upstreamBase = env.UPSTREAM_API || UPSTREAM_DEFAULT;
     const targetUrl = new URL(url.pathname + url.search, upstreamBase);
 

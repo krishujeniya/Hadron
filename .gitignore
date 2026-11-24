@@ -94,4 +94,3 @@ supabase/.temp/
 .env.*.local
 .dev.vars
 .wrangler/
-.vercel/

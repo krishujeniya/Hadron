@@ -4,7 +4,6 @@
 .git/
 .gitignore
 .github/
-.vercelignore
 
 # Local Credentials & Secrets (CRITICAL SECURITY BOUNDARY)
 .aws/

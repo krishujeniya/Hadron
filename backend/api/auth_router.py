@@ -99,7 +99,7 @@ def _validate_redirect_uri(redirect_uri: str | None, settings: Settings) -> str 
         "https://api-hadron-pr.pages.dev",
         "https://hadron.pages.dev",
         "https://krishujeniya.dev",
-        "https://hadron.vercel.app",
+        "https://krishujeniya.github.io",
     })
     if settings.is_development:
         allowed.update({

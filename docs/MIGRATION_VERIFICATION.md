@@ -9,7 +9,7 @@
 | **Structure & Boundaries** | `python3 scripts/check_structure.py` | **PASS**. 91 component moves, frontend import contracts, and shared boundaries verified. |
 | **Frontend Typecheck** | `npm run lint --prefix frontend` (`tsc --noEmit`) | **0 ERRORS**. Full TypeScript check passed cleanly across all components and shims. |
 | **Static Build Pipeline** | `npm run build:pages --prefix frontend` (`vite build`) | **PASS**. Generated static bundle in `frontend/dist/` with base path `/Hadron/` in 4.12s. |
-| **Next.js Production Build** | `npm run build --prefix frontend` (`next build`) | **PASS**. Compiled 19 routes successfully; ensures `hadron.vercel.app` remains intact. |
+| **Next.js Production Build** | `npm run build --prefix frontend` (`next build`) | **PASS**. Compiled 19 routes successfully; ensures `hadron.pages.dev` remains intact. |
 | **Playwright UI Regression** | `PLAYWRIGHT_CHROME_PATH=/usr/bin/google-chrome npm run test:ui` | **9/9 PASSED**. Responsive layouts, sign-in focus trap, dark theme, and OAuth callback exchange verified. |
 
 ---
@@ -58,7 +58,7 @@ Static preview verified using `npx vite preview --port 4173`:
 
 ### Step 2: GitHub OAuth Sign-In (Cross-Origin)
 1. Click **Sign in with GitHub**.
-2. Confirm the browser initiates a redirect to `https://hadron-backend.vercel.app/api/v1/auth/github/login?redirect_uri=https://krishujeniya.github.io/Hadron/auth/callback`.
+2. Confirm the browser initiates a redirect to `https://api-hadron-pr.pages.dev/api/v1/auth/github/login?redirect_uri=https://krishujeniya.github.io/Hadron/auth/callback`.
 3. Complete GitHub authorization.
 4. Verify redirect to `https://krishujeniya.github.io/Hadron/auth/callback?code=...&state=...`.
 5. Observe the callback handler exchanging the code with header `X-OAuth-State`.
@@ -75,7 +75,7 @@ Static preview verified using `npx vite preview --port 4173`:
 2. Select a pending HITL review item.
 3. Submit an approval or change-request decision.
 4. Confirm network payload contains `Authorization: Bearer <session_token>` and `x-csrf-token: <csrf_token>`.
-5. Verify response 200 OK from `https://hadron-backend.vercel.app/api/v1/hitl/decisions`.
+5. Verify response 200 OK from `https://api-hadron-pr.pages.dev/api/v1/hitl/decisions`.
 
 ---
 
@@ -87,7 +87,7 @@ The following tests require external production environment secrets and are docu
 - **Prerequisite**: Live GitHub App webhook secret (`GITHUB_WEBHOOK_SECRET`) and public endpoint URL configured in GitHub App settings.
 - **Verification Command**:
   ```bash
-  curl -X POST https://hadron-backend.vercel.app/api/v1/webhooks/github \
+  curl -X POST https://api-hadron-pr.pages.dev/api/v1/webhooks/github \
     -H "X-GitHub-Event: pull_request" \
     -H "X-Hub-Signature-256: sha256=<valid-hmac-signature>" \
     -d @tests/fixtures/pr_opened_event.json

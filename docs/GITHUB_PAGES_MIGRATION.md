@@ -13,13 +13,13 @@ Hadron employs a decoupled production hosting architecture that separates the st
   │     - Client-side navigation via `frontend/src/compat/next/`
   │     - 404.html URL reconstruction protocol for direct links & refresh
   │
-  ├─► Vercel Backend: https://hadron-backend.vercel.app/
-  │     - Serverless FastAPI execution (`api/index.py` via `vercel.json`)
+  ├─► Cloudflare Backend: https://api-hadron-pr.pages.dev/
+  │     - Serverless execution via Cloudflare Edge / Pages Functions
   │     - CORS allowlist explicitly permitting `https://krishujeniya.github.io`
   │     - Cross-origin session token and bearer authentication
   │     - Webhook ingestion from GitHub App (`/api/v1/webhooks/github`)
   │
-  └─► Existing Vercel Frontend: https://hadron.vercel.app/ (Preserved)
+  └─► Cloudflare Frontend: https://hadron.pages.dev/ (Unified App)
         - Next.js server build (`npm run build`) remains intact
 
 [Backend Infrastructure & Services]
@@ -33,7 +33,7 @@ Hadron employs a decoupled production hosting architecture that separates the st
 ## 2. Cross-Origin Authentication Architecture
 
 ### The Third-Party Cookie Constraint
-Modern browser privacy engines (Safari Intelligent Tracking Prevention, Chrome Privacy Sandbox, and Firefox Enhanced Tracking Protection) block cross-site cookies on cross-origin `fetch` requests between `https://krishujeniya.github.io` and `https://hadron-backend.vercel.app`. Relying solely on `Set-Cookie` fails in third-party contexts.
+Modern browser privacy engines (Safari Intelligent Tracking Prevention, Chrome Privacy Sandbox, and Firefox Enhanced Tracking Protection) block cross-site cookies on cross-origin `fetch` requests between `https://krishujeniya.github.io` and `https://api-hadron-pr.pages.dev`. Relying solely on `Set-Cookie` fails in third-party contexts.
 
 ### The Hybrid Token + Header Protocol
 Hadron implements a standards-compliant cross-origin authentication flow:
@@ -67,7 +67,7 @@ Hadron implements a standards-compliant cross-origin authentication flow:
 The backend CORS policy in `backend/main.py` explicitly allows:
 - `https://krishujeniya.github.io`
 - `https://hadron.dev`
-- `https://hadron.vercel.app`
+- `https://hadron.pages.dev`
 - `http://localhost:3000` (Next.js local development)
 - `http://localhost:5173` and `http://127.0.0.1:5173` (Vite local development)
 
@@ -87,7 +87,7 @@ GitHub Pages is a static file host that does not natively support server-side UR
 All static assets, route links, and script references are anchored to `/Hadron/`:
 - Vite configuration: `base: "/Hadron/"`.
 - Next.js Link compatibility shim: automatically prepends `/Hadron` when deployed on GitHub Pages.
-- API requests: client automatically detects hostname matching `*.github.io` and routes directly to `https://hadron-backend.vercel.app`.
+- API requests: client automatically detects hostname matching `*.github.io` and routes directly to `https://api-hadron-pr.pages.dev`.
 
 ### Direct Deep Links & Refresh Handling
 To support direct navigation to arbitrary dynamic paths (such as `/reviews/rev_123` or `/hitl/hitl_456`):
@@ -106,7 +106,7 @@ The repository maintains full dual-target compatibility:
 |---|---|---|---|---|
 | **GitHub Pages** | `npm run build:pages` | `frontend/dist/` | `frontend/vite.config.ts` | Static SPA bundle with base `/Hadron/` |
 | **Vercel Frontend** | `npm run build` | `frontend/.next/` | `frontend/next.config.mjs` | Server-rendered Next.js 15 application |
-| **Vercel Backend** | `vercel deploy` | Python runtime | `vercel.json` | Serverless FastAPI backend entrypoint |
+| **Cloudflare Backend** | `wrangler deploy` | Edge runtime | `wrangler.jsonc` | Cloudflare Edge backend entrypoint |
 
 ---
 
