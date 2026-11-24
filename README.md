@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg" />
-    <img src="assets/logo.svg" alt="Hadron — multi-agent pull request review" width="420" />
+    <source media="(prefers-color-scheme: dark)" srcset="assets/ulogo-logo.png" />
+    <img src="assets/ulogo-logo.png" alt="Hadron — multi-agent pull request review" width="320" />
   </picture>
 </p>
 

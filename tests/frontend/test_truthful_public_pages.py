@@ -54,7 +54,7 @@ def test_layout_metadata_and_structured_data_are_factual():
     content = layout_file.read_text(encoding="utf-8")
 
     assert 'canonical: "/"' in content or "canonical: '/'" in content
-    assert "/og-image.png" in content
+    assert "/ulogo-og-image.png" in content or "/og-image.png" in content
     assert "aggregateRating" not in content  # No fabricated review ratings
     assert "offers" not in content or "price" not in content  # No fabricated pricing schemes
 

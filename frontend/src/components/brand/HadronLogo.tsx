@@ -37,14 +37,14 @@ export function HadronLogo({
         className="shrink-0 object-contain rounded-lg w-8 h-8"
       />
       <img
-        src="/logo.svg"
+        src="/ulogo-logo.svg"
         alt="Hadron"
         width={dimensions.width}
         height={dimensions.height}
         className="block dark:hidden shrink-0"
       />
       <img
-        src="/logo-dark.svg"
+        src="/ulogo-logo-dark.svg"
         alt="Hadron"
         width={dimensions.width}
         height={dimensions.height}

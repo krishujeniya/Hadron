@@ -29,12 +29,12 @@ def _get_png_dimensions(path: Path) -> tuple[int, int]:
 def test_brand_assets_exist_and_have_exact_dimensions():
     """Verify all brand assets in frontend/public exist with valid formats and dimensions."""
     expected_assets = {
-        "apple-touch-icon.png": (180, 180),
-        "favicon-16x16.png": (16, 16),
-        "favicon-32x32.png": (32, 32),
-        "icon-192.png": (192, 192),
-        "icon-512.png": (512, 512),
-        "og-image.png": (1200, 630),
+        "ulogo-apple-touch-icon.png": (180, 180),
+        "ulogo-favicon-16x16.png": (16, 16),
+        "ulogo-favicon-32x32.png": (32, 32),
+        "ulogo-icon-192.png": (192, 192),
+        "ulogo-icon-512.png": (512, 512),
+        "ulogo-og-image.png": (1200, 630),
     }
 
     for filename, (expected_w, expected_h) in expected_assets.items():
@@ -44,7 +44,7 @@ def test_brand_assets_exist_and_have_exact_dimensions():
         assert (w, h) == (expected_w, expected_h), f"{filename} dimensions {w}x{h} != expected {expected_w}x{expected_h}"
 
     # SVGs
-    for svg_name in ["favicon.svg", "logo.svg"]:
+    for svg_name in ["ulogo-favicon.svg", "ulogo-logo.svg"]:
         svg_path = PUBLIC_DIR / svg_name
         assert svg_path.exists(), f"SVG asset {svg_name} must exist"
         text = svg_path.read_text(encoding="utf-8")
