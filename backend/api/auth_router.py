@@ -98,6 +98,7 @@ def _validate_redirect_uri(redirect_uri: str | None, settings: Settings) -> str 
         "https://hadron-pr.pages.dev",
         "https://api-hadron-pr.pages.dev",
         "https://hadron.pages.dev",
+        "https://api.hadron.workers.dev",
         "https://krishujeniya.dev",
         "https://krishujeniya.github.io",
     })
