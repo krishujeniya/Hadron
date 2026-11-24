@@ -307,7 +307,7 @@ export default async function SolutionDetailPage({
           "@type": "Organization",
           name: "Hadron AI",
           url: "https://hadron.pages.dev",
-          logo: "https://hadron.pages.dev/icon-512.png",
+          logo: "https://hadron.pages.dev/ulogo-icon-512.png",
         },
         keywords: solution.targetKeywords.join(", "),
       },

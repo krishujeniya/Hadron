@@ -30,7 +30,7 @@ export function HadronLogo({
   const content = (
     <span className={`inline-flex items-center gap-2.5 min-w-0 select-none ${className}`}>
       <img
-        src={`${basePath}/logo1.png`}
+        src={`${basePath}/ulogo-brand-32.png`}
         alt="Hadron"
         width={32}
         height={32}

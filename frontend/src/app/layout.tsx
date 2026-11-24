@@ -16,13 +16,16 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/ulogo-favicon.ico" },
+      { url: "/ulogo-favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/ulogo-favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/ulogo-android-chrome-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/ulogo-android-chrome-512x512.png", sizes: "512x512", type: "image/png" },
     ],
-    shortcut: "/favicon.svg",
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    shortcut: "/ulogo-favicon-32x32.png",
+    apple: [{ url: "/ulogo-apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
+  manifest: "/site.webmanifest",
   authors: [{ name: "Krish Ujeniya", url: "https://github.com/krishujeniya" }],
   creator: "Krish Ujeniya",
   keywords: [
@@ -39,14 +42,14 @@ export const metadata: Metadata = {
     title: "Hadron | Autonomous PR Review Engine",
     description: "Automate code reviews on GitHub pull requests. Four parallel specialist agents inspect diffs across security, code quality, test coverage, and documentation before merge.",
     url: "https://hadron.pages.dev",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Hadron multi-agent pull request review: four specialist agents, one review" }],
+    images: [{ url: "/ulogo-og-image.png", width: 1200, height: 630, alt: "Hadron multi-agent pull request review: four specialist agents, one review" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Hadron | Autonomous PR Review Engine",
     description: "Automate code reviews on GitHub pull requests. Four parallel specialist agents inspect diffs across security, code quality, test coverage, and documentation before merge.",
     creator: "@krishujeniya",
-    images: ["/og-image.png"],
+    images: ["/ulogo-og-image.png"],
   },
 };
 
@@ -80,7 +83,7 @@ const schemaOrgData = {
       "@type": "Organization",
       name: "Hadron AI",
       url: "https://hadron.pages.dev",
-      logo: "https://hadron.pages.dev/icon-512.png",
+      logo: "https://hadron.pages.dev/ulogo-icon-512.png",
       sameAs: ["https://github.com/krishujeniya/Hadron"],
     },
     {
