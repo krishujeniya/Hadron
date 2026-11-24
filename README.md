@@ -161,25 +161,41 @@ Each specialist operates under a strict role contract, using domain-specific pro
 
 ```text
 Hadron/
-├── api/                      Vercel ASGI adapter
-├── backend/                  Python domain packages and ARQ worker
-├── frontend/
-│   ├── src/app/              Next.js routes and layouts
-│   ├── src/features/         Auth, reviews, HITL, overview, marketing
-│   ├── src/components/       Shared ui, brand, and layout components
-│   ├── src/lib/              API transport, DTOs, theme and SWR
-│   ├── tests/                Browser regression checks
-│   ├── Dockerfile            Multi-stage standalone Next.js container
-│   └── public/               Browser-served assets
-├── tests/                    Python tests grouped by domain
-├── fixtures/                 Shared demo/test webhook payload
-├── scripts/                  Operational tools and migration artifacts
-├── docs/                     Architecture, operations, design and evidence
-├── assets/                   Repository branding assets
-├── Dockerfile                Multi-stage backend container (API & Worker)
-├── docker-compose.yml        Production compose topology
-├── docker-compose.dev.yml    All-local development compose topology
-└── .github/workflows/        CI and production readiness gate
+├── .github/workflows/        # CI/CD pipelines (ci.yml, deploy.yml, readiness)
+├── assets/                   # Brand logos (ulogo-*), diagrams, social cards
+├── backend/                  # Self-contained FastAPI service (API & ARQ Worker)
+│   ├── api/                  # API endpoints and route definitions
+│   ├── core/                 # Settings, security, and logging
+│   ├── models/               # Domain and database models
+│   ├── agents/               # Four specialist analysis sub-agents
+│   ├── orchestrator/         # Multi-agent LangGraph workflow engine
+│   ├── pyproject.toml        # Backend dependencies & toolchain
+│   ├── requirements.txt      # Dependency lock
+│   ├── .env.example          # Backend environment variables
+│   └── main.py               # Application entrypoint & health probe
+├── frontend/                 # Self-contained Next.js 15 dashboard
+│   ├── public/               # Static assets & ulogo branding
+│   ├── src/app/              # Next.js App Router pages and layouts
+│   ├── src/features/         # Feature modules (Auth, Reviews, HITL)
+│   ├── src/components/ui/    # Accessible shared UI primitives
+│   ├── src/lib/              # Typed API transport, SWR, and theme
+│   ├── package.json          # Node dependencies
+│   └── .env.example          # Frontend environment variables
+├── deploy/                   # All Docker and cloud deployment configs
+│   ├── docker/
+│   │   ├── backend.Dockerfile
+│   │   └── frontend.Dockerfile
+│   ├── docker-compose.yml    # Production compose topology
+│   ├── docker-compose.dev.yml# Local dev compose topology
+│   └── cloudflare/           # Cloudflare Worker and Edge configs
+├── docs/                     # Architecture, runbooks, security, deployment
+├── scripts/                  # Operational tools and verification scripts
+├── supabase/                 # Database migrations and schema definitions
+├── tests/                    # Critical-path test suite (Unit, Contract, Security)
+├── .gitignore                # Clean combined gitignore rules
+├── LICENSE                   # MIT License
+├── Makefile                  # Unified commands (make dev, make test, make build)
+└── README.md                 # Architecture overview and quickstart
 ```
 
 See [repository layout](docs/architecture/repository-layout.md) for dependency rules, verified upstream examples, and the exact move mapping. The [documentation index](docs/README.md) and [test guide](tests/README.md) provide focused entrypoints.

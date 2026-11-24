@@ -40,15 +40,15 @@ services:
   # ---------------------------------------------------------------------------
   api:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: deploy/docker/backend.Dockerfile
     container_name: hadron_api
     restart: unless-stopped
     command: ["api"]
     ports:
       - "${API_PORT:-8000}:8000"
     env_file:
-      - .env
+      - ../.env
     environment:
       REDIS_URL: "redis://redis:6379"
       PORT: "8000"
@@ -70,13 +70,13 @@ services:
   # ---------------------------------------------------------------------------
   worker:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: deploy/docker/backend.Dockerfile
     container_name: hadron_worker
     restart: unless-stopped
     command: ["worker"]
     env_file:
-      - .env
+      - ../.env
     environment:
       REDIS_URL: "redis://redis:6379"
     depends_on:
@@ -98,8 +98,8 @@ services:
   # ---------------------------------------------------------------------------
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: ../frontend
+      dockerfile: ../deploy/docker/frontend.Dockerfile
     container_name: hadron_frontend
     restart: unless-stopped
     ports:

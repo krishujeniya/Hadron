@@ -54,7 +54,9 @@ def test_dockerfile_multi_stage_structure_and_no_unsubstantiated_claims():
     Dockerfile must use a clean multi-stage pattern, unprivileged non-root user,
     allowlisted source copying, and must not make unsubstantiated claims.
     """
-    dockerfile_path = REPO_ROOT / "Dockerfile"
+    dockerfile_path = REPO_ROOT / "deploy" / "docker" / "backend.Dockerfile"
+    if not dockerfile_path.exists():
+        dockerfile_path = REPO_ROOT / "Dockerfile"
     assert dockerfile_path.exists(), "Dockerfile missing"
 
     content = dockerfile_path.read_text()
@@ -101,7 +103,9 @@ def test_docker_compose_production_topology_has_durable_volumes_and_isolated_ser
     docker-compose.yml must declare persistent Redis storage, independent
     process commands without duplicate workers, and the complete application topology.
     """
-    compose_path = REPO_ROOT / "docker-compose.yml"
+    compose_path = REPO_ROOT / "deploy" / "docker-compose.yml"
+    if not compose_path.exists():
+        compose_path = REPO_ROOT / "docker-compose.yml"
     assert compose_path.exists(), "docker-compose.yml missing"
 
     with open(compose_path, "r") as f:
@@ -142,7 +146,9 @@ def test_frontend_dockerfile_multi_stage_standalone():
     """
     frontend/Dockerfile must build Next.js in standalone mode with unprivileged user.
     """
-    frontend_dockerfile = REPO_ROOT / "frontend" / "Dockerfile"
+    frontend_dockerfile = REPO_ROOT / "deploy" / "docker" / "frontend.Dockerfile"
+    if not frontend_dockerfile.exists():
+        frontend_dockerfile = REPO_ROOT / "frontend" / "Dockerfile"
     assert frontend_dockerfile.exists(), "frontend/Dockerfile missing"
 
     content = frontend_dockerfile.read_text()

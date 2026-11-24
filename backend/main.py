@@ -492,6 +492,12 @@ async def _check_qdrant() -> str:
     description="Readiness check: Postgres, Schema, Redis, Worker, and Tiger Cloud.",
 )
 @app.get(
+    "/api/v1/health",
+    tags=["ops"],
+    summary="Readiness probe",
+    description="Readiness check: Postgres, Schema, Redis, Worker, and Tiger Cloud.",
+)
+@app.get(
     "/health",
     tags=["ops"],
     summary="Readiness probe",

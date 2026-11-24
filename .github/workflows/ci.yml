@@ -182,4 +182,4 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build backend production image
-        run: docker build --tag hadron-backend:ci .
+        run: docker build -f deploy/docker/backend.Dockerfile --tag hadron-backend:ci .
