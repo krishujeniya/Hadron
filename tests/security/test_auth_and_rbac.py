@@ -56,6 +56,7 @@ class TestT02RouteInventoryAndAuthentication:
         "/health",
         "/health/live",
         "/health/ready",
+        "/api/v1/health",
         "/docs",
         "/redoc",
         "/openapi.json",
