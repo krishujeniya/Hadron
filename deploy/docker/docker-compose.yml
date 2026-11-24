@@ -1,0 +1,134 @@
+# docker-compose.yml — Declared Production Topology for Hadron Autonomous PR Review Agent
+#
+# Topology:
+#   1. frontend — Next.js production UI (port 3000)
+#   2. api      — FastAPI web server & webhook receiver (port 8000)
+#   3. worker   — Persistent ARQ review execution worker (decoupled from API)
+#   4. redis    — Durable job queue and idempotency store with AOF persistence
+#   5. postgres — Cloud/Managed TimescaleDB (configured via DATABASE_URL)
+#
+# Process Isolation Contract:
+#   - API and Worker run as separate services from the same reproducible image.
+#   - Duplicate workers are prevented by explicit process commands (['api'] and ['worker']).
+#   - Redis queue state is preserved across container restarts via the redis_data volume.
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Redis — Persistent Job Queue & Distributed State
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7.2.4-alpine
+    container_name: hadron_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - hadron_net
+
+  # ---------------------------------------------------------------------------
+  # API — FastAPI Application & Webhook Receiver
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/docker/backend.Dockerfile
+    container_name: hadron_api
+    restart: unless-stopped
+    command: ["api"]
+    ports:
+      - "${API_PORT:-8000}:8000"
+    env_file:
+      - ../.env
+    environment:
+      REDIS_URL: "redis://redis:6379"
+      PORT: "8000"
+      UVICORN_WORKERS: "${UVICORN_WORKERS:-2}"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - hadron_net
+
+  # ---------------------------------------------------------------------------
+  # Worker — Autonomous Review Execution Worker (ARQ)
+  # ---------------------------------------------------------------------------
+  worker:
+    build:
+      context: ..
+      dockerfile: deploy/docker/backend.Dockerfile
+    container_name: hadron_worker
+    restart: unless-stopped
+    command: ["worker"]
+    env_file:
+      - ../.env
+    environment:
+      REDIS_URL: "redis://redis:6379"
+    depends_on:
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c 'import asyncio; from backend.memory.redis_client import redis_client; active = asyncio.run(redis_client.get_active_workers()); exit(0 if active else 1)'"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - hadron_net
+
+  # ---------------------------------------------------------------------------
+  # Frontend — Next.js Standalone Production Dashboard
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: ../deploy/docker/frontend.Dockerfile
+    container_name: hadron_frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: "http://api:8000"
+      PORT: "3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - hadron_net
+
+# ---------------------------------------------------------------------------
+# Networks
+# ---------------------------------------------------------------------------
+networks:
+  hadron_net:
+    driver: bridge
+
+# ---------------------------------------------------------------------------
+# Volumes — Persistent State
+# ---------------------------------------------------------------------------
+volumes:
+  redis_data:
+    driver: local
