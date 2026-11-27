@@ -7,17 +7,17 @@
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <style>
     :root {
-      --bg: #0b1220;
-      --surface: #111827;
-      --panel: #1e293b;
-      --border: #334155;
-      --text: #f8fafc;
-      --muted: #94a3b8;
-      --accent: #93c5fd;
-      --accent-lit: #60a5fa;
-      --ok: #86efac;
-      --warn: #fde68a;
-      --err: #fca5a5;
+      --bg: #0a0a0a;
+      --surface: #18181b;
+      --panel: #27272a;
+      --border: #3f3f46;
+      --text: #fafafa;
+      --muted: #a1a1aa;
+      --accent: #e4e4e7;
+      --accent-lit: #fafafa;
+      --ok: #d4d4d8;
+      --warn: #a1a1aa;
+      --err: #fafafa;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -38,14 +38,14 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #050811;
+      background: #050505;
     }
 
     #stage {
       position: relative;
       width: 1280px;
       height: 720px;
-      background: radial-gradient(circle at 50% 30%, #172554 0%, #0b1220 70%, #030712 100%);
+      background: radial-gradient(circle at 50% 30%, #262626 0%, #0a0a0a 70%, #000000 100%);
       overflow: hidden;
       box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9);
       perspective: 1000px;
@@ -56,8 +56,8 @@
       position: absolute;
       inset: -20%;
       background-image: 
-        linear-gradient(to right, rgba(147, 197, 253, 0.05) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(147, 197, 253, 0.05) 1px, transparent 1px);
+        linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
       background-size: 32px 32px;
       transform: rotateX(45deg);
       transform-origin: center bottom;
@@ -84,7 +84,7 @@
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 13px;
       color: var(--muted);
-      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
       padding-bottom: 16px;
       z-index: 10;
     }
@@ -103,7 +103,7 @@
       align-items: center;
       gap: 8px;
       padding: 4px 10px;
-      background: rgba(30, 41, 59, 0.6);
+      background: rgba(39, 39, 42, 0.6);
       border: 1px solid var(--border);
       border-radius: 9999px;
       font-size: 11px;
@@ -151,8 +151,8 @@
       content: "";
       position: absolute;
       inset: 2px 0;
-      background: rgba(147, 197, 253, 0.15);
-      border: 1px solid rgba(147, 197, 253, 0.4);
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.4);
       border-radius: 6px;
       z-index: -1;
     }
@@ -195,8 +195,8 @@
       white-space: nowrap;
       overflow: hidden;
     }
-    .diff-add { background: rgba(134, 239, 172, 0.15); color: var(--ok); }
-    .diff-del { background: rgba(252, 165, 165, 0.15); color: var(--err); }
+    .diff-add { background: rgba(255, 255, 255, 0.14); color: var(--ok); }
+    .diff-del { background: rgba(255, 255, 255, 0.14); color: var(--err); }
 
     /* 4 Specialist Agents Cluster */
     .agent-cluster {
@@ -206,7 +206,7 @@
     }
 
     .agent-card {
-      background: rgba(17, 24, 39, 0.9);
+      background: rgba(10, 10, 10, 0.9);
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 16px;
@@ -220,7 +220,7 @@
 
     .agent-card.active {
       border-color: var(--accent);
-      background: rgba(30, 41, 59, 0.95);
+      background: rgba(39, 39, 42, 0.95);
     }
 
     .agent-card::before {
@@ -253,7 +253,7 @@
       justify-content: space-between;
       font-size: 11px;
       color: var(--accent);
-      border-top: 1px solid rgba(148, 163, 184, 0.2);
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
       padding-top: 8px;
     }
 
@@ -276,7 +276,7 @@
       font-size: 14px;
       font-weight: 800;
       letter-spacing: 0.05em;
-      background: rgba(134, 239, 172, 0.15);
+      background: rgba(255, 255, 255, 0.14);
       color: var(--ok);
       border: 1px solid var(--ok);
       margin-top: 12px;
@@ -298,7 +298,7 @@
       bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(11, 18, 32, 0.95);
+      background: rgba(10, 10, 10, 0.95);
       border: 1px solid var(--border);
       border-radius: 9999px;
       padding: 8px 20px;
@@ -338,9 +338,9 @@
       <svg id="connector-svg" viewBox="0 0 1280 720">
         <defs>
           <linearGradient id="beamGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#93c5fd" stop-opacity="0.2" />
-            <stop offset="50%" stop-color="#93c5fd" stop-opacity="0.9" />
-            <stop offset="100%" stop-color="#86efac" stop-opacity="0.8" />
+            <stop offset="0%" stop-color="#e4e4e7" stop-opacity="0.2" />
+            <stop offset="50%" stop-color="#e4e4e7" stop-opacity="0.9" />
+            <stop offset="100%" stop-color="#d4d4d8" stop-opacity="0.8" />
           </linearGradient>
         </defs>
         <path id="flow-line-1" d="M 304 430 C 370 430, 370 330, 440 330" fill="none" stroke="url(#beamGrad)" stroke-width="2" stroke-dasharray="6 6" />
@@ -355,7 +355,7 @@
         <header class="hud-bar">
           <div class="brand-mark">
             <svg width="24" height="24" viewBox="0 0 128 128" fill="none">
-              <circle cx="64" cy="64" r="56" stroke="#93c5fd" stroke-width="8" stroke-dasharray="16 8" />
+              <circle cx="64" cy="64" r="56" stroke="#e4e4e7" stroke-width="8" stroke-dasharray="16 8" />
               <circle cx="64" cy="64" r="24" fill="#ffffff" />
             </svg>
             HADRON TELEMETRY
@@ -501,13 +501,13 @@
         2.9
       )
       .fromTo("#k-shot-2", { opacity: 0, y: 24, filter: "blur(8px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.7, ease: "power4.out" }, 3.1)
-      .to(".agent-card", { borderColor: "#93c5fd", duration: 0.4, stagger: 0.1, yoyo: true, repeat: 1 }, 3.8)
+      .to(".agent-card", { borderColor: "#e4e4e7", duration: 0.4, stagger: 0.1, yoyo: true, repeat: 1 }, 3.8)
       .to("#k-shot-2", { opacity: 0, y: -20, filter: "blur(6px)", duration: 0.4, ease: "power2.in" }, 5.5);
 
     // Shot 3: Synthesis & Publication
     tl.fromTo("#node-verdict", { opacity: 0, x: 40, scale: 0.9 }, { opacity: 1, x: 0, scale: 1, duration: 0.8, ease: "power4.out" }, 5.6)
       .fromTo("#k-shot-3", { opacity: 0, y: 24, filter: "blur(8px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.7, ease: "power4.out" }, 5.8)
-      .fromTo(".verdict-chip", { scale: 0.8, boxShadow: "0 0 0px var(--ok)" }, { scale: 1, boxShadow: "0 0 24px rgba(134, 239, 172, 0.4)", duration: 0.5, ease: "back.out(2)" }, 6.4)
+      .fromTo(".verdict-chip", { scale: 0.8, boxShadow: "0 0 0px var(--ok)" }, { scale: 1, boxShadow: "0 0 24px rgba(255, 255, 255, 0.35)", duration: 0.5, ease: "back.out(2)" }, 6.4)
       .to("#k-shot-3", { opacity: 0, y: -20, filter: "blur(6px)", duration: 0.4, ease: "power2.in" }, 8.4);
 
     // Interactive Scrubber & Controls

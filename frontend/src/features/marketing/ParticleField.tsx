@@ -8,7 +8,7 @@ type Particle = {
   shape: number; color: string; opacity: number; phase: number;
 };
 
-const PALETTE = ["#4285F4", "#EA4335", "#FBBC04", "#34A853", "#F5F7FB", "#B9C4D3"];
+const PALETTE = ["#FFFFFF", "#E4E4E7", "#A1A1AA", "#D4D4D8", "#71717A", "#52525B"];
 const TWO_PI = Math.PI * 2;
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 

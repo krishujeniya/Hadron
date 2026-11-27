@@ -73,7 +73,7 @@ export default function DocsPage() {
           <p>Copy the commands below to run the development Compose topology. Configure the example environment file before launching containers. You will need Docker, Compose, and provider credentials for the applicable integrations.</p>
           <div style={{ position: "relative" }}>
             <pre><code>{commands.join("\n")}</code></pre>
-            <button type="button" onClick={copyCommands} aria-live="polite" style={{ position: "absolute", right: 13, top: 12, borderRadius: 10, padding: "8px 13px", background: "#30333c", color: "white", fontSize: 12 }}>{copied ? "Copied" : "Copy commands"}</button>
+            <button type="button" onClick={copyCommands} aria-live="polite" style={{ position: "absolute", right: 13, top: 12, borderRadius: 10, padding: "8px 13px", background: "#3f3f46", color: "white", fontSize: 12 }}>{copied ? "Copied" : "Copy commands"}</button>
           </div>
           <p>Frontend: <code>http://localhost:3000</code> · API: <code>http://localhost:8000</code> · OpenAPI: <code>http://localhost:8000/docs</code>.</p>
         </section>

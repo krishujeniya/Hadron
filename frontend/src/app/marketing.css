@@ -1,52 +1,52 @@
 /* Hadron / Antigravity-inspired public experience.
    All selectors are intentionally scoped: signed-in dashboard tokens are unchanged. */
 .hadron-public {
-  --hm-ink: #121317;
+  --hm-ink: #18181b;
   --hm-bg: #ffffff;
-  --hm-muted: #45474d;
-  --hm-surface: #f8f9fa;
-  --hm-line: rgba(18, 19, 23, .105);
-  --hm-blue: #4285f4;
+  --hm-muted: #52525b;
+  --hm-surface: #fafafa;
+  --hm-line: rgba(0, 0, 0, .08);
+  --hm-accent: #18181b;
   --hm-ease: cubic-bezier(.165,.84,.44,1);
   --bg: 255 255 255;
-  --surface: 248 249 250;
-  --panel: 243 245 247;
+  --surface: 250 250 250;
+  --panel: 244 244 245;
   --foreground: 18 19 23;
-  --muted: 69 71 77;
-  --accent: 32 97 209;
+  --muted: 82 82 91;
+  --accent: 18 19 23;
   --primary-action: 18 19 23;
-  --separator: 227 230 234;
-  --border: 222 225 229;
-  --ok: 32 125 84;
-  --warn: 136 91 8;
-  --err: 167 40 39;
+  --separator: 228 228 231;
+  --border: 212 212 216;
+  --ok: 24 24 27;
+  --warn: 113 113 122;
+  --err: 0 0 0;
   color-scheme: light;
   background: var(--hm-bg);
   color: var(--hm-ink);
   font-family: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 .dark .hadron-public {
-  --hm-ink: #f5f6f8;
-  --hm-bg: #111318;
-  --hm-muted: #b7bcc7;
-  --hm-surface: #1a1d24;
+  --hm-ink: #fafafa;
+  --hm-bg: #0a0a0a;
+  --hm-muted: #a1a1aa;
+  --hm-surface: #1c1c1f;
   --hm-line: rgba(255,255,255,.11);
-  --bg: 17 19 24;
-  --surface: 26 29 36;
-  --panel: 35 39 47;
-  --foreground: 245 246 248;
-  --muted: 183 188 199;
-  --accent: 121 170 255;
+  --bg: 10 10 10;
+  --surface: 24 24 27;
+  --panel: 39 39 42;
+  --foreground: 250 250 250;
+  --muted: 161 161 170;
+  --accent: 250 250 250;
   --primary-action: 244 246 248;
-  --separator: 55 59 67;
-  --border: 62 67 76;
-  --ok: 110 215 161;
-  --warn: 236 193 95;
-  --err: 255 154 146;
+  --separator: 63 63 70;
+  --border: 82 82 91;
+  --ok: 244 244 245;
+  --warn: 161 161 170;
+  --err: 255 255 255;
   color-scheme: dark;
 }
 .hadron-public :focus-visible {
-  outline: 3px solid #4285f4;
+  outline: 3px solid var(--hm-ink);
   outline-offset: 3px;
 }
 .hadron-public .hm-header {
@@ -139,7 +139,8 @@
   letter-spacing:.12em;
   margin-bottom: clamp(34px, 5vw, 70px);
 }
-.hm-eyebrow-dot { width:8px; height:8px; background:#34a853; border-radius:50%; box-shadow:0 0 0 5px rgba(52,168,83,.11); }
+.hm-eyebrow-dot { width:8px; height:8px; background:var(--hm-ink); border-radius:50%; box-shadow:0 0 0 5px rgba(0,0,0,.08); }
+.dark .hm-eyebrow-dot { box-shadow:0 0 0 5px rgba(255,255,255,.12); }
 .hm-headline {
   font-family: "Plus Jakarta Sans", "Inter", -apple-system, sans-serif;
   font-weight: 620;
@@ -187,9 +188,9 @@
   border-radius: 36px;
   overflow:hidden;
   isolation:isolate;
-  background: #121317;
-  color: #f8f9fc;
-  box-shadow: 0 40px 90px rgba(18, 19, 23, .18);
+  background: #18181b;
+  color: #fafafa;
+  box-shadow: 0 40px 90px rgba(0, 0, 0, .16);
   display:flex;
   flex-direction:column;
   padding: clamp(18px, 2.3vw, 32px);
@@ -197,20 +198,20 @@
 .hm-stage::before {
   content:"";
   position:absolute; inset:0;
-  background: radial-gradient(ellipse at 54% 46%, rgba(48,87,148,.15), transparent 52%);
+  background: radial-gradient(ellipse at 54% 46%, rgba(255,255,255,.14), transparent 52%);
   pointer-events:none;
   z-index:0;
 }
 .hm-field { position:absolute; inset:0; z-index:1; overflow:hidden; touch-action:pan-y; }
 .hm-field canvas { position:absolute; inset:0; width:100%!important; height:100%!important; pointer-events:none; }
 .hm-stage-top { position:relative; z-index:2; display:flex; justify-content:space-between; gap:12px; align-items:center; }
-.hm-window-label { font:600 10px/1.4 ui-monospace,monospace; letter-spacing:.11em; text-transform:uppercase; color:#c7cbd3; }
-.hm-status { display:flex; align-items:center; gap:8px; font:500 10px/1.4 ui-monospace,monospace; color:#b8c0cd; }
-.hm-status-dot { width:6px; height:6px; background:#34a853; border-radius:50%; }
+.hm-window-label { font:600 10px/1.4 ui-monospace,monospace; letter-spacing:.11em; text-transform:uppercase; color:#d4d4d8; }
+.hm-status { display:flex; align-items:center; gap:8px; font:500 10px/1.4 ui-monospace,monospace; color:#a1a1aa; }
+.hm-status-dot { width:6px; height:6px; background:#fafafa; border-radius:50%; }
 .hm-window {
   position:relative; z-index:2; width:min(100%, 430px); align-self:center;
   margin:auto 0;
-  background:rgba(20,22,28,.87); border:1px solid rgba(255,255,255,.15);
+  background:rgba(24,24,27,.87); border:1px solid rgba(255,255,255,.15);
   border-radius:21px; box-shadow:0 30px 70px rgba(0,0,0,.42);
   overflow:hidden; backdrop-filter:blur(14px);
   transform:rotate(-1.8deg);
@@ -218,30 +219,30 @@
 }
 .hm-stage:hover .hm-window { transform:rotate(0deg) translateY(-4px); }
 .hm-window-bar { display:flex;align-items:center;gap:7px;padding:13px 17px;border-bottom:1px solid rgba(255,255,255,.1); }
-.hm-window-bar i { height:8px;width:8px;border:1px solid #7f8796;border-radius:50%;display:inline-block; }
-.hm-window-bar span { margin-left:auto;color:#9aa5b6;font:500 10px/1.4 ui-monospace,monospace; }
-.hm-code { padding:22px; font:500 12px/1.8 "JetBrains Mono", ui-monospace,monospace; color:#c6d0df; white-space:pre-wrap; }
+.hm-window-bar i { height:8px;width:8px;border:1px solid #52525b;border-radius:50%;display:inline-block; }
+.hm-window-bar span { margin-left:auto;color:#a1a1aa;font:500 10px/1.4 ui-monospace,monospace; }
+.hm-code { padding:22px; font:500 12px/1.8 "JetBrains Mono", ui-monospace,monospace; color:#d4d4d8; white-space:pre-wrap; }
 .hm-code-line { display:block; }
-.hm-code-line b { color:#84b6ff; font-weight:600; }
-.hm-code-line em { color:#a6d9ae; font-style:normal; }
+.hm-code-line b { color:#fafafa; font-weight:600; }
+.hm-code-line em { color:#a1a1aa; font-style:normal; }
 .hm-code-line.is-muted { opacity:.52; }
 .hm-result { margin:0 16px 16px; display:flex; gap:12px; align-items:flex-start; padding:13px; border:1px solid rgba(255,255,255,.13); border-radius:13px; background:rgba(255,255,255,.065); }
-.hm-result-icon { width:24px;height:24px;display:grid;place-items:center;border-radius:8px;background:rgba(234,67,53,.16);color:#ff9b93;font-size:13px;flex-shrink:0; }
+.hm-result-icon { width:24px;height:24px;display:grid;place-items:center;border-radius:8px;background:rgba(255,255,255,.14);color:#fafafa;font-size:13px;flex-shrink:0; }
 .hm-result strong { display:block;font-size:12px;font-weight:650;color:#fff; }
-.hm-result p { font-size:11px;line-height:1.55;color:#b2bbca;margin-top:4px; }
-.hm-stage-foot { position:relative;z-index:2; display:flex;align-items:center;gap:10px; font:500 10px/1.5 ui-monospace,monospace; color:#c8d1db; padding-right:170px; }
+.hm-result p { font-size:11px;line-height:1.55;color:#a1a1aa;margin-top:4px; }
+.hm-stage-foot { position:relative;z-index:2; display:flex;align-items:center;gap:10px; font:500 10px/1.5 ui-monospace,monospace; color:#d4d4d8; padding-right:170px; }
 .hm-mini-line { width:32px;height:1px;background:rgba(255,255,255,.3); }
 /* Editorial capability band */
 .hm-capabilities { display:grid;grid-template-columns:1.15fr .85fr .85fr;gap:14px; }
 .hm-capability { min-height:215px;padding:32px;border-radius:24px;background:var(--hm-surface);border:1px solid var(--hm-line);display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden; }
-.hm-capability:first-child { grid-row:span 2;min-height:445px;background:#eaf1ff; color:#172941; }
-.dark .hm-capability:first-child { background:#17253b; color:#edf4ff; }
+.hm-capability:first-child { grid-row:span 2;min-height:445px;background:#18181b; color:#fafafa; }
+.dark .hm-capability:first-child { background:#26262b; color:#fafafa; }
 .hm-capability:nth-child(4) { grid-column:span 2; }
 .hm-capability-kicker { font:600 11px/1.5 ui-monospace,monospace; text-transform:uppercase;letter-spacing:.12em; opacity:.7; }
 .hm-capability-title { font-size:clamp(23px,2.1vw,33px);line-height:1.12;letter-spacing:-.04em;font-weight:650;max-width:360px; }
 .hm-capability-body { font-size:13px;line-height:1.65;max-width:390px;opacity:.8; }
 .hm-capability-visual { display:flex; gap:10px;align-items:center;flex-wrap:wrap;margin:28px 0; }
-.hm-agent-pill { border:1px solid rgba(25,43,75,.18);background:rgba(255,255,255,.5);padding:10px 13px;border-radius:999px;font:600 11px/1 ui-monospace,monospace; }
+.hm-agent-pill { border:1px solid rgba(0,0,0,.14);background:rgba(255,255,255,.5);padding:10px 13px;border-radius:999px;font:600 11px/1 ui-monospace,monospace; }
 .dark .hm-agent-pill { background:rgba(255,255,255,.08); }
 .hm-capability > span:last-child { color:var(--hm-muted); }
 /* Data-first product sections */
@@ -255,13 +256,13 @@
 /* Closing CTA and restrained footer */
 .hm-closing {
   border-radius:36px;min-height:340px;padding:clamp(35px,6vw,85px);
-  background:#121317;color:#fff;display:flex;align-items:flex-end;justify-content:space-between;gap:30px;
+  background:#18181b;color:#fff;display:flex;align-items:flex-end;justify-content:space-between;gap:30px;
   overflow:hidden;position:relative;
 }
 .hm-closing::before {content:"";position:absolute; width:450px;height:450px;right:-120px;top:-200px;border-radius:50%;border:1px solid rgba(255,255,255,.12);box-shadow:0 0 0 65px rgba(255,255,255,.015),0 0 0 140px rgba(255,255,255,.015);pointer-events:none;}
 .hm-closing h2 { font-size:clamp(2.3rem,4.3vw,4.6rem)!important;max-width:700px;line-height:1.04!important;letter-spacing:-.05em; }
-.hm-closing p { color:#bec3cd;margin-top:18px;font-size:15px;line-height:1.7;max-width:500px; }
-.hm-closing .hm-button { background:#fff;color:#121317;flex-shrink:0; }
+.hm-closing p { color:#a1a1aa;margin-top:18px;font-size:15px;line-height:1.7;max-width:500px; }
+.hm-closing .hm-button { background:#fff;color:#18181b;flex-shrink:0; }
 .hadron-public .hm-site > footer { display:none; }
 .hadron-public > footer { border-color:var(--hm-line);background:var(--hm-bg);font-family:inherit;padding-block:36px; }
 .hadron-public > footer > div { max-width:1360px; }
@@ -277,7 +278,7 @@
 .hm-docs-article p,.hm-docs-article li { color:var(--hm-muted);font-size:16px;line-height:1.8; }
 .hm-docs-article p { max-width:75ch; }
 .hm-docs-article code { font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.86em; }
-.hm-docs-article pre { background:#16181e;color:#e6e8f0;border-radius:18px;padding:25px;overflow-x:auto;margin:22px 0;white-space:pre-wrap; }
+.hm-docs-article pre { background:#18181b;color:#e4e4e7;border-radius:18px;padding:25px;overflow-x:auto;margin:22px 0;white-space:pre-wrap; }
 .hm-docs-article .hm-docs-search { width:100%;max-width:490px;min-height:48px;border:1px solid var(--hm-line);border-radius:14px;padding:12px 16px;background:var(--hm-surface);color:var(--hm-ink);margin:22px 0 8px;font-size:14px; }
 .hm-docs-article .hm-docs-cards { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin-top:30px; }
 .hm-docs-card { border:1px solid var(--hm-line);border-radius:18px;padding:24px; }
@@ -339,7 +340,8 @@
 
 
 /* Hallmark v2: specific product proof, restrained type, no generic AI ambience. */
-.hadron-public{--hm-focus:#2061d1}
+.hadron-public{--hm-focus:#18181b}
+.dark .hadron-public{--hm-focus:#fafafa}
 .hadron-public .hm-hero{min-height:0;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);align-items:center;gap:clamp(26px,4vw,60px);padding-block:clamp(54px,7vh,88px)}
 .hadron-public .hm-hero-copy{padding:0}
 .hadron-public .hm-headline{font-family:"Plus Jakarta Sans","Inter",system-ui,sans-serif;font-size:clamp(3.1rem,5.7vw,6.25rem);line-height:1.08;font-weight:650;letter-spacing:-.065em;margin:0 0 24px;overflow-wrap:break-word}
@@ -351,7 +353,7 @@
 .hadron-public .hm-window-bar i{display:none}
 .hadron-public .hm-window-bar span{margin-left:0;font-size:12px;letter-spacing:0}
 .hadron-public .hm-window-label,.hadron-public .hm-capability-kicker,.hadron-public .hm-stage-foot{font-family:inherit;font-size:12px;font-weight:500;letter-spacing:0;text-transform:none}
-.hadron-public .hm-stage-foot{padding:0;color:#c4d2de}
+.hadron-public .hm-stage-foot{padding:0;color:#a1a1aa}
 .hadron-public .hm-site{gap:clamp(58px,6vw,100px)}
 .hadron-public :focus-visible{outline:3px solid var(--hm-focus);outline-offset:3px}
 @media(max-width:980px){.hadron-public .hm-hero{grid-template-columns:minmax(0,1fr);padding-block:48px 70px}.hadron-public .hm-stage{width:100%;max-width:750px}.hadron-public .hm-headline{font-size:clamp(3rem,8vw,5.5rem)}}
