@@ -12,6 +12,7 @@
 #      and declares the full production topology (frontend, api, worker, redis).
 
 import pathlib
+import re
 import yaml
 
 
@@ -61,9 +62,9 @@ def test_dockerfile_multi_stage_structure_and_no_unsubstantiated_claims():
 
     content = dockerfile_path.read_text()
 
-    # Multi-stage check
-    assert "FROM python:3.11-slim AS builder" in content
-    assert "FROM python:3.11-slim AS runtime" in content
+    # Multi-stage check (tag or digest-pinned)
+    assert re.search(r"FROM python:3\.11-slim(@sha256:[0-9a-f]{64})? AS builder", content)
+    assert re.search(r"FROM python:3\.11-slim(@sha256:[0-9a-f]{64})? AS runtime", content)
 
     # Non-root unprivileged execution check
     assert "USER hadron" in content
@@ -152,8 +153,8 @@ def test_frontend_dockerfile_multi_stage_standalone():
     assert frontend_dockerfile.exists(), "frontend/Dockerfile missing"
 
     content = frontend_dockerfile.read_text()
-    assert "FROM node:20-alpine AS deps" in content
-    assert "FROM node:20-alpine AS builder" in content
-    assert "FROM node:20-alpine AS runner" in content
+    assert re.search(r"FROM node:20-alpine(@sha256:[0-9a-f]{64})? AS deps", content)
+    assert re.search(r"FROM node:20-alpine(@sha256:[0-9a-f]{64})? AS builder", content)
+    assert re.search(r"FROM node:20-alpine(@sha256:[0-9a-f]{64})? AS runner", content)
     assert "USER nextjs" in content
     assert 'CMD ["node", "server.js"]' in content

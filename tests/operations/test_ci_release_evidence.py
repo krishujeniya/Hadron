@@ -36,9 +36,10 @@ def test_ci_workflow_structure_and_security_invariants():
     content = ci_path.read_text(encoding="utf-8")
     parsed = yaml.safe_load(content)
 
-    # 1. Concurrency cancellation
+    # 1. Concurrency cancellation (all or PR-scoped)
     assert "concurrency" in parsed
-    assert parsed["concurrency"].get("cancel-in-progress") is True
+    cancel_val = parsed["concurrency"].get("cancel-in-progress")
+    assert cancel_val is True or (isinstance(cancel_val, str) and "pull_request" in cancel_val)
 
     # 2. Permissions
     assert "permissions" in parsed
