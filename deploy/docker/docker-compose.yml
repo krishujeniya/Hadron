@@ -21,6 +21,10 @@ services:
     image: redis:7.2.4-alpine
     container_name: hadron_redis
     restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
     ports:
       - "${REDIS_PORT:-6379}:6379"
@@ -44,11 +48,16 @@ services:
       dockerfile: deploy/docker/backend.Dockerfile
     container_name: hadron_api
     restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     command: ["api"]
     ports:
       - "${API_PORT:-8000}:8000"
     env_file:
-      - ../.env
+      - path: ../../.env
+        required: false
     environment:
       REDIS_URL: "redis://redis:6379"
       PORT: "8000"
@@ -74,9 +83,14 @@ services:
       dockerfile: deploy/docker/backend.Dockerfile
     container_name: hadron_worker
     restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     command: ["worker"]
     env_file:
-      - ../.env
+      - path: ../../.env
+        required: false
     environment:
       REDIS_URL: "redis://redis:6379"
     depends_on:
@@ -102,6 +116,10 @@ services:
       dockerfile: ../deploy/docker/frontend.Dockerfile
     container_name: hadron_frontend
     restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     environment:
